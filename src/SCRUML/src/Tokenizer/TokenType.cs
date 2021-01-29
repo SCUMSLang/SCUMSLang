@@ -60,11 +60,11 @@
         /// </summary>
         TemplateKeyword,
         /// <summary>
-        /// <
+        /// &lt;
         /// </summary>
         OpenAngleBracket,
         /// <summary>
-        /// >
+        /// &gt;
         /// </summary>
         CloseAngleBracket,
         /// <summary>
@@ -84,25 +84,21 @@
         /// </summary>
         OrLogicalOperator,
         /// <summary>
-        /// &lt;
-        /// </summary>
-        LessThan,
-        /// <summary>
         /// &lt;=
         /// </summary>
         LessThanOrEqual,
-        /// <summary>
-        /// &gt;
-        /// </summary>
-        GreaterThan,
         /// <summary>
         /// &gt;=
         /// </summary>
         GreaterThanOrEqual,
         /// <summary>
+        /// =
+        /// </summary>
+        EqualOperator,
+        /// <summary>
         /// !=
         /// </summary>
-        UnequalSign,
+        UnequalOperator,
         /// <summary>
         /// if
         /// </summary>
@@ -118,6 +114,14 @@
         /// <summary>
         /// true or false
         /// </summary>
-        Boolean
+        Boolean,
+        /// <summary>
+        /// ;
+        /// </summary>
+        Semicolon,
+        /// <summary>
+        /// for
+        /// </summary>
+        ForKeyword
     }
 }

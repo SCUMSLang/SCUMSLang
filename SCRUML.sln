@@ -3,7 +3,11 @@ Microsoft Visual Studio Solution File, Format Version 12.00
 # Visual Studio Version 16
 VisualStudioVersion = 16.0.30907.101
 MinimumVisualStudioVersion = 10.0.40219.1
-Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "SCRUML", "src\SCRUML\SCRUML.csproj", "{E33742E2-8012-44BC-BE5B-C1FCB4080A7F}"
+Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "SCRUML", "src\SCRUML\src\SCRUML.csproj", "{DF0E1DEF-6E14-405E-B258-F1CA51C67E86}"
+EndProject
+Project("{2150E333-8FDC-42A3-9474-1A3956D46DE8}") = "Tests", "Tests", "{206D8A4E-C002-4791-81D5-B5B5E6A3C126}"
+EndProject
+Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "SCRUML.Tests", "src\SCRUML\test\SCRUML.Tests\SCRUML.Tests.csproj", "{B9F8D4A0-E869-4DDC-A3FA-F1FD05858A04}"
 EndProject
 Global
 	GlobalSection(SolutionConfigurationPlatforms) = preSolution
@@ -11,13 +15,20 @@ Global
 		Release|Any CPU = Release|Any CPU
 	EndGlobalSection
 	GlobalSection(ProjectConfigurationPlatforms) = postSolution
-		{E33742E2-8012-44BC-BE5B-C1FCB4080A7F}.Debug|Any CPU.ActiveCfg = Debug|Any CPU
-		{E33742E2-8012-44BC-BE5B-C1FCB4080A7F}.Debug|Any CPU.Build.0 = Debug|Any CPU
-		{E33742E2-8012-44BC-BE5B-C1FCB4080A7F}.Release|Any CPU.ActiveCfg = Release|Any CPU
-		{E33742E2-8012-44BC-BE5B-C1FCB4080A7F}.Release|Any CPU.Build.0 = Release|Any CPU
+		{DF0E1DEF-6E14-405E-B258-F1CA51C67E86}.Debug|Any CPU.ActiveCfg = Debug|Any CPU
+		{DF0E1DEF-6E14-405E-B258-F1CA51C67E86}.Debug|Any CPU.Build.0 = Debug|Any CPU
+		{DF0E1DEF-6E14-405E-B258-F1CA51C67E86}.Release|Any CPU.ActiveCfg = Release|Any CPU
+		{DF0E1DEF-6E14-405E-B258-F1CA51C67E86}.Release|Any CPU.Build.0 = Release|Any CPU
+		{B9F8D4A0-E869-4DDC-A3FA-F1FD05858A04}.Debug|Any CPU.ActiveCfg = Debug|Any CPU
+		{B9F8D4A0-E869-4DDC-A3FA-F1FD05858A04}.Debug|Any CPU.Build.0 = Debug|Any CPU
+		{B9F8D4A0-E869-4DDC-A3FA-F1FD05858A04}.Release|Any CPU.ActiveCfg = Release|Any CPU
+		{B9F8D4A0-E869-4DDC-A3FA-F1FD05858A04}.Release|Any CPU.Build.0 = Release|Any CPU
 	EndGlobalSection
 	GlobalSection(SolutionProperties) = preSolution
 		HideSolutionNode = FALSE
+	EndGlobalSection
+	GlobalSection(NestedProjects) = preSolution
+		{B9F8D4A0-E869-4DDC-A3FA-F1FD05858A04} = {206D8A4E-C002-4791-81D5-B5B5E6A3C126}
 	EndGlobalSection
 	GlobalSection(ExtensibilityGlobals) = postSolution
 		SolutionGuid = {064721C0-71B9-4F38-B229-32D736CCA207}
