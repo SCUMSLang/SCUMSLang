@@ -1,4 +1,4 @@
-﻿namespace SCRUML.Tokenizer
+﻿namespace SCUMSLang.Tokenizer
 {
     public enum TokenType
     {

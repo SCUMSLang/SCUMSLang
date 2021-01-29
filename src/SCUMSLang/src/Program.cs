@@ -1,6 +1,6 @@
 ﻿using System;
 
-namespace SCRUML
+namespace SCUMSLang
 {
     class Program
     {

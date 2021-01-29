@@ -15,7 +15,7 @@
   </ItemGroup>
 
   <ItemGroup>
-    <ProjectReference Include="..\..\src\SCRUML.csproj" />
+    <ProjectReference Include="..\..\src\SCUMSLang.csproj" />
   </ItemGroup>
 
 </Project>

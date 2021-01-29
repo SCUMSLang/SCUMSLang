@@ -2,9 +2,9 @@
 using System.Diagnostics.CodeAnalysis;
 using System.Globalization;
 
-namespace SCRUML.Tokenizer
+namespace SCUMSLang.Tokenizer
 {
-    internal static class SCRUMLTokenizerTools
+    internal static class SCUMSLangTokenizerTools
     {
         public static bool TryRecognizeWhiteSpaces(ReadOnlySpan<char> characters, out int charactersRead)
         {

@@ -1,14 +1,14 @@
 ﻿using Xunit;
 
-namespace SCRUML.Tokenizer
+namespace SCUMSLang.Tokenizer
 {
-    public class SCRUMLTokenizerTests
+    public class SCUMSLangTokenizerTests
     {
         [Fact]
         public void Should_tokenize_string()
         {
             var content = @"""<hello>""";
-            var tokens = SCRUMLTokenizer.Tokenize(content);
+            var tokens = SCUMSLangTokenizer.Tokenize(content);
 
             Assert.Equal(tokens, new Token[] {
                 TokenType.String
@@ -19,7 +19,7 @@ namespace SCRUML.Tokenizer
         public void Should_tokenize_static_variable_declaration_and_assignment()
         {
             var content = @"static goofy = 7;";
-            var tokens = SCRUMLTokenizer.Tokenize(content);
+            var tokens = SCUMSLangTokenizer.Tokenize(content);
 
             Assert.Equal(tokens, new Token[] {
                 TokenType.StaticKeyword,
@@ -37,7 +37,7 @@ namespace SCRUML.Tokenizer
     
 }";
 
-            var tokens = SCRUMLTokenizer.Tokenize(content);
+            var tokens = SCUMSLangTokenizer.Tokenize(content);
 
             Assert.Equal(tokens, new Token[] {
                 TokenType.FunctionKeyword,
@@ -56,7 +56,7 @@ namespace SCRUML.Tokenizer
 
 }";
 
-            var tokens = SCRUMLTokenizer.Tokenize(content);
+            var tokens = SCUMSLangTokenizer.Tokenize(content);
 
             Assert.Equal(tokens, new Token[] {
                 TokenType.FunctionKeyword,
@@ -78,7 +78,7 @@ namespace SCRUML.Tokenizer
 
 }";
 
-            var tokens = SCRUMLTokenizer.Tokenize(content);
+            var tokens = SCUMSLangTokenizer.Tokenize(content);
 
             Assert.Equal(tokens, new Token[] {
                 TokenType.FunctionKeyword,
@@ -105,7 +105,7 @@ namespace SCRUML.Tokenizer
 
 }";
 
-            var tokens = SCRUMLTokenizer.Tokenize(content);
+            var tokens = SCUMSLangTokenizer.Tokenize(content);
 
             Assert.Equal(tokens, new Token[] {
                 TokenType.TemplateKeyword,

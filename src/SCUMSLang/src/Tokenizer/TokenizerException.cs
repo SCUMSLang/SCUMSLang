@@ -1,7 +1,7 @@
 ﻿using System;
 using System.Runtime.Serialization;
 
-namespace SCRUML.Tokenizer
+namespace SCUMSLang.Tokenizer
 {
     [Serializable]
     internal class TokenizerException : Exception

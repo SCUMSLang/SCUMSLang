@@ -1,7 +1,7 @@
 ﻿using System;
 using System.Diagnostics.CodeAnalysis;
 
-namespace SCRUML.Tokenizer
+namespace SCUMSLang.Tokenizer
 {
     public class Token : IEquatable<Token>
     {

@@ -1,7 +1,7 @@
 ﻿using System;
 using System.Diagnostics;
 
-namespace SCRUML.Tokenizer
+namespace SCUMSLang.Tokenizer
 {
     internal class ContentReader
     {

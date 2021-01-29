@@ -2,11 +2,11 @@
 using System.IO;
 using System.Text;
 using System.Threading.Tasks;
-using static SCRUML.Tokenizer.SCRUMLTokenizerTools;
+using static SCUMSLang.Tokenizer.SCUMSLangTokenizerTools;
 
-namespace SCRUML.Tokenizer
+namespace SCUMSLang.Tokenizer
 {
-    public static class SCRUMLTokenizer
+    public static class SCUMSLangTokenizer
     {
         public static List<Token> Tokenize(string content)
         {
