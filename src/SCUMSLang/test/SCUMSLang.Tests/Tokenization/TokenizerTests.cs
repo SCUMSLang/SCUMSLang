@@ -164,7 +164,7 @@ namespace SCUMSLang.Tokenization
             var tokens = Tokenizer.Tokenize(content);
 
             Assert.Equal(tokens, new Token[] {
-                
+
                 TokenType.SequenceKeyword,
                 TokenType.OpenBrace,
                 TokenType.CloseBrace

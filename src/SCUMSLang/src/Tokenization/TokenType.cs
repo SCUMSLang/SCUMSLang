@@ -24,12 +24,14 @@ namespace SCUMSLang.Tokenization
         /// unit
         /// </summary>
         [TokenKeyword("unit")]
+        [TokenValueType]
         [NodeValueType(NodeValueType.Unit)]
         UnitKeyword,
         /// <summary>
         /// player
         /// </summary>
         [TokenKeyword("player")]
+        [TokenValueType]
         [NodeValueType(NodeValueType.Player)]
         PlayerKeyword,
         /// <summary>

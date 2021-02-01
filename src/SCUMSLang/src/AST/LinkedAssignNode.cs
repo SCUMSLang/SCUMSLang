@@ -20,7 +20,7 @@ namespace SCUMSLang.AST
             && Declaration.Equals(linkedAssignment.Declaration)
             && Assignment.Equals(linkedAssignment.Assignment);
 
-        public override int GetHashCode() => 
+        public override int GetHashCode() =>
             HashCode.Combine(NodeType, Declaration, Assignment);
     }
 }

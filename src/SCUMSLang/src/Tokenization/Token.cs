@@ -29,8 +29,7 @@ namespace SCUMSLang.Tokenization
 
         public bool TryRecognize<T>(TokenType tokenType, [NotNullWhen(true)] out T value)
         {
-            if (TokenType == tokenType)
-            {
+            if (TokenType == tokenType) {
                 value = (T)Value!;
                 return true;
             }
@@ -43,10 +42,8 @@ namespace SCUMSLang.Tokenization
         {
             var index = tokenTypes.Length;
 
-            while (--index >= 0)
-            {
-                if (TokenType == tokenTypes[index])
-                {
+            while (--index >= 0) {
+                if (TokenType == tokenTypes[index]) {
                     return true;
                 }
             }
@@ -54,9 +51,9 @@ namespace SCUMSLang.Tokenization
             return false;
         }
 
-        public bool TryRecognize(TokenType tokenType, out Token token) {
-            if (TokenType == tokenType)
-            {
+        public bool TryRecognize(TokenType tokenType, out Token token)
+        {
+            if (TokenType == tokenType) {
                 token = this;
                 return true;
             }

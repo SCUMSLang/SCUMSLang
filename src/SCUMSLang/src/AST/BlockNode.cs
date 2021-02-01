@@ -38,8 +38,7 @@ namespace SCUMSLang.AST
         {
             BlockNode parentBlock = this;
 
-            do
-            {
+            do {
                 yield return parentBlock;
                 parentBlock = parentBlock.Parent;
             } while (!ReferenceEquals(StaticBlock, parentBlock));
@@ -47,10 +46,8 @@ namespace SCUMSLang.AST
 
         public bool IsNameCrossBlockAssigned(string name)
         {
-            foreach (var block in YieldBlocks())
-            {
-                if (block.NamedNodes.ContainsKey(name))
-                {
+            foreach (var block in YieldBlocks()) {
+                if (block.NamedNodes.ContainsKey(name)) {
                     return true;
                 }
             }
@@ -60,10 +57,8 @@ namespace SCUMSLang.AST
 
         public bool TryGetDeclarationByName(string name, [NotNullWhen(true)] out DeclarationNode declaration)
         {
-            foreach (var block in YieldBlocks())
-            {
-                if (block.NamedNodes.TryGetValue(name, out Node? node) && node is DeclarationNode declarationNode)
-                {
+            foreach (var block in YieldBlocks()) {
+                if (block.NamedNodes.TryGetValue(name, out Node? node) && node is DeclarationNode declarationNode) {
                     declaration = declarationNode;
                     return true;
                 }
@@ -78,15 +73,12 @@ namespace SCUMSLang.AST
 
         public void AddDeclaration(DeclarationNode declaration)
         {
-            if (declaration.Scope != Scope)
-            {
+            if (declaration.Scope != Scope) {
                 throw new ArgumentException("Declaration has invalid scope.");
             }
 
-            foreach (var namedNode in NamedNodes)
-            {
-                if (IsNameCrossBlockAssigned(declaration.Name))
-                {
+            foreach (var namedNode in NamedNodes) {
+                if (IsNameCrossBlockAssigned(declaration.Name)) {
                     throw new ArgumentException($"The name '{declaration.Name}' exists already.");
                 }
             }
@@ -97,13 +89,10 @@ namespace SCUMSLang.AST
 
         public void AddAssignment(AssignNode assignment)
         {
-            if (TryGetDeclarationByName(assignment.Name, out var declaration))
-            {
+            if (TryGetDeclarationByName(assignment.Name, out var declaration)) {
                 var linkedAssignment = new LinkedAssignment(declaration, assignment);
                 nodes.Add(linkedAssignment);
-            }
-            else
-            {
+            } else {
                 throw new ArgumentException($"Declaration with name '{assignment.Name}' does not exist.");
             }
         }
@@ -116,8 +105,7 @@ namespace SCUMSLang.AST
 
             blockClosed = true;
 
-            if (ReferenceEquals(this, StaticBlock))
-            {
+            if (ReferenceEquals(this, StaticBlock)) {
                 throw new InvalidOperationException("You cannot end the block of the root block.");
             }
 

@@ -11,10 +11,10 @@ namespace SCUMSLang.AST
         public CollectionNode() =>
             nodes = new Collection<Node>();
 
-        public Node this[int index] => 
+        public Node this[int index] =>
             ((IReadOnlyList<Node>)nodes)[index];
 
-        public int Count => 
+        public int Count =>
             ((IReadOnlyCollection<Node>)nodes).Count;
 
         public IEnumerator<Node> GetEnumerator() =>

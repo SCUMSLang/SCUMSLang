@@ -8,10 +8,8 @@ namespace SCUMSLang
     {
         public readonly ReadOnlySpan<T> Span { get; }
 
-        public readonly ReadOnlySpan<T> View
-        {
-            get
-            {
+        public readonly ReadOnlySpan<T> View {
+            get {
                 Debug.Assert(viewReadLength >= 0, "Content read length should not be lesser than zero.");
                 return currentPosition.View;
             }
@@ -25,23 +23,15 @@ namespace SCUMSLang
         /// <summary>
         /// The position which takes length into account.
         /// </summary>
-        public readonly int UpperPosition
-        {
-            get
-            {
-                if (viewReadLength == 0)
-                {
+        public readonly int UpperPosition {
+            get {
+                if (viewReadLength == 0) {
                     throw new InvalidOperationException("Not a single value has been consumed.");
                 }
 
                 return readPosition + viewReadLength - 1;
             }
         }
-
-        /// <summary>
-        /// The position which takes length into account.
-        /// </summary>
-        public readonly int ReadLength => readPosition + viewReadLength;
 
         private int readPosition;
         private int viewReadLength;
@@ -62,8 +52,7 @@ namespace SCUMSLang
         {
             viewReadLength++;
 
-            if (readPosition + viewReadLength > Span.Length)
-            {
+            if (readPosition + viewReadLength > Span.Length) {
                 return false;
             }
 
@@ -73,8 +62,7 @@ namespace SCUMSLang
 
         public bool ConsumeNext(out ReaderPosition<T> position)
         {
-            if (ConsumeNext())
-            {
+            if (ConsumeNext()) {
                 position = currentPosition;
                 return true;
             }
@@ -85,8 +73,7 @@ namespace SCUMSLang
 
         public bool ConsumeNext(out ReadOnlySpan<T> values)
         {
-            if (ConsumeNext())
-            {
+            if (ConsumeNext()) {
                 values = currentPosition.View;
                 return true;
             }
@@ -97,8 +84,7 @@ namespace SCUMSLang
 
         public bool ConsumeNext(out T value)
         {
-            if (ConsumeNext())
-            {
+            if (ConsumeNext()) {
                 value = currentPosition.Value;
                 return true;
             }
@@ -111,9 +97,17 @@ namespace SCUMSLang
         {
             comparer ??= EqualityComparer<T>.Default;
 
-            if (ConsumeNext() && comparer.Equals(currentPosition.View.Last(), value))
-            {
+            if (ConsumeNext() && comparer.Equals(currentPosition.View.Last(), value)) {
                 return true;
+            }
+
+            return false;
+        }
+
+        public bool ConsumeNext(bool consume)
+        {
+            if (consume) {
+                return ConsumeNext();
             }
 
             return false;
@@ -137,44 +131,48 @@ namespace SCUMSLang
             values = currentPosition.View;
         }
 
-        public bool PeekNext(out ReaderPosition<T> position) {
+        public bool PeekNext(out ReaderPosition<T> position)
+        {
             var reader = this;
             return reader.ConsumeNext(out position);
         }
 
-        public bool PeekNext(T value, IEqualityComparer<T> comparer) {
+        public bool PeekNext(T value, IEqualityComparer<T> comparer)
+        {
             var reader = this;
 
-            if (ConsumeNext(value, comparer)) {
+            if (reader.ConsumeNext(value, comparer)) {
                 return true;
             }
 
             return false;
         }
 
-        /// <summary>
-        /// Sets the position to <paramref name="position"/>
-        /// and resets the <see cref="View"/>.
-        /// </summary>
-        /// <param name="position"></param>
-        public void MovePositionBy(int position)
-        {
-            readPosition += position;
-            viewReadLength = 0;
-            setCurrentPosition();
-        }
+        ///// <summary>
+        ///// Sets the position to <paramref name="position"/>
+        ///// and resets the <see cref="View"/>.
+        ///// </summary>
+        ///// <param name="position"></param>
+        //public void MovePositionBy(int position)
+        //{
+        //    readPosition += position;
+        //    viewReadLength = 0;
+        //    setCurrentPosition();
+        //}
 
-        public void TakePositionView(ReaderPosition<T> position)
+        public void TakePositionView(int position)
         {
-            readPosition = position.UpperReaderPosition;
+            readPosition = position;
             viewReadLength = 1;
             setCurrentPosition();
         }
 
+        public void TakePositionView(ReaderPosition<T> position) =>
+            TakePositionView(position.UpperReaderPosition);
+
         public bool TakeNextPositionView()
         {
-            if (ConsumeNext())
-            {
+            if (ConsumeNext()) {
                 TakePositionView(currentPosition);
                 return true;
             }
@@ -184,8 +182,7 @@ namespace SCUMSLang
 
         public bool TakeNextPositionView(T value, IEqualityComparer<T> comparer)
         {
-            if (ConsumeNext(value, comparer))
-            {
+            if (ConsumeNext(value, comparer)) {
                 TakePositionView(currentPosition);
                 return true;
             }
@@ -193,11 +190,18 @@ namespace SCUMSLang
             return false;
         }
 
-        public void SetPositionTo(int newPosition) {
+        public void SetPositionTo(int newPosition)
+        {
             readPosition = newPosition;
             viewReadLength = 0;
             setCurrentPosition();
         }
 
+        public void SetLengthTo(int newPosition)
+        {
+            var positionDistance = newPosition - readPosition + 1;
+            viewReadLength = positionDistance;
+            setCurrentPosition();
+        }
     }
 }

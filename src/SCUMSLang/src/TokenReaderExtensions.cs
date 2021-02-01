@@ -7,8 +7,7 @@ namespace SCUMSLang
     {
         public static bool ConsumeNext(this ref Reader<Token> reader, TokenType tokenType, [MaybeNullWhen(false)] out Token token)
         {
-            if (reader.ConsumeNext(tokenType, TokenOnlyTypeComparer.Default))
-            {
+            if (reader.ConsumeNext(tokenType, TokenOnlyTypeComparer.Default)) {
                 token = reader.View.Last();
                 return true;
             }
@@ -22,8 +21,7 @@ namespace SCUMSLang
 
         public static bool PeekNext(this ref Reader<Token> reader, TokenType tokenType)
         {
-            if (reader.PeekNext(tokenType, TokenOnlyTypeComparer.Default))
-            {
+            if (reader.PeekNext(tokenType, TokenOnlyTypeComparer.Default)) {
                 return true;
             }
 
@@ -32,8 +30,7 @@ namespace SCUMSLang
 
         public static bool TakeNextPositionView(this ref Reader<Token> reader, TokenType tokenType)
         {
-            if (reader.TakeNextPositionView(tokenType, TokenOnlyTypeComparer.Default))
-            {
+            if (reader.TakeNextPositionView(tokenType, TokenOnlyTypeComparer.Default)) {
                 return true;
             }
 

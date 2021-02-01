@@ -6,7 +6,7 @@ namespace SCUMSLang
     {
         static void Main(string[] args)
         {
-            
+
         }
     }
 }

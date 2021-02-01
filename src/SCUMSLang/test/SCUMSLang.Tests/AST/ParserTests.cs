@@ -67,5 +67,21 @@ namespace SCUMSLANG.AST
 
             Assert.Equal(expectedBlock.Nodes, block.Nodes);
         }
+
+        //[Fact]
+        //public void Should_parse_function_with_generic_parameters()
+        //{
+        //    var content = @"function daisy<unit PlayerId>() when cond_one(0xf) {}";
+
+        //    var block = Parser.Parse(content);
+
+        //    var expectedBlock = new StaticBlockNode();
+        //    var genericDeclaration = new DeclarationNode(Scope.Local, NodeValueType.Unit, "PlayerId");
+
+        //    expectedBlock.BeginBlock(new FunctionNode("daisy", new DeclarationNode[] { genericDeclaration }, null));
+        //    expectedBlock.CurrentBlock.EndBlock();
+
+        //    Assert.Equal(expectedBlock.Nodes, block.Nodes);
+        //}
     }
 }

@@ -19,25 +19,21 @@ namespace SCUMSLang.Tokenization
             var valueTypeAttributeType = typeof(TokenValueTypeAttribute);
             var valueTypeTokens = new List<TokenType>();
 
-            while (--index >= 0)
-            {
+            while (--index >= 0) {
                 var tokenType = (TokenType)tokenTypeValues.GetValue(index)!;
                 var tokenTypeName = Enum.GetName(TypeOfTokenType, tokenType)!;
                 var memberInfo = TypeOfTokenType.GetField(tokenTypeName)!;
                 var keywordAttributes = Attribute.GetCustomAttribute(memberInfo, keywordAttributeType) as TokenKeywordAttribute;
 
-                if (!(keywordAttributes is null))
-                {
-                    foreach (var keyword in keywordAttributes.Keywords)
-                    {
+                if (!(keywordAttributes is null)) {
+                    foreach (var keyword in keywordAttributes.Keywords) {
                         AscendKeywordedTokenTypes.Add((tokenType, keyword));
                     }
                 }
 
                 var valueTypeAttributes = Attribute.GetCustomAttribute(memberInfo, valueTypeAttributeType) as TokenValueTypeAttribute;
 
-                if (!(keywordAttributes is null))
-                {
+                if (!(keywordAttributes is null)) {
                     valueTypeTokens.Add(tokenType);
                 }
             }

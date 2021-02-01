@@ -6,6 +6,6 @@ namespace SCUMSLang.AST
 {
     public abstract class ScopeNode : Node
     {
-        
+
     }
 }

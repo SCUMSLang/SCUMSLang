@@ -8,12 +8,9 @@ namespace SCUMSLang.Tokenization
     {
         public static bool TryRecognizeWhiteSpaces(Reader<char> reader, out int? newPosition)
         {
-            if (char.IsWhiteSpace(reader.ViewLastValue))
-            {
-                while (reader.PeekNext(out var peekedPosition) && char.IsWhiteSpace(peekedPosition.Value))
-                {
-                    if (reader.ConsumeNext())
-                    {
+            if (char.IsWhiteSpace(reader.ViewLastValue)) {
+                while (reader.PeekNext(out var peekedPosition) && char.IsWhiteSpace(peekedPosition.Value)) {
+                    if (reader.ConsumeNext()) {
                         continue;
                     }
                 }
@@ -58,30 +55,25 @@ namespace SCUMSLang.Tokenization
             var characters = reader.View;
             token = null;
 
-            if (char.IsLetter(characters[0]))
-            {
+            if (char.IsLetter(characters[0])) {
                 static bool isLetter(char letter) =>
                     char.IsLetter(letter) || letter == '_';
 
-                while (reader.PeekNext(out var peekedPosition) && isLetter(peekedPosition.View.Last()))
-                {
+                while (reader.PeekNext(out var peekedPosition) && isLetter(peekedPosition.View.Last())) {
                     reader.ConsumeNext(out characters);
                     continue;
                 }
 
                 string name = characters.ToString();
 
-                foreach (var (TokenType, Keyword) in TokenTypeLibrary.AscendKeywordedTokenTypes)
-                {
-                    if (name == Keyword)
-                    {
+                foreach (var (TokenType, Keyword) in TokenTypeLibrary.AscendKeywordedTokenTypes) {
+                    if (name == Keyword) {
                         token = CreateToken(TokenType, reader);
                         break;
                     }
                 }
 
-                if (token is null)
-                {
+                if (token is null) {
                     token = CreateToken(TokenType.Name, name.ToString(), reader);
                     newPosition = reader.UpperPosition;
                     return true;
@@ -99,51 +91,36 @@ namespace SCUMSLang.Tokenization
         {
             var characters = reader.View;
 
-            if (char.IsDigit(characters[0]))
-            {
+            if (char.IsDigit(characters[0])) {
                 bool isHexadecimal = false;
 
-                if (characters[0] == '0' && reader.PeekNext(out var peedkPosition) && peedkPosition.View[1] == 'x')
-                {
+                if (characters[0] == '0' && reader.PeekNext(out var peedkPosition) && peedkPosition.View[1] == 'x') {
                     reader.ConsumeNext(out characters);
                     isHexadecimal = true;
                 }
 
-                if (isHexadecimal)
-                {
-                    while (reader.PeekNext(out var peekedPosition))
-                    {
+                if (isHexadecimal) {
+                    while (reader.PeekNext(out var peekedPosition)) {
                         char lastCharacter = peekedPosition.Value;
 
-                        if (char.IsDigit(lastCharacter))
-                        {
+                        if (char.IsDigit(lastCharacter)) {
                             reader.ConsumeNext(out characters);
                             continue;
-                        }
-                        else if (char.IsLetter(lastCharacter))
-                        {
+                        } else if (char.IsLetter(lastCharacter)) {
                             reader.ConsumeNext(out characters);
                             lastCharacter = char.ToUpper(lastCharacter);
 
-                            if (lastCharacter >= 'A' && lastCharacter <= 'F')
-                            {
+                            if (lastCharacter >= 'A' && lastCharacter <= 'F') {
                                 continue;
-                            }
-                            else
-                            {
+                            } else {
                                 throw new TokenizationException(reader.UpperPosition, "Token of type Integer can only have valid hexadecimal literals: [A-Fa-f1-9].");
                             }
-                        }
-                        else
-                        {
+                        } else {
                             break;
                         }
                     }
-                }
-                else
-                {
-                    while (reader.PeekNext(out var peekedPosition) && char.IsDigit(peekedPosition.Value))
-                    {
+                } else {
+                    while (reader.PeekNext(out var peekedPosition) && char.IsDigit(peekedPosition.Value)) {
                         reader.ConsumeNext(out characters);
                         continue;
                     }
@@ -152,12 +129,9 @@ namespace SCUMSLang.Tokenization
                 var integerChars = characters.Slice(0, characters.Length);
                 int integer;
 
-                if (isHexadecimal)
-                {
+                if (isHexadecimal) {
                     integer = Convert.ToInt32(integerChars.ToString(), 16);
-                }
-                else
-                {
+                } else {
                     integer = int.Parse(integerChars);
                 }
 
@@ -179,8 +153,7 @@ namespace SCUMSLang.Tokenization
         {
             var characters = reader.View;
 
-            if (characters[0] == character)
-            {
+            if (characters[0] == character) {
                 token = CreateToken(tokenType, reader);
                 return true;
             }
@@ -199,10 +172,8 @@ namespace SCUMSLang.Tokenization
             var characters = reader.View;
             int stage = 0;
 
-            while (sequentialCharacters.Length <= characters.Length)
-            {
-                if (characters[stage] != sequentialCharacters[stage])
-                {
+            while (sequentialCharacters.Length <= characters.Length) {
+                if (characters[stage] != sequentialCharacters[stage]) {
                     newPosition = null;
                     token = null;
                     return false;
@@ -228,12 +199,9 @@ namespace SCUMSLang.Tokenization
         {
             var characters = reader.View;
 
-            if (characters[0] == '"')
-            {
-                do
-                {
-                    if (!reader.ConsumeNext(out characters))
-                    {
+            if (characters[0] == '"') {
+                do {
+                    if (!reader.ConsumeNext(out characters)) {
                         throw new TokenizationException(reader.UpperPosition, "Token of type String was expected to be closed with another \".");
                     }
                 } while (characters.Last() != '"');
@@ -252,24 +220,20 @@ namespace SCUMSLang.Tokenization
         {
             int? newPosition;
 
-            if (TryRecognizeWhiteSpaces(reader, out newPosition))
-            {
+            if (TryRecognizeWhiteSpaces(reader, out newPosition)) {
                 token = null;
                 return newPosition;
             }
 
-            if (TryRecognizeStringToken(reader, out newPosition, out token))
-            {
+            if (TryRecognizeStringToken(reader, out newPosition, out token)) {
                 return newPosition;
             }
 
-            if (TryRecognizeKeywordOrName(reader, out newPosition, out token))
-            {
+            if (TryRecognizeKeywordOrName(reader, out newPosition, out token)) {
                 return newPosition;
             }
 
-            if (TryRecognizeInteger(reader, out newPosition, out token))
-            {
+            if (TryRecognizeInteger(reader, out newPosition, out token)) {
                 return newPosition;
             }
 
@@ -283,8 +247,7 @@ namespace SCUMSLang.Tokenization
                     || TryRecognizeSingleCharacterToken(reader, '[', TokenType.OpenSquareBracket, out token)
                     || TryRecognizeSingleCharacterToken(reader, ']', TokenType.CloseSquareBracket, out token)
                     || TryRecognizeSingleCharacterToken(reader, ',', TokenType.Comma, out token)
-                    || TryRecognizeSingleCharacterToken(reader, ';', TokenType.Semicolon, out token)))
-            {
+                    || TryRecognizeSingleCharacterToken(reader, ';', TokenType.Semicolon, out token))) {
                 return reader.UpperPosition;
             }
 
@@ -295,8 +258,7 @@ namespace SCUMSLang.Tokenization
                     || TryRecognizeSequentialCharactersToken(reader, "&&", TokenType.AndLogicalOperator, out newPosition, out token)
                     || TryRecognizeSequentialCharactersToken(reader, "||", TokenType.OrLogicalOperator, out newPosition, out token)
                     || TryRecognizeSequentialCharactersToken(reader, "++", TokenType.IncrementOperator, out newPosition, out token)
-                    || TryRecognizeSequentialCharactersToken(reader, "--", TokenType.DecrementOperator, out newPosition, out token)))
-            {
+                    || TryRecognizeSequentialCharactersToken(reader, "--", TokenType.DecrementOperator, out newPosition, out token))) {
                 return newPosition;
             }
 
@@ -304,8 +266,7 @@ namespace SCUMSLang.Tokenization
                 || TryRecognizeSingleCharacterToken(reader, '<', TokenType.OpenAngleBracket, out token)
                 || TryRecognizeSingleCharacterToken(reader, '>', TokenType.CloseAngleBracket, out token)
                 || TryRecognizeSingleCharacterToken(reader, '+', TokenType.AdditionOperator, out token)
-                || TryRecognizeSingleCharacterToken(reader, '-', TokenType.SubtractionOperator, out token))
-            {
+                || TryRecognizeSingleCharacterToken(reader, '-', TokenType.SubtractionOperator, out token)) {
                 return reader.UpperPosition;
             }
 

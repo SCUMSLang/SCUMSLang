@@ -12,18 +12,14 @@ namespace SCUMSLang.AST
             var tokens = reader.View;
             Scope scope;
 
-            if (tokens[0] == TokenType.StaticKeyword)
-            {
+            if (tokens[0] == TokenType.StaticKeyword) {
                 scope = Scope.Static;
-            }
-            else
-            {
+            } else {
                 scope = Scope.Local;
             }
 
             if (reader.ConsumeNext(tokenValueType, out var valueTypeToken)
-                && reader.ConsumeNext(TokenType.Name, out var nameToken))
-            {
+                && reader.ConsumeNext(TokenType.Name, out var nameToken)) {
                 reader.ConsumePrevious(1);
 
                 var nodeValueType = (Attribute.GetCustomAttribute(
@@ -48,10 +44,8 @@ namespace SCUMSLang.AST
 
             if (tokens[0].TryRecognize(TokenType.Name, out string name)
                 && reader.ConsumeNext(TokenType.EqualSign)
-                && reader.ConsumeNext(valueType, out var valueToken))
-            {
-                if (!reader.ConsumeNext(TokenType.Semicolon))
-                {
+                && reader.ConsumeNext(valueType, out var valueToken)) {
+                if (!reader.ConsumeNext(TokenType.Semicolon)) {
                     throw new MissingTokenException(valueToken, TokenType.Semicolon);
                 }
 
@@ -70,34 +64,68 @@ namespace SCUMSLang.AST
         /// </summary>
         /// <param name="reader"></param>
         /// <returns></returns>
-        public static bool TryRecognizeParameters(ref Reader<Token> reader, TokenType openTokenType, TokenType closeTokenType, out List<DeclarationNode> functionParameters)
+        public static bool TryRecognizeParameters(
+            Reader<Token> reader,
+            TokenType openTokenType,
+            TokenType closeTokenType,
+            out List<DeclarationNode> functionParameters,
+            [NotNullWhen(true)] out int? newPosition,
+            bool required = false,
+            bool needConsume = false)
         {
             functionParameters = new List<DeclarationNode>();
 
-            if (reader.View[0].TryRecognize(openTokenType))
-            {
-                while (reader.ConsumeNext(out Token lastToken) && lastToken.TryRecognize(TokenTypeLibrary.ValueTypes))
-                {
-                    if (!reader.ConsumeNext(TokenType.Name, out var parameterNameToken))
-                    {
+            if (reader.ConsumeNext(needConsume)
+                && reader.ViewLastValue.TryRecognize(openTokenType)) {
+                //while (reader.ConsumeNext(out Token lastToken) && lastToken.TryRecognize(TokenTypeLibrary.ValueTypes)) {
+                //    if (!reader.ConsumeNext(TokenType.Name, out var parameterNameToken)) {
+                //        throw new ParseException(reader.ViewLastValue, "Parameter name is missing");
+                //    }
+
+                //    var nodeValueType = TokenTypeTools.GetNodeValueType(lastToken.TokenType);
+                //    functionParameters.Add(new DeclarationNode(Scope.Local, nodeValueType, parameterNameToken.GetValue<string>()));
+
+                //    if (!reader.ConsumeNext(out lastToken) && !lastToken.TryRecognize(TokenType.Comma, closeTokenType)) {
+                //        throw new MissingTokenException(reader.ViewLastValue, closeTokenType);
+                //    }
+
+                //    if (lastToken.TokenType == closeTokenType) {
+                //        newPosition = reader.UpperPosition;
+                //        return true;
+                //    }
+                //}
+
+                while (reader.ConsumeNext(out Token lastToken)) {
+                    var hasValueType = lastToken.TryRecognize(TokenTypeLibrary.ValueTypes);
+                    var hasEndCloseType = lastToken.TokenType == closeTokenType;
+
+                    if (!hasValueType && !hasEndCloseType) {
+                        throw new ParseException(reader.ViewLastValue, "Parameter list need to be closed.");
+                    }
+
+                    if (hasEndCloseType) {
+                        break;
+                    }
+
+                    if (!reader.ConsumeNext(TokenType.Name, out var parameterNameToken)) {
                         throw new ParseException(reader.ViewLastValue, "Parameter name is missing");
                     }
 
                     var nodeValueType = TokenTypeTools.GetNodeValueType(lastToken.TokenType);
                     functionParameters.Add(new DeclarationNode(Scope.Local, nodeValueType, parameterNameToken.GetValue<string>()));
 
-                    if (!reader.ConsumeNext(out lastToken) && !lastToken.TryRecognize(TokenType.Comma, closeTokenType))
-                    {
-                        throw new MissingTokenException(reader.ViewLastValue, closeTokenType);
-                    }
-
-                    if (lastToken.TokenType == closeTokenType)
-                    {
-                        return true;
+                    if (reader.PeekNext(TokenType.Comma)) {
+                        reader.ConsumeNext();
                     }
                 }
+
+                newPosition = reader.UpperPosition;
+                return true;
+            } else if (required) {
+                throw new ParseException(reader.ViewLastValue, "Parameter list was expected.");
             }
 
+            newPosition = null;
             return false;
         }
 
@@ -105,49 +133,39 @@ namespace SCUMSLang.AST
         {
             var constantNodes = new List<ConstantNode>();
 
-            do
-            {
-                if (reader.ViewLastValue == endTokenType)
-                {
+            do {
+                if (reader.ViewLastValue == endTokenType) {
                     return constantNodes;
                 }
 
-                if (!reader.ConsumeNext(out Token nextToken) || !nextToken.TryRecognize(allowedValueTypeTokens))
-                {
+                if (!reader.ConsumeNext(out Token nextToken) || !nextToken.TryRecognize(allowedValueTypeTokens)) {
                     throw new ParseException(reader.ViewLastValue, $"A valid value was expected"); // TODO: Concrete error
                 }
 
-                if (reader.PeekNext(TokenType.Comma))
-                {
+                if (reader.PeekNext(TokenType.Comma)) {
                     reader.ConsumeNext();
                 }
             } while (true);
         }
 
-        public static bool TryRecognizeFunctionCallNode(Reader<Token> reader, out int? newPosition, [MaybeNull] out FunctionCallNode node)
+        public static bool TryRecognizeFunctionCallNode(Reader<Token> reader, out int? newPosition, [MaybeNull] out FunctionCallNode node, bool required)
         {
             if (reader.ViewLastValue == TokenType.Name
                 && reader.ConsumeNext(out ReaderPosition<Token> peekedToken)
-                && peekedToken.Value.TryRecognize(TokenType.OpenAngleBracket, TokenType.OpenBracket))
-            {
-                if (!reader.TakeNextPositionView())
-                {
-                    throw new ParseException(reader.ViewLastValue, "Condition must have a signature (e.g. '<...>() or '()').");
+                && peekedToken.Value.TryRecognize(TokenType.OpenAngleBracket, TokenType.OpenBracket)) {
+                if (!reader.TakeNextPositionView()) {
+                    throw new ParseException(reader.ViewLastValue, "Function call must have a signature (e.g. '<...>() or '()').");
                 }
 
                 List<ConstantNode> genericArguments;
 
-                if (peekedToken.Value == TokenType.OpenAngleBracket)
-                {
+                if (peekedToken.Value == TokenType.OpenAngleBracket) {
                     genericArguments = RecognizeArgumentList(ref reader, TokenType.CloseAngleBracket);
-                }
-                else
-                {
+                } else {
                     genericArguments = new List<ConstantNode>();
 
-                    if (!reader.TakeNextPositionView(TokenType.OpenBracket))
-                    {
-                        throw new ParseException(reader.ViewLastValue, "Condition must be folled by '()'/'(...)'.");
+                    if (!reader.TakeNextPositionView(TokenType.OpenBracket)) {
+                        throw new ParseException(reader.ViewLastValue, "Function call must be folled by '()'/'(...)'.");
                     }
                 }
 
@@ -162,47 +180,31 @@ namespace SCUMSLang.AST
             return false;
         }
 
-        public static bool TryRecognizeFunctionNode(Reader<Token> reader, out int? newPosition, [MaybeNull] out Node node)
+        public static bool TryRecognizeFunctionOrEventHandlerNode(Reader<Token> reader, out int? newPosition, [MaybeNull] out Node node)
         {
-            if (reader.View[0].TryRecognize(TokenType.FunctionKeyword, out var functionToken))
-            {
-                if (!reader.ConsumeNext(TokenType.Name, out var functionNameToken))
-                {
+            if (reader.View[0].TryRecognize(TokenType.FunctionKeyword, out var functionToken)) {
+                if (!reader.ConsumeNext(TokenType.Name, out var functionNameToken)) {
                     throw new ParseException(functionToken, "Function must have a name.");
                 }
 
-                if (reader.ConsumeNext(out ReaderPosition<Token> test))
-                {
-                    // Prepare for recognizing parameters.
-                    reader.TakePositionView(test);
-                }
-                else
-                {
-                    throw new ParseException(reader.ViewLastValue, "Function must have a signature (e.g. '<...>()' or '()'.");
+                if (TryRecognizeParameters(reader, TokenType.OpenAngleBracket, TokenType.CloseAngleBracket, out var genericParameters, out newPosition, needConsume: true)) {
+                    reader.SetLengthTo(newPosition.Value);
+                } 
+
+                if (TryRecognizeParameters(reader, TokenType.OpenBracket, TokenType.CloseBracket, out var parameters, out newPosition, required: true, needConsume: true)) {
+                    reader.SetLengthTo(newPosition.Value);
                 }
 
-                if (TryRecognizeParameters(ref reader, TokenType.OpenAngleBracket, TokenType.CloseAngleBracket, out var genericParameters)
-                    && !reader.TakeNextPositionView(TokenType.OpenBracket))
-                {
-                    throw new ParseException(reader.ViewLastValue, "Function must have parameter list (e.g. '()').");
-                }
-
-                TryRecognizeParameters(ref reader, TokenType.OpenBracket, TokenType.CloseBracket, out var parameters);
-
-                if (!reader.ConsumeNext(out Token openBracketNode) || !openBracketNode.TryRecognize(TokenType.OpenBrace, TokenType.WhenKeyword))
-                {
+                if (!reader.ConsumeNext(out Token openBracketNode) || !openBracketNode.TryRecognize(TokenType.OpenBrace, TokenType.WhenKeyword)) {
                     throw new ParseException(reader.ViewLastValue, "Function must have a block (e.g. '{}') or 'when' keyword after the signature.");
                 }
 
-                if (openBracketNode.TokenType == TokenType.OpenBrace)
-                {
+                if (openBracketNode.TokenType == TokenType.OpenBrace) {
                     newPosition = reader.UpperPosition;
                     node = new FunctionNode(functionNameToken.GetValue<string>(), genericParameters, parameters);
                     return true;
-                }
-                else
-                {
-
+                } else {
+                    //if (!reader.ConsumeNext()
                 }
             }
 
@@ -215,18 +217,15 @@ namespace SCUMSLang.AST
         {
             int? newPosition;
 
-            if (TryRecognizeDeclarationNode(reader, TokenType.IntKeyword, out newPosition, out node))
-            {
+            if (TryRecognizeDeclarationNode(reader, TokenType.IntKeyword, out newPosition, out node)) {
                 return newPosition;
             }
 
-            if (TryRecognizeAssignmentNode(reader, TokenType.Integer, out newPosition, out node))
-            {
+            if (TryRecognizeAssignmentNode(reader, TokenType.Integer, out newPosition, out node)) {
                 return newPosition;
             }
 
-            if (TryRecognizeFunctionNode(reader, out newPosition, out node))
-            {
+            if (TryRecognizeFunctionOrEventHandlerNode(reader, out newPosition, out node)) {
                 return newPosition;
             }
 

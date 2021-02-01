@@ -1,5 +1,6 @@
 ﻿using System;
 using System.Collections.Generic;
+using System.Linq;
 
 namespace SCUMSLang.AST
 {
@@ -17,5 +18,13 @@ namespace SCUMSLang.AST
             GenericParameters = genericParameters ?? new List<DeclarationNode>();
             Parameters = parameters ?? new List<DeclarationNode>();
         }
+
+        public override bool Equals(object? obj) =>
+            obj is FunctionNode function
+            && Enumerable.SequenceEqual(GenericParameters, function.GenericParameters)
+            && Enumerable.SequenceEqual(Parameters, function.Parameters);
+
+        public override int GetHashCode() => 
+            HashCode.Combine(NodeType, Name, GenericParameters, Parameters);
     }
 }

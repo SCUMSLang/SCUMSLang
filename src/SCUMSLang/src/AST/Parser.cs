@@ -11,36 +11,25 @@ namespace SCUMSLang.AST
             var tokenReader = new Reader<Token>(span);
             var block = new StaticBlockNode();
 
-            while (tokenReader.ConsumeNext())
-            {
+            while (tokenReader.ConsumeNext()) {
                 int? newPosition;
 
-                if (tokenReader.View[0].TryRecognize(TokenType.CloseBrace))
-                {
+                if (tokenReader.View[0].TryRecognize(TokenType.CloseBrace)) {
                     block.CurrentBlock.EndBlock();
                     newPosition = tokenReader.UpperPosition;
-                }
-                else
-                {
+                } else {
                     newPosition = RecognizeNode(tokenReader, out var node);
 
-                    if (newPosition == null)
-                    {
+                    if (newPosition == null) {
                         throw new ParseException(tokenReader.View.Last(), "A valid node could not be found.");
                     }
 
-                    if (!(node is null))
-                    {
-                        if (node is DeclarationNode declarationNode)
-                        {
+                    if (!(node is null)) {
+                        if (node is DeclarationNode declarationNode) {
                             block.AddDeclaration(declarationNode);
-                        }
-                        else if (node is AssignNode assignNode)
-                        {
+                        } else if (node is AssignNode assignNode) {
                             block.AddAssignment(assignNode);
-                        }
-                        else if (node is FunctionNode functionNode)
-                        {
+                        } else if (node is FunctionNode functionNode) {
                             block.BeginBlock(functionNode);
                         }
                     }

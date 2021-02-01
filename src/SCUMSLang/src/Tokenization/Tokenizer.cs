@@ -14,22 +14,20 @@ namespace SCUMSLang.Tokenization
             var charReader = new Reader<char>(content);
             var tokens = new List<Token>();
 
-            while (charReader.ConsumeNext())
-            {
+            while (charReader.ConsumeNext()) {
                 var newPosition = RecognizeToken(charReader, out var token);
 
                 if (newPosition == null) {
                     throw new TokenizationException(charReader.UpperPosition);
                 }
 
-                if (!(token is null))
-                {
+                if (!(token is null)) {
                     tokens.Add(token);
                 }
 
                 charReader.SetPositionTo(newPosition.Value + 1);
             }
-            
+
             return tokens;
         }
 
@@ -44,12 +42,10 @@ namespace SCUMSLang.Tokenization
                 var fileBytesLeft = (int)stream.Length;
                 var fileBytesRead = 0;
 
-                while (fileBytesLeft > 0)
-                {
+                while (fileBytesLeft > 0) {
                     var bytesProcessed = await stream.ReadAsync(fileBytes, fileBytesRead, fileBytesLeft).ConfigureAwait(false);
 
-                    if (bytesProcessed == 0)
-                    {
+                    if (bytesProcessed == 0) {
                         break;
                     }
 

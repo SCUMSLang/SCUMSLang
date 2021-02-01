@@ -11,5 +11,6 @@
         Block,
         Function,
         FunctionCall,
+        EventHandler
     }
 }
