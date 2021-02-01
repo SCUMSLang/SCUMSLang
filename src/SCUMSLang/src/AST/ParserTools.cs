@@ -100,7 +100,11 @@ namespace SCUMSLang.AST
                     var hasEndCloseType = lastToken.TokenType == closeTokenType;
 
                     if (!hasValueType && !hasEndCloseType) {
-                        throw new ParseException(reader.ViewLastValue, "Parameter list need to be closed.");
+                        if (reader.PeekNext(TokenType.Name)) {
+                            throw new ParseException(reader.ViewLastValue, "Parameter unit type is incorrect.");
+                        } else {
+                            throw new ParseException(reader.ViewLastValue, "Parameter list must be closed.");
+                        }
                     }
 
                     if (hasEndCloseType) {
@@ -108,7 +112,7 @@ namespace SCUMSLang.AST
                     }
 
                     if (!reader.ConsumeNext(TokenType.Name, out var parameterNameToken)) {
-                        throw new ParseException(reader.ViewLastValue, "Parameter name is missing");
+                        throw new ParseException(reader.ViewLastValue, "Parameter name is missing.");
                     }
 
                     var nodeValueType = TokenTypeTools.GetNodeValueType(lastToken.TokenType);
