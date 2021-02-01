@@ -1,33 +1,40 @@
-﻿using System.Collections.Generic;
+﻿using System;
+using System.Collections.Generic;
 using System.IO;
 using System.Text;
 using System.Threading.Tasks;
-using static SCUMSLang.Tokenizer.SCUMSLangTokenizerTools;
+using static SCUMSLang.Tokenization.TokenizerTools;
 
-namespace SCUMSLang.Tokenizer
+namespace SCUMSLang.Tokenization
 {
-    public static class SCUMSLangTokenizer
+    public static class Tokenizer
     {
-        public static List<Token> Tokenize(string content)
+        public static List<Token> Tokenize(ReadOnlySpan<char> content)
         {
-
-            var contentReader = new ContentReader(content);
+            var charReader = new Reader<char>(content);
             var tokens = new List<Token>();
 
-            while (contentReader.MoveNext())
+            while (charReader.ConsumeNext())
             {
-                var charactersRead = RecognizeToken(contentReader, out var token);
+                var newPosition = RecognizeToken(charReader, out var token);
+
+                if (newPosition == null) {
+                    throw new TokenizationException(charReader.UpperPosition);
+                }
 
                 if (!(token is null))
                 {
                     tokens.Add(token);
                 }
 
-                contentReader.FastForward(charactersRead);
+                charReader.SetPositionTo(newPosition.Value + 1);
             }
-
+            
             return tokens;
         }
+
+        public static List<Token> Tokenize(string content) =>
+            Tokenize(content.AsSpan());
 
         public static async Task<List<Token>> TokenizeAsync(Stream stream)
         {

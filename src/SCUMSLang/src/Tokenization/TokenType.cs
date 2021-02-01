@@ -1,15 +1,40 @@
-﻿namespace SCUMSLang.Tokenizer
+﻿using SCUMSLang.AST;
+
+namespace SCUMSLang.Tokenization
 {
     public enum TokenType
     {
         /// <summary>
         /// static
         /// </summary>
+        [TokenKeyword("static")]
         StaticKeyword,
         /// <summary>
         /// E.g. "DrinkMilk" or "drink_milk" (without quotes)
         /// </summary>
         Name,
+        /// <summary>
+        /// int
+        /// </summary>
+        [TokenKeyword("int")]
+        [TokenValueType]
+        [NodeValueType(NodeValueType.Integer)]
+        IntKeyword,
+        /// <summary>
+        /// unit
+        /// </summary>
+        [TokenKeyword("unit")]
+        [NodeValueType(NodeValueType.Unit)]
+        UnitKeyword,
+        /// <summary>
+        /// player
+        /// </summary>
+        [TokenKeyword("player")]
+        [NodeValueType(NodeValueType.Player)]
+        PlayerKeyword,
+        /// <summary>
+        /// =
+        /// </summary>
         EqualSign,
         /// <summary>
         /// A 32-bit integer value.
@@ -18,6 +43,7 @@
         /// <summary>
         /// function
         /// </summary>
+        [TokenKeyword("function")]
         FunctionKeyword,
         /// <summary>
         /// (
@@ -42,6 +68,7 @@
         /// <summary>
         /// when
         /// </summary>
+        [TokenKeyword("when")]
         WhenKeyword,
         /// <summary>
         /// [
@@ -54,10 +81,12 @@
         /// <summary>
         /// string
         /// </summary>
+        [TokenValueType]
         String,
         /// <summary>
         /// template
         /// </summary>
+        [TokenKeyword("template")]
         TemplateKeyword,
         /// <summary>
         /// &lt;
@@ -70,10 +99,12 @@
         /// <summary>
         /// ordered
         /// </summary>
-        OrderedKeyword,
+        [TokenKeyword("sequence")]
+        SequenceKeyword,
         /// <summary>
         /// and
         /// </summary>
+        [TokenKeyword("and")]
         AndKeyword,
         /// <summary>
         /// &&
@@ -102,18 +133,22 @@
         /// <summary>
         /// if
         /// </summary>
+        [TokenKeyword("if")]
         IfKeyword,
         /// <summary>
         /// else
         /// </summary>
+        [TokenKeyword("else")]
         ElseKeyword,
         /// <summary>
         /// while
         /// </summary>
+        [TokenKeyword("while")]
         WhileKeyword,
         /// <summary>
         /// true or false
         /// </summary>
+        [TokenKeyword("true", "false")]
         Boolean,
         /// <summary>
         /// ;
@@ -122,6 +157,23 @@
         /// <summary>
         /// for
         /// </summary>
-        ForKeyword
+        [TokenKeyword("for")]
+        ForKeyword,
+        /// <summary>
+        /// +
+        /// </summary>
+        AdditionOperator,
+        /// <summary>
+        /// -
+        /// </summary>
+        SubtractionOperator,
+        /// <summary>
+        /// ++
+        /// </summary>
+        IncrementOperator,
+        /// <summary>
+        /// --
+        /// </summary>
+        DecrementOperator
     }
 }
