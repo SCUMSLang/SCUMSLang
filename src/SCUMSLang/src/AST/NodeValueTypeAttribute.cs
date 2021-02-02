@@ -6,6 +6,7 @@ namespace SCUMSLang.AST
     public class NodeValueTypeAttribute : Attribute
     {
         public NodeValueType ValueType { get; }
+        public bool IsDeclarable { get; set; }
 
         public NodeValueTypeAttribute(NodeValueType valueType) =>
             ValueType = valueType;

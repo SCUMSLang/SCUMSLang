@@ -6,14 +6,13 @@ namespace SCUMSLang.Tokenization
     public static class TokenTypeLibrary
     {
         internal static Type TypeOfTokenType;
-        internal static List<(TokenType TokenType, string Keyword)> AscendKeywordedTokenTypes { get; }
+        internal static List<(TokenType TokenType, string Keyword)> TokenAscendedKeywords { get; }
         internal static TokenType[] ValueTypes { get; }
-        //internal static 
 
         static TokenTypeLibrary()
         {
             TypeOfTokenType = typeof(TokenType);
-            AscendKeywordedTokenTypes = new List<(TokenType TokenType, string Keyword)>();
+            TokenAscendedKeywords = new List<(TokenType TokenType, string Keyword)>();
             var tokenTypeValues = Enum.GetValues(TypeOfTokenType);
             var index = tokenTypeValues.Length;
             var keywordAttributeType = typeof(TokenKeywordAttribute);
@@ -28,7 +27,7 @@ namespace SCUMSLang.Tokenization
 
                 if (!(keywordAttributes is null)) {
                     foreach (var keyword in keywordAttributes.Keywords) {
-                        AscendKeywordedTokenTypes.Add((tokenType, keyword));
+                        TokenAscendedKeywords.Add((tokenType, keyword));
                     }
                 }
 
@@ -39,7 +38,7 @@ namespace SCUMSLang.Tokenization
                 }
             }
 
-            AscendKeywordedTokenTypes.Sort(Comparer<(TokenType TokenType, string Keyword)>.Create((x, y) => x.Keyword.CompareTo(y.Keyword)));
+            TokenAscendedKeywords.Sort(Comparer<(TokenType TokenType, string Keyword)>.Create((x, y) => x.Keyword.CompareTo(y.Keyword)));
             ValueTypes = valueTypeTokens.ToArray();
         }
     }

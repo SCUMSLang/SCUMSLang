@@ -69,7 +69,7 @@ namespace SCUMSLang.Tokenization
 
                 string name = characters.ToString();
 
-                foreach (var (TokenType, Keyword) in TokenTypeLibrary.AscendKeywordedTokenTypes) {
+                foreach (var (TokenType, Keyword) in TokenTypeLibrary.TokenAscendedKeywords) {
                     if (name == Keyword) {
                         token = CreateToken(TokenType, reader);
                         break;

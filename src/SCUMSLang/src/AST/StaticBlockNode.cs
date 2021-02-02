@@ -12,11 +12,14 @@ namespace SCUMSLang.AST
         public StaticBlockNode() =>
             NamedNodes = new Dictionary<string, Node>();
 
+        /// <summary>
+        /// Begins a block in <see cref="BlockNode.CurrentBlock"/>.
+        /// </summary>
+        /// <param name="function"></param>
         public virtual void BeginBlock(FunctionNode function)
         {
             var functionBlock = new FunctionBlockNode(this, function);
-            CurrentBlock = functionBlock;
-            AddNode(functionBlock);
+            BeginBlock(functionBlock);
         }
     }
 }

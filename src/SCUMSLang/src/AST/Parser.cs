@@ -21,14 +21,14 @@ namespace SCUMSLang.AST
                     newPosition = RecognizeNode(tokenReader, out var node);
 
                     if (newPosition == null) {
-                        throw new ParseException(tokenReader.View.Last(), "A valid node could not be found.");
+                        throw new ParseException(tokenReader.View.Last(), "A valid programming structure could not be found.");
                     }
 
                     if (!(node is null)) {
                         if (node is DeclarationNode declarationNode) {
-                            block.AddDeclaration(declarationNode);
+                            block.CurrentBlock.AddDeclaration(declarationNode);
                         } else if (node is AssignNode assignNode) {
-                            block.AddAssignment(assignNode);
+                            block.CurrentBlock.AddAssignment(assignNode);
                         } else if (node is FunctionNode functionNode) {
                             block.BeginBlock(functionNode);
                         }

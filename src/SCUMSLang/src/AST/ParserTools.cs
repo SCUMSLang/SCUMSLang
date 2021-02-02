@@ -14,12 +14,15 @@ namespace SCUMSLang.AST
 
             if (tokens[0] == TokenType.StaticKeyword) {
                 scope = Scope.Static;
+
+                if (!reader.ConsumeNext()) {
+                    throw new ArgumentException("A value type was expected.");
+                }
             } else {
                 scope = Scope.Local;
             }
 
-            if (reader.ConsumeNext(tokenValueType, out var valueTypeToken)
-                && reader.ConsumeNext(TokenType.Name, out var nameToken)) {
+            if (reader.ConsumeNext(TokenType.Name, out var nameToken)) {
                 reader.ConsumePrevious(1);
 
                 var nodeValueType = (Attribute.GetCustomAttribute(
@@ -162,7 +165,7 @@ namespace SCUMSLang.AST
                     if (!hadPreviousComma && tokenPosition.Value == endTokenType) {
                         newPosition = reader.UpperPosition;
                         return true;
-                    } 
+                    }
 
                     if (!TryRecognizeConstantNode(tokenPosition, out _, out var node)) {
                         // When you cannot consume or can consume but can not recognize constant, then throw.
@@ -202,12 +205,12 @@ namespace SCUMSLang.AST
                 && peekedToken.Value.TryRecognize(TokenType.OpenAngleBracket, TokenType.OpenBracket)) {
                 List<ConstantNode> genericArguments;
 
-                if (peekedToken.Value == TokenType.OpenAngleBracket 
+                if (peekedToken.Value == TokenType.OpenAngleBracket
                     && TryRecognizeArgumentList(
-                        reader, 
-                        TokenType.OpenAngleBracket, 
-                        TokenType.CloseAngleBracket, 
-                        out newPosition, 
+                        reader,
+                        TokenType.OpenAngleBracket,
+                        TokenType.CloseAngleBracket,
+                        out newPosition,
                         out genericArguments,
                         needConsume: true)) {
                     reader.SetLengthTo(newPosition.Value);
@@ -283,6 +286,10 @@ namespace SCUMSLang.AST
         {
             int? newPosition;
 
+            if (TryRecognizeFunctionOrEventHandlerNode(reader, out newPosition, out node)) {
+                return newPosition;
+            }
+
             if (TryRecognizeDeclarationNode(reader, TokenType.IntKeyword, out newPosition, out node)) {
                 return newPosition;
             }
@@ -291,12 +298,8 @@ namespace SCUMSLang.AST
                 return newPosition;
             }
 
-            if (TryRecognizeFunctionOrEventHandlerNode(reader, out newPosition, out node)) {
-                return newPosition;
-            }
-
             node = null;
-            return 0;
+            return null;
         }
     }
 }

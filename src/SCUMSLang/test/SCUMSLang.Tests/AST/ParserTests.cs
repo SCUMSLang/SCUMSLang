@@ -31,7 +31,7 @@ namespace SCUMSLANG.AST
         }
 
         [Fact]
-        public void Should_parse_functions()
+        public void Should_parse_parameterized_functions()
         {
             var content = @"function daisy(int hello) {}
                             function daisy() {}";
@@ -51,7 +51,7 @@ namespace SCUMSLANG.AST
         }
 
         [Fact]
-        public void Should_parse_function_with_generic_parameters()
+        public void Should_parse_generic_parameterized_function()
         {
             var content = @"function daisy<unit PlayerId>() {}";
 
@@ -61,6 +61,26 @@ namespace SCUMSLANG.AST
             var genericDeclaration = new DeclarationNode(Scope.Local, NodeValueType.Unit, "PlayerId");
 
             expectedBlock.BeginBlock(new FunctionNode("daisy", new DeclarationNode[] { genericDeclaration }, null));
+            expectedBlock.CurrentBlock.EndBlock();
+
+            Assert.Equal(expectedBlock, block);
+        }
+
+        [Fact]
+        public void Should_parse_generic_parameterized_function_with_declared_assignment()
+        {
+            var content = @"function daisy<unit PlayerId>() {
+                int local_var = 2;
+            }";
+
+            var block = Parser.Parse(content);
+
+            var expectedBlock = new StaticBlockNode();
+            var genericDeclaration = new DeclarationNode(Scope.Local, NodeValueType.Unit, "PlayerId");
+
+            expectedBlock.BeginBlock(new FunctionNode("daisy", new DeclarationNode[] { genericDeclaration }, null));
+            expectedBlock.CurrentBlock.AddDeclaration(new DeclarationNode(Scope.Local, NodeValueType.Integer, "local_var"));
+            expectedBlock.CurrentBlock.AddAssignment(new AssignNode("local_var", new ConstantNode(NodeValueType.Integer, 2)));
             expectedBlock.CurrentBlock.EndBlock();
 
             Assert.Equal(expectedBlock, block);

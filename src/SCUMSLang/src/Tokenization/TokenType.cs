@@ -18,7 +18,7 @@ namespace SCUMSLang.Tokenization
         /// </summary>
         [TokenKeyword("int")]
         [TokenValueType]
-        [NodeValueType(NodeValueType.Integer)]
+        [NodeValueType(NodeValueType.Integer, IsDeclarable = true)]
         IntKeyword,
         /// <summary>
         /// unit

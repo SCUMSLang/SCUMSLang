@@ -31,7 +31,13 @@ namespace SCUMSLang.AST
         {
             nodes = new List<Node>();
             CurrentBlock = this;
-            this.Parent = parent;
+            Parent = parent;
+        }
+
+        public void BeginBlock(BlockNode functionBlock)
+        {
+            CurrentBlock = functionBlock;
+            AddNode(functionBlock);
         }
 
         protected IEnumerable<BlockNode> YieldBlocks()
