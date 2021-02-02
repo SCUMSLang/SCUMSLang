@@ -11,7 +11,7 @@ namespace SCUMSLang
         public readonly ReadOnlySpan<T> View {
             get {
                 Debug.Assert(viewReadLength >= 0, "Content read length should not be lesser than zero.");
-                return currentPosition.View;
+                return viewLastPosition.View;
             }
         }
 
@@ -19,6 +19,7 @@ namespace SCUMSLang
 
         public readonly int ReadPosition => readPosition;
         public readonly int ViewReadLength => viewReadLength;
+        public readonly ReaderPosition<T> ViewLastPosition => viewLastPosition;
 
         /// <summary>
         /// The position which takes length into account.
@@ -35,18 +36,18 @@ namespace SCUMSLang
 
         private int readPosition;
         private int viewReadLength;
-        private ReaderPosition<T> currentPosition;
+        private ReaderPosition<T> viewLastPosition;
 
         public Reader(ReadOnlySpan<T> span)
         {
             Span = span;
             readPosition = 0;
             viewReadLength = 0;
-            currentPosition = default;
+            viewLastPosition = default;
         }
 
         private void setCurrentPosition() =>
-            currentPosition = new ReaderPosition<T>(readPosition, Span.Slice(readPosition, viewReadLength), viewReadLength - 1);
+            viewLastPosition = new ReaderPosition<T>(readPosition, Span.Slice(readPosition, viewReadLength), viewReadLength - 1);
 
         public bool ConsumeNext()
         {
@@ -63,7 +64,7 @@ namespace SCUMSLang
         public bool ConsumeNext(out ReaderPosition<T> position)
         {
             if (ConsumeNext()) {
-                position = currentPosition;
+                position = viewLastPosition;
                 return true;
             }
 
@@ -74,7 +75,7 @@ namespace SCUMSLang
         public bool ConsumeNext(out ReadOnlySpan<T> values)
         {
             if (ConsumeNext()) {
-                values = currentPosition.View;
+                values = viewLastPosition.View;
                 return true;
             }
 
@@ -85,7 +86,7 @@ namespace SCUMSLang
         public bool ConsumeNext(out T value)
         {
             if (ConsumeNext()) {
-                value = currentPosition.Value;
+                value = viewLastPosition.Value;
                 return true;
             }
 
@@ -97,7 +98,7 @@ namespace SCUMSLang
         {
             comparer ??= EqualityComparer<T>.Default;
 
-            if (ConsumeNext() && comparer.Equals(currentPosition.View.Last(), value)) {
+            if (ConsumeNext() && comparer.Equals(viewLastPosition.View.Last(), value)) {
                 return true;
             }
 
@@ -110,7 +111,7 @@ namespace SCUMSLang
                 return ConsumeNext();
             }
 
-            return false;
+            return true;
         }
 
         public void ConsumePrevious(int valuesRead)
@@ -122,13 +123,13 @@ namespace SCUMSLang
         public void ConsumePrevious(int amount, out ReaderPosition<T> position)
         {
             ConsumePrevious(amount);
-            position = currentPosition;
+            position = viewLastPosition;
         }
 
         public void ConsumePrevious(int amount, out ReadOnlySpan<T> values)
         {
             ConsumePrevious(amount);
-            values = currentPosition.View;
+            values = viewLastPosition.View;
         }
 
         public bool PeekNext(out ReaderPosition<T> position)
@@ -173,7 +174,7 @@ namespace SCUMSLang
         public bool TakeNextPositionView()
         {
             if (ConsumeNext()) {
-                TakePositionView(currentPosition);
+                TakePositionView(viewLastPosition);
                 return true;
             }
 
@@ -183,7 +184,7 @@ namespace SCUMSLang
         public bool TakeNextPositionView(T value, IEqualityComparer<T> comparer)
         {
             if (ConsumeNext(value, comparer)) {
-                TakePositionView(currentPosition);
+                TakePositionView(viewLastPosition);
                 return true;
             }
 

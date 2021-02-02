@@ -7,9 +7,9 @@ namespace SCUMSLang.AST
     public class EventHandlerNode : FunctionNode
     {
         public override NodeType NodeType => NodeType.EventHandler;
-        public List<FunctionCallNode> Conditions { get; }
+        public IReadOnlyList<FunctionCallNode> Conditions { get; }
 
-        public EventHandlerNode(string name, IReadOnlyList<DeclarationNode>? genericParameters, IReadOnlyList<DeclarationNode>? parameters, List<FunctionCallNode> conditions)
+        public EventHandlerNode(string name, IReadOnlyList<DeclarationNode>? genericParameters, IReadOnlyList<DeclarationNode>? parameters, IReadOnlyList<FunctionCallNode> conditions)
             : base(name, genericParameters, parameters) =>
             Conditions = conditions ?? new List<FunctionCallNode>();
 

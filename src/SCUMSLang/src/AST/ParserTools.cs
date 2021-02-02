@@ -77,24 +77,6 @@ namespace SCUMSLang.AST
 
             if (reader.ConsumeNext(needConsume)
                 && reader.ViewLastValue.TryRecognize(openTokenType)) {
-                //while (reader.ConsumeNext(out Token lastToken) && lastToken.TryRecognize(TokenTypeLibrary.ValueTypes)) {
-                //    if (!reader.ConsumeNext(TokenType.Name, out var parameterNameToken)) {
-                //        throw new ParseException(reader.ViewLastValue, "Parameter name is missing");
-                //    }
-
-                //    var nodeValueType = TokenTypeTools.GetNodeValueType(lastToken.TokenType);
-                //    functionParameters.Add(new DeclarationNode(Scope.Local, nodeValueType, parameterNameToken.GetValue<string>()));
-
-                //    if (!reader.ConsumeNext(out lastToken) && !lastToken.TryRecognize(TokenType.Comma, closeTokenType)) {
-                //        throw new MissingTokenException(reader.ViewLastValue, closeTokenType);
-                //    }
-
-                //    if (lastToken.TokenType == closeTokenType) {
-                //        newPosition = reader.UpperPosition;
-                //        return true;
-                //    }
-                //}
-
                 while (reader.ConsumeNext(out Token lastToken)) {
                     var hasValueType = lastToken.TryRecognize(TokenTypeLibrary.ValueTypes);
                     var hasEndCloseType = lastToken.TokenType == closeTokenType;
@@ -133,50 +115,113 @@ namespace SCUMSLang.AST
             return false;
         }
 
-        public static List<ConstantNode> RecognizeArgumentList(ref Reader<Token> reader, TokenType endTokenType, params TokenType[] allowedValueTypeTokens)
+        public static bool TryRecognizeConstantNode(ReaderPosition<Token> position, [NotNullWhen(true)] out int? newPosition, [MaybeNullWhen(false)] out ConstantNode constant)
         {
-            var constantNodes = new List<ConstantNode>();
+            var token = position.Value;
+            NodeValueType? nullableValueType;
 
-            do {
-                if (reader.ViewLastValue == endTokenType) {
-                    return constantNodes;
-                }
+            if (TokenTypeTools.TryGetNodeValueType(token.TokenType, out nullableValueType)) {
+                newPosition = position.UpperReaderPosition;
+                constant = new ConstantNode(nullableValueType.Value, position.Value);
+                return true;
+            }
 
-                if (!reader.ConsumeNext(out Token nextToken) || !nextToken.TryRecognize(allowedValueTypeTokens)) {
-                    throw new ParseException(reader.ViewLastValue, $"A valid value was expected"); // TODO: Concrete error
+            if (token.TokenType == TokenType.Name
+                && token.TryGetValue(out string? stringValue)) {
+                if (Enum.TryParse<Player>(stringValue, out var valueType)) {
+                    newPosition = position.UpperReaderPosition;
+                    constant = new ConstantNode(NodeValueType.Player, valueType);
+                    return true;
                 }
+            }
 
-                if (reader.PeekNext(TokenType.Comma)) {
-                    reader.ConsumeNext();
-                }
-            } while (true);
+            newPosition = null;
+            constant = null;
+            return false;
         }
 
-        public static bool TryRecognizeFunctionCallNode(Reader<Token> reader, out int? newPosition, [MaybeNull] out FunctionCallNode node, bool required)
+        public static bool TryRecognizeArgumentList(
+            Reader<Token> reader,
+            TokenType openTokenType,
+            TokenType endTokenType,
+            [NotNullWhen(true)] out int? newPosition,
+            out List<ConstantNode> arguments,
+            bool required = false,
+            bool needConsume = false)
         {
-            if (reader.ViewLastValue == TokenType.Name
-                && reader.ConsumeNext(out ReaderPosition<Token> peekedToken)
-                && peekedToken.Value.TryRecognize(TokenType.OpenAngleBracket, TokenType.OpenBracket)) {
-                if (!reader.TakeNextPositionView()) {
-                    throw new ParseException(reader.ViewLastValue, "Function call must have a signature (e.g. '<...>() or '()').");
-                }
+            arguments = new List<ConstantNode>();
+            bool hadPreviousComma = false;
 
+            if (reader.ConsumeNext(needConsume)
+                && reader.ViewLastValue == openTokenType) {
+                do {
+                    if (!reader.ConsumeNext(out ReaderPosition<Token> tokenPosition)) {
+                        throw new ParseException(reader.ViewLastValue, "The argument list needs to be enclosed.");
+                    }
+
+                    if (!hadPreviousComma && tokenPosition.Value == endTokenType) {
+                        newPosition = reader.UpperPosition;
+                        return true;
+                    } 
+
+                    if (!TryRecognizeConstantNode(tokenPosition, out _, out var node)) {
+                        // When you cannot consume or can consume but can not recognize constant, then throw.
+                        throw new ParseException(reader.ViewLastValue, $"A value was expected."); // TODO: Concrete error
+                    }
+
+                    arguments.Add(node);
+
+                    if (reader.PeekNext(out var peekedToken) && peekedToken.Value == TokenType.Comma) {
+                        hadPreviousComma = true;
+
+                        if (!reader.ConsumeNext()) {
+                            throw new ParseException(reader.ViewLastValue, "Another value was expected.");
+                        }
+                    } else {
+                        hadPreviousComma = false;
+                    }
+                } while (true);
+            } else if (required) {
+                throw new ParseException(reader.ViewLastValue, "A argument list was expected.");
+            }
+
+            newPosition = null;
+            return false;
+        }
+
+        public static bool TryRecognizeFunctionCallNode(
+            Reader<Token> reader,
+            [NotNullWhen(true)] out int? newPosition,
+            [MaybeNullWhen(false)] out FunctionCallNode node,
+            bool required = false,
+            bool needConsume = false)
+        {
+            if (reader.ConsumeNext(needConsume)
+                && reader.ViewLastValue.TryRecognize(TokenType.Name, out var nameToken)
+                && reader.PeekNext(out ReaderPosition<Token> peekedToken)
+                && peekedToken.Value.TryRecognize(TokenType.OpenAngleBracket, TokenType.OpenBracket)) {
                 List<ConstantNode> genericArguments;
 
-                if (peekedToken.Value == TokenType.OpenAngleBracket) {
-                    genericArguments = RecognizeArgumentList(ref reader, TokenType.CloseAngleBracket);
+                if (peekedToken.Value == TokenType.OpenAngleBracket 
+                    && TryRecognizeArgumentList(
+                        reader, 
+                        TokenType.OpenAngleBracket, 
+                        TokenType.CloseAngleBracket, 
+                        out newPosition, 
+                        out genericArguments,
+                        needConsume: true)) {
+                    reader.SetLengthTo(newPosition.Value);
                 } else {
                     genericArguments = new List<ConstantNode>();
-
-                    if (!reader.TakeNextPositionView(TokenType.OpenBracket)) {
-                        throw new ParseException(reader.ViewLastValue, "Function call must be folled by '()'/'(...)'.");
-                    }
                 }
 
-                var arguments = RecognizeArgumentList(ref reader, TokenType.CloseBracket);
-                newPosition = reader.UpperPosition;
-                node = new FunctionCallNode(genericArguments, arguments);
-                return true;
+                if (TryRecognizeArgumentList(reader, TokenType.OpenBracket, TokenType.CloseBracket, out newPosition, out var arguments, required: true, needConsume: true)) {
+                    reader.SetLengthTo(newPosition.Value);
+                    node = new FunctionCallNode(nameToken.GetValue<string>(), genericArguments, arguments);
+                    return true;
+                }
+            } else if (required) {
+                throw new ParseException(reader.ViewLastValue, "Function call was expected.");
             }
 
             newPosition = 0;
@@ -193,7 +238,7 @@ namespace SCUMSLang.AST
 
                 if (TryRecognizeParameters(reader, TokenType.OpenAngleBracket, TokenType.CloseAngleBracket, out var genericParameters, out newPosition, needConsume: true)) {
                     reader.SetLengthTo(newPosition.Value);
-                } 
+                }
 
                 if (TryRecognizeParameters(reader, TokenType.OpenBracket, TokenType.CloseBracket, out var parameters, out newPosition, required: true, needConsume: true)) {
                     reader.SetLengthTo(newPosition.Value);
@@ -208,7 +253,24 @@ namespace SCUMSLang.AST
                     node = new FunctionNode(functionNameToken.GetValue<string>(), genericParameters, parameters);
                     return true;
                 } else {
-                    //if (!reader.ConsumeNext()
+                    var conditions = new List<FunctionCallNode>();
+
+                    do {
+                        if (TryRecognizeFunctionCallNode(reader, out newPosition, out var condition, required: true, needConsume: true)) {
+                            reader.SetLengthTo(newPosition.Value);
+                            conditions.Add(condition);
+                        }
+
+                        if (reader.ConsumeNext(TokenType.OpenBrace)) {
+                            newPosition = reader.UpperPosition;
+                            node = new EventHandlerNode(functionNameToken.GetValue<string>(), genericParameters, parameters, conditions);
+                            return true;
+                        }
+
+                        if (!reader.ConsumeNext(TokenType.AndKeyword)) {
+                            throw new ParseException(reader.ViewLastValue, "As long as the function block is not opening (e.g. '{') another condition is expected.");
+                        }
+                    } while (true);
                 }
             }
 

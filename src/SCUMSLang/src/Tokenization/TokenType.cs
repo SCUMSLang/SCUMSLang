@@ -41,6 +41,7 @@ namespace SCUMSLang.Tokenization
         /// <summary>
         /// A 32-bit integer value.
         /// </summary>
+        [NodeValueType(NodeValueType.Integer)]
         Integer,
         /// <summary>
         /// function
@@ -84,6 +85,7 @@ namespace SCUMSLang.Tokenization
         /// string
         /// </summary>
         [TokenValueType]
+        [NodeValueType(NodeValueType.String)]
         String,
         /// <summary>
         /// template
@@ -151,6 +153,7 @@ namespace SCUMSLang.Tokenization
         /// true or false
         /// </summary>
         [TokenKeyword("true", "false")]
+        [NodeValueType(NodeValueType.Boolean)]
         Boolean,
         /// <summary>
         /// ;

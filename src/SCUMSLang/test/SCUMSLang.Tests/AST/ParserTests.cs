@@ -12,11 +12,9 @@ namespace SCUMSLANG.AST
             var block = Parser.Parse(content);
 
             var declaration = new DeclarationNode(Scope.Static, NodeValueType.Integer, "goofy");
+            var expectedNodes = new Node[] { declaration, new LinkedAssignment(declaration, new AssignNode("goofy", new ConstantNode(NodeValueType.Integer, 4))) };
 
-            Assert.Equal(new Node[] {
-                declaration,
-                new LinkedAssignment(declaration, new AssignNode("goofy", new ConstantNode(NodeValueType.Integer, 4)))
-            }, block.Nodes);
+            Assert.Equal(expectedNodes, block.Nodes);
         }
 
         [Fact]
@@ -29,7 +27,7 @@ namespace SCUMSLANG.AST
             expectedBlock.BeginBlock(new FunctionNode("daisy", null, new DeclarationNode[] { }));
             expectedBlock.CurrentBlock.EndBlock();
 
-            Assert.Equal(expectedBlock.Nodes, block.Nodes);
+            Assert.Equal(expectedBlock, block);
         }
 
         [Fact]
@@ -49,7 +47,7 @@ namespace SCUMSLANG.AST
             expectedBlock.BeginBlock(new FunctionNode("daisy", null, null));
             expectedBlock.CurrentBlock.EndBlock();
 
-            Assert.Equal(expectedBlock.Nodes, block.Nodes);
+            Assert.Equal(expectedBlock, block);
         }
 
         [Fact]
@@ -65,23 +63,28 @@ namespace SCUMSLANG.AST
             expectedBlock.BeginBlock(new FunctionNode("daisy", new DeclarationNode[] { genericDeclaration }, null));
             expectedBlock.CurrentBlock.EndBlock();
 
-            Assert.Equal(expectedBlock.Nodes, block.Nodes);
+            Assert.Equal(expectedBlock, block);
         }
 
-        //[Fact]
-        //public void Should_parse_function_with_generic_parameters()
-        //{
-        //    var content = @"function daisy<unit PlayerId>() when cond_one(0xf) {}";
+        [Fact]
+        public void Should_parse_event_handler_with_generic_parameters()
+        {
+            var content = @"function daisy<unit PlayerId>() when cond_one<Player1>(0xf) {}";
 
-        //    var block = Parser.Parse(content);
+            var block = Parser.Parse(content);
 
-        //    var expectedBlock = new StaticBlockNode();
-        //    var genericDeclaration = new DeclarationNode(Scope.Local, NodeValueType.Unit, "PlayerId");
+            var expectedBlock = new StaticBlockNode();
 
-        //    expectedBlock.BeginBlock(new FunctionNode("daisy", new DeclarationNode[] { genericDeclaration }, null));
-        //    expectedBlock.CurrentBlock.EndBlock();
+            expectedBlock.BeginBlock(
+                new EventHandlerNode(
+                    "daisy",
+                    new[] { new DeclarationNode(Scope.Local, NodeValueType.Unit, "PlayerId") },
+                    null,
+                    new[] { new FunctionCallNode("cond_one", new[] { new ConstantNode(NodeValueType.Player, Player.Player1) }, new[] { new ConstantNode(NodeValueType.Integer, 16) }) }));
 
-        //    Assert.Equal(expectedBlock.Nodes, block.Nodes);
-        //}
+            expectedBlock.CurrentBlock.EndBlock();
+
+            Assert.Equal(expectedBlock, block);
+        }
     }
 }

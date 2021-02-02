@@ -4,6 +4,8 @@
     {
         Integer,
         Player,
-        Unit
+        Unit,
+        String,
+        Boolean
     }
 }

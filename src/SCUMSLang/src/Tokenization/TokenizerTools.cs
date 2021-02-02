@@ -55,11 +55,14 @@ namespace SCUMSLang.Tokenization
             var characters = reader.View;
             token = null;
 
-            if (char.IsLetter(characters[0])) {
-                static bool isLetter(char letter) =>
+            static bool isBeginningToken(char letter) =>
                     char.IsLetter(letter) || letter == '_';
 
-                while (reader.PeekNext(out var peekedPosition) && isLetter(peekedPosition.View.Last())) {
+            if (isBeginningToken(characters[0])) {
+                static bool isValidCharacter(char letter) =>
+                    isBeginningToken(letter) || char.IsDigit(letter);
+
+                while (reader.PeekNext(out var peekedPosition) && isValidCharacter(peekedPosition.View.Last())) {
                     reader.ConsumeNext(out characters);
                     continue;
                 }

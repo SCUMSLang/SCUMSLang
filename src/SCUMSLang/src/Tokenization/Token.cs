@@ -65,6 +65,16 @@ namespace SCUMSLang.Tokenization
         public T GetValue<T>() =>
             (T)Value ?? throw new InvalidOperationException();
 
+        public bool TryGetValue<T>([MaybeNullWhen(false)]out T value) {
+            if (Value is T typedValue) {
+                value = typedValue;
+                return true;
+            }
+
+            value = default;
+            return false;
+        }
+
         public bool Equals([AllowNull] Token other) =>
             ReferenceEquals(this, other) || (!(other is null) && TokenType == other.TokenType);
 

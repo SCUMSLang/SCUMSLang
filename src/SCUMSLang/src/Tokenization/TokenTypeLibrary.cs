@@ -8,6 +8,7 @@ namespace SCUMSLang.Tokenization
         internal static Type TypeOfTokenType;
         internal static List<(TokenType TokenType, string Keyword)> AscendKeywordedTokenTypes { get; }
         internal static TokenType[] ValueTypes { get; }
+        //internal static 
 
         static TokenTypeLibrary()
         {
