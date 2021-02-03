@@ -6,7 +6,7 @@ namespace SCUMSLANG.AST
     public class ParserTests
     {
         [Fact]
-        public void Should_parse_static_declaration_and_integer_assignment()
+        public void Should_parse_static_int_declaration_and_assignment()
         {
             var content = "static int goofy = 4;";
             var block = Parser.Parse(content);
@@ -31,7 +31,7 @@ namespace SCUMSLANG.AST
         }
 
         [Fact]
-        public void Should_parse_parameterized_functions()
+        public void Should_parse_parameterized_function_and_function()
         {
             var content = @"function daisy(int hello) {}
                             function daisy() {}";
@@ -86,7 +86,7 @@ namespace SCUMSLANG.AST
         }
 
         [Fact]
-        public void Should_parse_function_with_assignment()
+        public void Should_parse_function_with_static_declaration_and_local_assignment()
         {
             var content = @"static int global_var;
             function daisy() {
@@ -105,7 +105,7 @@ namespace SCUMSLANG.AST
         }
 
         [Fact]
-        public void Should_parse_event_handler_with_generic_parameters()
+        public void Should_parse_generic_parameterized_event_handler()
         {
             var content = @"function daisy<unit PlayerId>() when cond_one<Player1>(0xf) {}";
 
