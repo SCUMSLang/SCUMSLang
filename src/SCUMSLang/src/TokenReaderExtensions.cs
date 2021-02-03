@@ -19,14 +19,17 @@ namespace SCUMSLang
         public static bool ConsumeNext(this ref Reader<Token> reader, TokenType tokenType) =>
             ConsumeNext(ref reader, tokenType, out _);
 
-        public static bool PeekNext(this ref Reader<Token> reader, TokenType tokenType)
+        public static bool PeekNext(this ref Reader<Token> reader, int count, TokenType tokenType)
         {
-            if (reader.PeekNext(tokenType, TokenOnlyTypeComparer.Default)) {
+            if (reader.PeekNext(count, tokenType, TokenOnlyTypeComparer.Default)) {
                 return true;
             }
 
             return false;
         }
+
+        public static bool PeekNext(this ref Reader<Token> reader, TokenType tokenType) =>
+            PeekNext(ref reader, 1, tokenType);
 
         public static bool TakeNextPositionView(this ref Reader<Token> reader, TokenType tokenType)
         {

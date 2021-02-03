@@ -22,8 +22,12 @@ namespace SCUMSLang.AST
                 scope = Scope.Local;
             }
 
-            if (reader.ConsumeNext(TokenType.Name, out var nameToken)) {
-                reader.ConsumePrevious(1);
+            if (reader.PeekNext(out var nameToken) && nameToken.Value.TokenType == TokenType.Name) {
+                if (reader.PeekNext(2, out var semicolonToken) && semicolonToken.Value.TokenType == TokenType.Semicolon) {
+                    newPosition = semicolonToken.UpperReaderPosition;
+                } else {
+                    newPosition = reader.UpperPosition;
+                }
 
                 var nodeValueType = (Attribute.GetCustomAttribute(
                     TokenTypeLibrary.TypeOfTokenType.GetField(Enum.GetName(TokenTypeLibrary.TypeOfTokenType, tokenValueType)!)!,
@@ -31,8 +35,8 @@ namespace SCUMSLang.AST
                     ?? throw new ArgumentException("The token type has not the information about a node value type."))
                     .ValueType;
 
-                node = new DeclarationNode(scope, nodeValueType, (string)nameToken.Value!);
-                newPosition = reader.UpperPosition;
+                node = new DeclarationNode(scope, nodeValueType, nameToken.Value.GetValue<string>());
+                //newPosition = reader.UpperPosition;
                 return true;
             }
 

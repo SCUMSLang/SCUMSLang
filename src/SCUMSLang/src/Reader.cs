@@ -49,9 +49,9 @@ namespace SCUMSLang
         private void setCurrentPosition() =>
             viewLastPosition = new ReaderPosition<T>(readPosition, Span.Slice(readPosition, viewReadLength), viewReadLength - 1);
 
-        public bool ConsumeNext()
+        public bool ConsumeNext(int count)
         {
-            viewReadLength++;
+            viewReadLength += count;
 
             if (readPosition + viewReadLength > Span.Length) {
                 return false;
@@ -61,9 +61,12 @@ namespace SCUMSLang
             return true;
         }
 
-        public bool ConsumeNext(out ReaderPosition<T> position)
+        public bool ConsumeNext() =>
+            ConsumeNext(1);
+
+        public bool ConsumeNext(int count, out ReaderPosition<T> position)
         {
-            if (ConsumeNext()) {
+            if (ConsumeNext(count)) {
                 position = viewLastPosition;
                 return true;
             }
@@ -71,6 +74,9 @@ namespace SCUMSLang
             position = default!;
             return false;
         }
+
+        public bool ConsumeNext(out ReaderPosition<T> position) =>
+            ConsumeNext(1, out position);
 
         public bool ConsumeNext(out ReadOnlySpan<T> values)
         {
@@ -94,16 +100,19 @@ namespace SCUMSLang
             return false;
         }
 
-        public bool ConsumeNext(T value, IEqualityComparer<T> comparer)
+        public bool ConsumeNext(int count, T value, IEqualityComparer<T> comparer)
         {
             comparer ??= EqualityComparer<T>.Default;
 
-            if (ConsumeNext() && comparer.Equals(viewLastPosition.View.Last(), value)) {
+            if (ConsumeNext(count) && comparer.Equals(viewLastPosition.View.Last(), value)) {
                 return true;
             }
 
             return false;
         }
+
+        public bool ConsumeNext(T value, IEqualityComparer<T> comparer) =>
+            ConsumeNext(1, value, comparer);
 
         public bool ConsumeNext(bool consume)
         {
@@ -132,34 +141,28 @@ namespace SCUMSLang
             values = viewLastPosition.View;
         }
 
-        public bool PeekNext(out ReaderPosition<T> position)
+        public bool PeekNext(int count, out ReaderPosition<T> position)
         {
             var reader = this;
-            return reader.ConsumeNext(out position);
+            return reader.ConsumeNext(count, out position);
         }
 
-        public bool PeekNext(T value, IEqualityComparer<T> comparer)
+        public bool PeekNext(out ReaderPosition<T> position) =>
+            PeekNext(1, out position);
+
+        public bool PeekNext(int count, T value, IEqualityComparer<T> comparer)
         {
             var reader = this;
 
-            if (reader.ConsumeNext(value, comparer)) {
+            if (reader.ConsumeNext(count, value, comparer)) {
                 return true;
             }
 
             return false;
         }
 
-        ///// <summary>
-        ///// Sets the position to <paramref name="position"/>
-        ///// and resets the <see cref="View"/>.
-        ///// </summary>
-        ///// <param name="position"></param>
-        //public void MovePositionBy(int position)
-        //{
-        //    readPosition += position;
-        //    viewReadLength = 0;
-        //    setCurrentPosition();
-        //}
+        public bool PeekNext(T value, IEqualityComparer<T> comparer) =>
+            PeekNext(1, value, comparer);
 
         public void TakePositionView(int position)
         {
