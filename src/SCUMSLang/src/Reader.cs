@@ -226,11 +226,16 @@ namespace SCUMSLang
             return false;
         }
 
-        public void SetPositionTo(int newPosition)
+        public bool SetPositionTo(int newPosition)
         {
-            readPosition = newPosition;
-            viewReadLength = 0;
-            setCurrentPosition();
+            if (newPosition < Span.Length) {
+                readPosition = newPosition;
+                viewReadLength = 0;
+                setCurrentPosition();
+                return true;
+            }
+
+            return false;
         }
 
         public void SetLengthTo(int newPosition)

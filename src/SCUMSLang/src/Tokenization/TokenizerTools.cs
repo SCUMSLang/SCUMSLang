@@ -29,13 +29,13 @@ namespace SCUMSLang.Tokenization
             if (reader.ViewLastValue == '/') {
                 TokenType tokenType;
 
-                if (!reader.ConsumeNext(out ReaderPosition<char> peekedCharacter) && peekedCharacter.Value == '/') {
+                if (!reader.ConsumeNext(out ReaderPosition<char> consumedCharacter) && consumedCharacter.Value == '/') {
                     throw new TokenizationException(reader.ViewLastPosition, "A comment was expected.");
                 }
 
-                if (reader.PeekNext(out peekedCharacter) && peekedCharacter.Value == '/'
-                    && reader.PeekNext(2, out var peekedSecondCharacter) && peekedSecondCharacter.Value != '/') {
-                    reader.SetLengthTo(peekedCharacter.UpperReaderPosition);
+                if (reader.PeekNext(out consumedCharacter) && consumedCharacter.Value == '/'
+                    && (!reader.PeekNext(2, out var peekedSecondCharacter) || peekedSecondCharacter.Value != '/')) {
+                    reader.SetLengthTo(consumedCharacter.UpperReaderPosition);
                     tokenType = TokenType.XmlComment;
                 } else {
                     tokenType = TokenType.Comment;
@@ -47,7 +47,7 @@ namespace SCUMSLang.Tokenization
                     reader.ConsumeUntil((ref ReaderPosition<char> character) => character.Value == '\r' || character.Value == 'n');
                     token = new Token(tokenType, reader.ReadPosition, reader.ViewReadLength, reader.View.ToString().Trim());
                 } else {
-                    token = new Token(tokenType, reader.UpperPosition + 1, 0, string.Empty);
+                    token = new Token(tokenType, reader.UpperPosition, 0, string.Empty);
                 }
 
                 newPosition = reader.UpperPosition;

@@ -25,7 +25,9 @@ namespace SCUMSLang.Tokenization
                     tokens.Add(token);
                 }
 
-                charReader.SetPositionTo(newPosition.Value + 1);
+                if (!charReader.SetPositionTo(newPosition.Value + 1)) {
+                    break;
+                }
             }
 
             return tokens;

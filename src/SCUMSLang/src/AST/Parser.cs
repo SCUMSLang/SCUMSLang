@@ -35,7 +35,9 @@ namespace SCUMSLang.AST
                     }
                 }
 
-                tokenReader.SetPositionTo(newPosition.Value + 1);
+                if (!tokenReader.SetPositionTo(newPosition.Value + 1)) {
+                    break;
+                }
             }
 
             return block;

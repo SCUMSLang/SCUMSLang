@@ -1,4 +1,5 @@
-﻿using Xunit;
+﻿using System.Collections.Generic;
+using Xunit;
 
 namespace SCUMSLang.Tokenization
 {
@@ -256,6 +257,22 @@ namespace SCUMSLang.Tokenization
             Assert.Equal("hello", tokens[5].GetValue<string>());
             Assert.Equal(":)", tokens[6].GetValue<string>());
             Assert.Equal("", tokens[7].GetValue<string>());
+        }
+
+        [Fact]
+        public void Should_tokenize_comments_without_further_input()
+        {
+            IEnumerable<(string Value, TokenType Token)> yieldImmediatellyEndingComments()
+            {
+                yield return (@"//", TokenType.Comment);
+                yield return (@"///", TokenType.XmlComment);
+            }
+
+            foreach (var (value, token) in yieldImmediatellyEndingComments()) {
+                var tokens = Tokenizer.Tokenize(value);
+                Assert.Equal(tokens, new Token[] { token }, TokenOnlyTypeComparer.Default);
+                Assert.Equal("", tokens[0].GetValue<string>());
+            }
         }
     }
 }
