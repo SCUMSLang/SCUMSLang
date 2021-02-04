@@ -1,0 +1,31 @@
+<Project Sdk="Microsoft.Build.Traversal/3.0.3">
+  <ItemGroup>
+    <None Include="*.scl" />
+    <None Include="*.sch" />
+  </ItemGroup>
+  <ItemGroup>
+    <None Include="EnumTypes\Comparison.sch" />
+    <None Include="EnumTypes\AIScript.sch" />
+    <None Include="EnumTypes\AllianceStatus.sch" />
+    <None Include="EnumTypes\EndCondition.sch" />
+    <None Include="EnumTypes\Order.sch" />
+    <None Include="EnumTypes\Player.sch" />
+    <None Include="EnumTypes\ResourceType.sch" />
+    <None Include="EnumTypes\ScoreType.sch" />
+    <None Include="EnumTypes\State.sch" />
+    <None Include="EnumTypes\Unit.sch" />
+    <None Include="EnumTypes\UnitMod.sch" />
+    <None Include="Functions\UnitFunctions.sch" />
+    <None Include="Functions\UserInterfaceFunctions.sch" />
+    <None Include="Functions\ResourceFunctions.sch" />
+    <None Include="Functions\MiscellaneousFunctions.sch" />
+    <None Include="Functions\GameFunctions.sch" />
+    <None Include="Conditions\UnitConditions.sch" />
+    <None Include="Conditions\ResourceConditions.sch" />
+    <None Include="Conditions\GameConditions.sch" />
+    <None Include="Conditions\ScoreConditions.sch" />
+    <None Include="Conditions\MiscellaneousConditions.sch" />
+    <None Include="Functions\ScoreFunctions.sch" />
+    <None Include="UnitProperty.sch.tmp" />
+  </ItemGroup>
+</Project>

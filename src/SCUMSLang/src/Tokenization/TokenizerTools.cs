@@ -1,4 +1,5 @@
 ﻿using System;
+using System.Collections.Generic;
 using System.Diagnostics.CodeAnalysis;
 using static SCUMSLang.Tokenization.TokenTools;
 
@@ -20,6 +21,41 @@ namespace SCUMSLang.Tokenization
             }
 
             newPosition = null;
+            return false;
+        }
+
+        private static bool TryRecognizeComment(Reader<char> reader, [NotNullWhen(true)] out int? newPosition, [MaybeNullWhen(false)] out Token token)
+        {
+            if (reader.ViewLastValue == '/') {
+                TokenType tokenType;
+
+                if (!reader.ConsumeNext(out ReaderPosition<char> peekedCharacter) && peekedCharacter.Value == '/') {
+                    throw new TokenizationException(reader.ViewLastPosition, "A comment was expected.");
+                }
+
+                if (reader.PeekNext(out peekedCharacter) && peekedCharacter.Value == '/'
+                    && reader.PeekNext(2, out var peekedSecondCharacter) && peekedSecondCharacter.Value != '/') {
+                    reader.SetLengthTo(peekedCharacter.UpperReaderPosition);
+                    tokenType = TokenType.XmlComment;
+                } else {
+                    tokenType = TokenType.Comment;
+                    reader.ConsumeUntilNot('/', EqualityComparer<char>.Default);
+                }
+
+                if (reader.ConsumeNext()) {
+                    reader.SetPositionTo(reader.UpperPosition);
+                    reader.ConsumeUntil((ref ReaderPosition<char> character) => character.Value == '\r' || character.Value == 'n');
+                    token = new Token(tokenType, reader.ReadPosition, reader.ViewReadLength, reader.View.ToString().Trim());
+                } else {
+                    token = new Token(tokenType, reader.UpperPosition + 1, 0, string.Empty);
+                }
+
+                newPosition = reader.UpperPosition;
+                return true;
+            }
+
+            newPosition = reader.UpperPosition;
+            token = null;
             return false;
         }
 
@@ -225,6 +261,10 @@ namespace SCUMSLang.Tokenization
 
             if (TryRecognizeWhiteSpaces(reader, out newPosition)) {
                 token = null;
+                return newPosition;
+            }
+
+            if (TryRecognizeComment(reader, out newPosition, out token)) {
                 return newPosition;
             }
 

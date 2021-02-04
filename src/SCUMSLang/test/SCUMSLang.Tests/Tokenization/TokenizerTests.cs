@@ -193,7 +193,6 @@ namespace SCUMSLang.Tokenization
             var tokens = Tokenizer.Tokenize(content);
 
             Assert.Equal(tokens, new Token[] {
-
                 TokenType.OpenSquareBracket,
                 TokenType.Name,
                 TokenType.OpenBracket,
@@ -217,6 +216,46 @@ namespace SCUMSLang.Tokenization
                 TokenType.CloseBracket,
                 TokenType.CloseSquareBracket
             }, TokenOnlyTypeComparer.Default);
+        }
+
+        [Fact]
+        public void Should_tokenize_comments_and_xml_comments()
+        {
+            var content = @"name_keyword_like
+
+                            // hello
+
+                            /// :)
+                            
+                            //hello
+                            ///:)
+                            //            hello
+                            ///           :)
+                            
+                            ////           
+                            name_keyword_like";
+
+            var tokens = Tokenizer.Tokenize(content);
+
+            Assert.Equal(tokens, new Token[] {
+                TokenType.Name,
+                TokenType.Comment,
+                TokenType.XmlComment,
+                TokenType.Comment,
+                TokenType.XmlComment,
+                TokenType.Comment,
+                TokenType.XmlComment,
+                TokenType.Comment,
+                TokenType.Name
+            }, TokenOnlyTypeComparer.Default);
+
+            Assert.Equal("hello", tokens[1].GetValue<string>());
+            Assert.Equal(":)", tokens[2].GetValue<string>());
+            Assert.Equal("hello", tokens[3].GetValue<string>());
+            Assert.Equal(":)", tokens[4].GetValue<string>());
+            Assert.Equal("hello", tokens[5].GetValue<string>());
+            Assert.Equal(":)", tokens[6].GetValue<string>());
+            Assert.Equal("", tokens[7].GetValue<string>());
         }
     }
 }

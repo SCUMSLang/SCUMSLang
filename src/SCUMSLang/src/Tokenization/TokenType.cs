@@ -179,6 +179,8 @@ namespace SCUMSLang.Tokenization
         /// <summary>
         /// --
         /// </summary>
-        DecrementOperator
+        DecrementOperator,
+        Comment,
+        XmlComment
     }
 }

@@ -123,6 +123,38 @@ namespace SCUMSLang
             return true;
         }
 
+        public void ConsumeUntilNot(T value, IEqualityComparer<T> comparer)
+        {
+            while (PeekNext(value, comparer)) {
+                ConsumeNext();
+            }
+        }
+
+        public void ConsumeUntilNot(UntilDelegate<T> untilNot)
+        {
+            while (PeekNext(out var position) && untilNot(ref position)) {
+                ConsumeNext();
+            }
+        }
+
+        public void ConsumeUntil(T value, IEqualityComparer<T> comparer)
+        {
+            while (!PeekNext(value, comparer)) {
+                ConsumeNext();
+            }
+        }
+
+        public void ConsumeUntil(UntilDelegate<T> until)
+        {
+            while (PeekNext(out ReaderPosition<T> position)) {
+                if (until(ref position)) {
+                    break;
+                }
+
+                _ = ConsumeNext();
+            }
+        }
+
         public void ConsumePrevious(int valuesRead)
         {
             viewReadLength -= valuesRead;
