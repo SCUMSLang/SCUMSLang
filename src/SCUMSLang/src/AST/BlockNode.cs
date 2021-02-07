@@ -2,6 +2,7 @@
 using System.Collections.Generic;
 using System.Diagnostics.CodeAnalysis;
 using System.Linq;
+using Teronis.Collections.Specialized;
 
 namespace SCUMSLang.AST
 {
@@ -15,7 +16,7 @@ namespace SCUMSLang.AST
         public IReadOnlyList<Node> Nodes => nodes;
 
         protected BlockNode Parent;
-        protected abstract Dictionary<string, Node> NamedNodes { get; }
+        protected abstract LinkedBucketList<string, Node> NamedNodes { get; }
 
         private List<Node> nodes;
         private bool blockClosed;
@@ -34,11 +35,8 @@ namespace SCUMSLang.AST
             Parent = parent;
         }
 
-        public void BeginBlock(BlockNode functionBlock)
-        {
+        public void BeginBlock(BlockNode functionBlock) =>
             CurrentBlock = functionBlock;
-            AddNode(functionBlock);
-        }
 
         protected IEnumerable<BlockNode> YieldBlocks()
         {
@@ -53,7 +51,7 @@ namespace SCUMSLang.AST
         public bool IsNameCrossBlockAssigned(string name)
         {
             foreach (var block in YieldBlocks()) {
-                if (block.NamedNodes.ContainsKey(name)) {
+                if (block.NamedNodes.TryGetBucket(name, out _)) {
                     return true;
                 }
             }
@@ -61,20 +59,121 @@ namespace SCUMSLang.AST
             return false;
         }
 
-        public bool TryGetDeclarationByName(string name, [NotNullWhen(true)] out DeclarationNode declaration)
+        public bool TryGetNodes(string name, [MaybeNullWhen(false)] out List<Node> foundNodes)
         {
+            foundNodes = new List<Node>();
+
             foreach (var block in YieldBlocks()) {
-                if (block.NamedNodes.TryGetValue(name, out Node? node) && node is DeclarationNode declarationNode) {
-                    declaration = declarationNode;
+                if (block.NamedNodes.TryGetBucket(name, out ILinkedBucketList<string, Node>? nodes)) {
+                    foreach (var node in nodes) {
+                        foundNodes.Add(node);
+                    }
+                }
+            }
+
+            return foundNodes.Count != 0;
+        }
+
+        public bool TryGetFirstNode<T>(IEnumerable<Node> candidates, Func<Node, bool> isFunctionDelegate, [MaybeNullWhen(false)] out T function)
+            where T : Node
+        {
+            foreach (var candiate in candidates) {
+                if (isFunctionDelegate(candiate)) {
+                    function = (T)candiate;
                     return true;
                 }
             }
 
-            declaration = null!;
+            function = null;
             return false;
         }
 
-        protected void AddNode(Node node) =>
+        //public bool TryGetFirstNode<T>(string name, Func<Node, bool> isNodeDelegate, [MaybeNullWhen(false)] out T function)
+        //    where T : Node
+        //{
+        //    if (TryGetNodes(name, out var candidates)
+        //        && TryGetFirstNode(candidates, isNodeDelegate, out function)) {
+        //        return true;
+        //    }
+
+        //    function = null;
+        //    return false;
+        //}
+
+        public bool TryGetFirstNode<T>(string name, Func<Node, bool> isNodeDelegate, [MaybeNullWhen(false)] out T function)
+            where T : Node
+        {
+            if (TryGetNodes(name, out var candidates)
+                && TryGetFirstNode(candidates, isNodeDelegate, out function)) {
+                return true;
+            }
+
+            function = null;
+            return false;
+        }
+
+        public bool TryGetFirstNode<T>(IEnumerable<T> candidates, [MaybeNullWhen(false)] out T function)
+            where T : Node =>
+            TryGetFirstNode(candidates, (node) => node is T, out function);
+
+        public bool TryGetFirstNode<T>(string name, [MaybeNullWhen(false)] out T function)
+            where T : Node =>
+            TryGetFirstNode(name, (node) => node is T, out function);
+
+        public bool TryGetFirstNode<T>(T template, [MaybeNullWhen(false)] out T function)
+            where T : Node, INameableNode =>
+            TryGetFirstNode(template.Name, (node) => node.Equals(template), out function);
+
+        public bool TryGetFirstNode<T>(IEnumerable<T> candidates, T template, [MaybeNullWhen(false)] out T function, IEqualityComparer<T>? comparer = null)
+            where T : Node, INameableNode
+        {
+            comparer ??= EqualityComparer<T>.Default;
+            return TryGetFirstNode(candidates, (node) => node is T typedNode && comparer.Equals(typedNode, template), out function);
+        }
+
+        public bool TryGetFirstFunctionNode(string name, FunctionCallNode functionCall, [MaybeNullWhen(false)] out FunctionNode function)
+        {
+            bool isFunction(Node node)
+            {
+                if (!(node is FunctionNode function)) {
+                    return false;
+                }
+
+                if (function.GenericParameters.Count != functionCall.GenericArguments.Count) {
+                    return false;
+                }
+
+                var genericParameterIndex = function.GenericParameters.Count;
+
+                while (--genericParameterIndex >= 0) {
+                    if (function.GenericParameters[genericParameterIndex].ValueType != functionCall.GenericArguments[genericParameterIndex].ValueType) {
+                        return false;
+                    }
+                }
+
+                var parameterIndex = function.Parameters.Count;
+
+                if (function.Parameters.Count != functionCall.Arguments.Count) {
+                    return false;
+                }
+
+                while (--parameterIndex >= 0) {
+                    if (function.Parameters[parameterIndex].ValueType != functionCall.Arguments[parameterIndex].ValueType) {
+                        return false;
+                    }
+                }
+
+                return true;
+            }
+
+            if (TryGetFirstNode(name, isFunction, out function)) {
+                return true;
+            }
+
+            return false;
+        }
+
+        public void AddNode(Node node) =>
             nodes.Add(node);
 
         public void AddDeclaration(DeclarationNode declaration)
@@ -83,23 +182,31 @@ namespace SCUMSLang.AST
                 throw new ArgumentException("Declaration has invalid scope.");
             }
 
-            foreach (var namedNode in NamedNodes) {
-                if (IsNameCrossBlockAssigned(declaration.Name)) {
-                    throw new ArgumentException($"The name '{declaration.Name}' exists already.");
-                }
+            if (IsNameCrossBlockAssigned(declaration.Name)) {
+                throw new ArgumentException($"The name '{declaration.Name}' exists already.");
             }
 
             nodes.Add(declaration);
-            NamedNodes.Add(declaration.Name, declaration);
+            NamedNodes.AddLast(declaration.Name, declaration);
         }
 
         public void AddAssignment(AssignNode assignment)
         {
-            if (TryGetDeclarationByName(assignment.Name, out var declaration)) {
-                var linkedAssignment = new LinkedAssignment(declaration, assignment);
-                nodes.Add(linkedAssignment);
+            if (TryGetFirstNode<DeclarationNode>(assignment.DeclarationName, (node) => node is DeclarationNode, out var declarations)) {
+                assignment.Declaration = declarations;
+                nodes.Add(assignment);
             } else {
-                throw new ArgumentException($"Declaration with name '{assignment.Name}' does not exist.");
+                throw new ArgumentException($"Declaration with name '{assignment.DeclarationName}' does not exist.");
+            }
+        }
+
+        internal void AddAttribute(AttributeNode attribute)
+        {
+            if (TryGetFirstFunctionNode(attribute.FunctionCall.FunctionName, attribute.FunctionCall, out var function)) {
+                attribute.Function = function;
+                nodes.Add(attribute);
+            } else {
+                throw new ArgumentException($"Function with name '{attribute.FunctionCall.FunctionName}' and proper overload does not exist");
             }
         }
 
@@ -132,7 +239,7 @@ namespace SCUMSLang.AST
             public override BlockNode StaticBlock => Parent.StaticBlock;
             public Node Owner { get; }
 
-            protected override Dictionary<string, Node> NamedNodes => Parent.NamedNodes;
+            protected override LinkedBucketList<string, Node> NamedNodes => Parent.NamedNodes;
 
             public LocalBlockNode(BlockNode parent, Node owner)
                 : base(parent) =>

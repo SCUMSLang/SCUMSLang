@@ -4,17 +4,19 @@
     <None Include="*.sch" />
   </ItemGroup>
   <ItemGroup>
+    <None Include="Conditions\Index.sch" />
     <None Include="EnumTypes\Comparison.sch" />
     <None Include="EnumTypes\AIScript.sch" />
     <None Include="EnumTypes\AllianceStatus.sch" />
     <None Include="EnumTypes\EndCondition.sch" />
+    <None Include="EnumTypes\Index.sch" />
     <None Include="EnumTypes\Order.sch" />
     <None Include="EnumTypes\Player.sch" />
     <None Include="EnumTypes\ResourceType.sch" />
     <None Include="EnumTypes\ScoreType.sch" />
     <None Include="EnumTypes\State.sch" />
     <None Include="EnumTypes\Unit.sch" />
-    <None Include="EnumTypes\UnitMod.sch" />
+    <None Include="EnumTypes\UnitProperty.sch" />
     <None Include="Functions\UnitFunctions.sch" />
     <None Include="Functions\UserInterfaceFunctions.sch" />
     <None Include="Functions\ResourceFunctions.sch" />
@@ -26,6 +28,5 @@
     <None Include="Conditions\ScoreConditions.sch" />
     <None Include="Conditions\MiscellaneousConditions.sch" />
     <None Include="Functions\ScoreFunctions.sch" />
-    <None Include="UnitProperty.sch.tmp" />
   </ItemGroup>
 </Project>

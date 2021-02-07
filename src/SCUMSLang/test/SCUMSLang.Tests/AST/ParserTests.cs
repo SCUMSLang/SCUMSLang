@@ -1,18 +1,33 @@
-﻿using SCUMSLang.AST;
+﻿using SCUMSLang;
+using SCUMSLang.AST;
+using SCUMSLang.Tokenization;
 using Xunit;
 
 namespace SCUMSLANG.AST
 {
     public class ParserTests
     {
+        public ParserOptions ParserChannelParserOptions { get; }
+
+        public ParserTests()
+        {
+            ParserChannelParserOptions = new ParserOptions() {
+                TokenReaderBehaviour = new SpanReaderBehaviour<Token>() {
+                    SkipCondition = (ref ReaderPosition<Token> tokenPosition) => {
+                        return tokenPosition.Value.Channel != Channel.Parser;
+                    }
+                }
+            };
+        }
+
         [Fact]
         public void Should_parse_static_int_declaration_and_assignment()
         {
             var content = "static int goofy = 4;";
-            var block = Parser.Parse(content);
+            var block = Parser.Default.Parse(content);
 
             var declaration = new DeclarationNode(Scope.Static, NodeValueType.Integer, "goofy");
-            var expectedNodes = new Node[] { declaration, new LinkedAssignment(declaration, new AssignNode("goofy", new ConstantNode(NodeValueType.Integer, 4))) };
+            var expectedNodes = new Node[] { declaration, new AssignNode("goofy", new ConstantNode(NodeValueType.Integer, 4)) { Declaration = declaration } };
 
             Assert.Equal(expectedNodes, block.Nodes);
         }
@@ -21,7 +36,7 @@ namespace SCUMSLANG.AST
         public void Should_parse_function()
         {
             var content = "function daisy() {}";
-            var block = Parser.Parse(content);
+            var block = Parser.Default.Parse(content);
 
             var expectedBlock = new StaticBlockNode();
             expectedBlock.BeginBlock(new FunctionNode("daisy", null, new DeclarationNode[] { }));
@@ -36,7 +51,7 @@ namespace SCUMSLANG.AST
             var content = @"function daisy(int hello) {}
                             function daisy() {}";
 
-            var block = Parser.Parse(content);
+            var block = Parser.Default.Parse(content);
 
             var expectedBlock = new StaticBlockNode();
             var declarationFirst = new DeclarationNode(Scope.Local, NodeValueType.Integer, "hello");
@@ -55,7 +70,7 @@ namespace SCUMSLANG.AST
         {
             var content = @"function daisy<unit PlayerId>() {}";
 
-            var block = Parser.Parse(content);
+            var block = Parser.Default.Parse(content);
 
             var expectedBlock = new StaticBlockNode();
             var genericDeclaration = new DeclarationNode(Scope.Local, NodeValueType.Unit, "PlayerId");
@@ -73,7 +88,7 @@ namespace SCUMSLANG.AST
                 int local_var = 2;
             }";
 
-            var block = Parser.Parse(content);
+            var block = Parser.Default.Parse(content);
 
             var expectedBlock = new StaticBlockNode();
 
@@ -93,7 +108,7 @@ namespace SCUMSLANG.AST
                 global_var = 2;
             }";
 
-            var block = Parser.Parse(content);
+            var block = Parser.Default.Parse(content);
 
             var expectedBlock = new StaticBlockNode();
             expectedBlock.AddDeclaration(new DeclarationNode(Scope.Static, NodeValueType.String, "global_var"));
@@ -109,7 +124,7 @@ namespace SCUMSLANG.AST
         {
             var content = @"function daisy<unit PlayerId>() when cond_one<Player1>(0xf) {}";
 
-            var block = Parser.Parse(content);
+            var block = Parser.Default.Parse(content);
 
             var expectedBlock = new StaticBlockNode();
 
@@ -123,6 +138,33 @@ namespace SCUMSLANG.AST
             expectedBlock.CurrentBlock.EndBlock();
 
             Assert.Equal(expectedBlock, block);
+        }
+
+        [Fact]
+        public void Should_parse_static_int_declaration_with_comment()
+        {
+            var content = @"
+                // IGNORE ME
+                static int goofy;";
+
+            var block = Parser.Default.Parse(content, ParserChannelParserOptions);
+            var declaration = new DeclarationNode(Scope.Static, NodeValueType.Integer, "goofy");
+            Assert.Equal(new[] { declaration }, block.Nodes);
+        }
+
+        [Fact]
+        public void Should_parse_short_cut_attribute()
+        {
+            var content = @"
+                function TriggerCondition();
+
+                [TriggerCondition]";
+
+            var block = Parser.Default.Parse(content);
+            Assert.Equal(new Node[] {
+                new FunctionNode("TriggerCondition", null, null, isAbstract: true),
+                new AttributeNode(new FunctionCallNode("TriggerCondition", null, null))
+            }, block.Nodes);
         }
     }
 }

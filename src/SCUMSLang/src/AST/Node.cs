@@ -9,7 +9,7 @@ namespace SCUMSLang.AST
         public override bool Equals(object? obj) => 
             obj is Node node && NodeType == node.NodeType;
 
-        public override int GetHashCode() => 
+        public override int GetHashCode() =>
             HashCode.Combine(NodeType);
     }
 }

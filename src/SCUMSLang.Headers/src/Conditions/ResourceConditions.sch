@@ -1,3 +1,5 @@
+import "../System.sch";
+
 /// <summary>When a player owns a quantity of resources.</summary>
 [TriggerCondition]
 function accumulate(Player player, Comparison comparison, Quantity quantity, ResourceType resourceType);

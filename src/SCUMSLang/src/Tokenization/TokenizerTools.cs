@@ -1,13 +1,14 @@
 ﻿using System;
 using System.Collections.Generic;
 using System.Diagnostics.CodeAnalysis;
+using System.Linq;
 using static SCUMSLang.Tokenization.TokenTools;
 
 namespace SCUMSLang.Tokenization
 {
     internal static class TokenizerTools
     {
-        public static bool TryRecognizeWhiteSpaces(Reader<char> reader, out int? newPosition)
+        public static bool TryRecognizeWhiteSpaces(SpanReader<char> reader, out int? newPosition)
         {
             if (char.IsWhiteSpace(reader.ViewLastValue)) {
                 while (reader.PeekNext(out var peekedPosition) && char.IsWhiteSpace(peekedPosition.Value)) {
@@ -24,7 +25,7 @@ namespace SCUMSLang.Tokenization
             return false;
         }
 
-        private static bool TryRecognizeComment(Reader<char> reader, [NotNullWhen(true)] out int? newPosition, [MaybeNullWhen(false)] out Token token)
+        private static bool TryRecognizeComment(SpanReader<char> reader, [NotNullWhen(true)] out int? newPosition, [MaybeNullWhen(false)] out Token token)
         {
             if (reader.ViewLastValue == '/') {
                 TokenType tokenType;
@@ -45,9 +46,9 @@ namespace SCUMSLang.Tokenization
                 if (reader.ConsumeNext()) {
                     reader.SetPositionTo(reader.UpperPosition);
                     reader.ConsumeUntil((ref ReaderPosition<char> character) => character.Value == '\r' || character.Value == 'n');
-                    token = new Token(tokenType, reader.ReadPosition, reader.ViewReadLength, reader.View.ToString().Trim());
+                    token = new Token(tokenType, reader.ReadPosition, reader.ViewReadLength, reader.View.ToString().Trim(), Channel.Comments);
                 } else {
-                    token = new Token(tokenType, reader.UpperPosition, 0, string.Empty);
+                    token = new Token(tokenType, reader.UpperPosition, 0, string.Empty, Channel.Comments);
                 }
 
                 newPosition = reader.UpperPosition;
@@ -59,34 +60,7 @@ namespace SCUMSLang.Tokenization
             return false;
         }
 
-        //public static bool TryRecognizeNewLine(Reader<char> reader, out int charactersRead)
-        //{
-        //    var characters = reader.View;
-
-        //    if (characters[0] == '\\')
-        //    {
-        //        if (characters.Length == 1)
-        //        {
-        //            charactersRead = 0;
-        //            return true;
-        //        }
-
-        //        if (characters[1] == 'r' || characters[1] == 'n')
-        //        {
-        //            charactersRead = 2;
-        //            return true;
-        //        }
-        //        else
-        //        {
-        //            throw new TokenizationException(reader.UpperPosition, "Illegal character found beginning with '\\'. Only white-spaces (e.g. \\r or \\n) are allowed.");
-        //        }
-        //    }
-
-        //    charactersRead = 0;
-        //    return false;
-        //}
-
-        public static bool TryRecognizeKeywordOrName(Reader<char> reader, out int? newPosition, [MaybeNull] out Token token)
+        public static bool TryRecognizeKeywordOrName(SpanReader<char> reader, out int? newPosition, [MaybeNull] out Token token)
         {
             var characters = reader.View;
             token = null;
@@ -126,7 +100,7 @@ namespace SCUMSLang.Tokenization
             return false;
         }
 
-        public static bool TryRecognizeInteger(Reader<char> reader, out int? newPosition, [MaybeNull] out Token token)
+        public static bool TryRecognizeInteger(SpanReader<char> reader, out int? newPosition, [MaybeNull] out Token token)
         {
             var characters = reader.View;
 
@@ -185,7 +159,7 @@ namespace SCUMSLang.Tokenization
         }
 
         public static bool TryRecognizeSingleCharacterToken(
-                Reader<char> reader,
+                SpanReader<char> reader,
                 char character,
                 TokenType tokenType,
                 out Token? token)
@@ -202,7 +176,7 @@ namespace SCUMSLang.Tokenization
         }
 
         public static bool TryRecognizeSequentialCharactersToken(
-            Reader<char> reader,
+            SpanReader<char> reader,
             TokenType tokenType,
             out int? newPosition,
             out Token? token,
@@ -227,14 +201,14 @@ namespace SCUMSLang.Tokenization
         }
 
         public static bool TryRecognizeSequentialCharactersToken(
-            Reader<char> reader,
+            SpanReader<char> reader,
             string sequentialCharacters,
             TokenType tokenType,
             out int? charactersRead,
             out Token? token) =>
             TryRecognizeSequentialCharactersToken(reader, tokenType, out charactersRead, out token, sequentialCharacters.ToCharArray());
 
-        public static bool TryRecognizeStringToken(Reader<char> reader, out int? newPosition, [MaybeNull] out Token token)
+        public static bool TryRecognizeStringToken(SpanReader<char> reader, out int? newPosition, [MaybeNull] out Token token)
         {
             var characters = reader.View;
 
@@ -255,7 +229,7 @@ namespace SCUMSLang.Tokenization
             return false;
         }
 
-        public static int? RecognizeToken(Reader<char> reader, [MaybeNull] out Token token)
+        public static int? RecognizeToken(SpanReader<char> reader, [MaybeNull] out Token token)
         {
             int? newPosition;
 
@@ -316,5 +290,18 @@ namespace SCUMSLang.Tokenization
             token = null;
             return reader.View.Length;
         }
+
+        //public static List<Token> FilterTokens(IEnumerable<Token> tokens, Channel[]? channels = null)
+        //{
+        //    var filteredTokens = new List<Token>();
+
+        //    foreach (var token in tokens) {
+        //        if (channels is null || channels.Contains(token.Channel)) {
+        //            filteredTokens.Add(token);
+        //        }
+        //    }
+
+        //    return filteredTokens;
+        //}
     }
 }

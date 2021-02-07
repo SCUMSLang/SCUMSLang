@@ -11,7 +11,7 @@ namespace SCUMSLang.Tokenization
     {
         public static List<Token> Tokenize(ReadOnlySpan<char> content)
         {
-            var charReader = new Reader<char>(content);
+            var charReader = new SpanReader<char>(content);
             var tokens = new List<Token>();
 
             while (charReader.ConsumeNext()) {

@@ -1,3 +1,5 @@
+import "../EnumTypes/Index.sch";
+
 /// <summary>Sets the resource count for a player.</summary>
 function set_resource(Player player, ResourceType resourceType, int expression);
 

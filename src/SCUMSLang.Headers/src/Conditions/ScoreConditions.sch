@@ -1,3 +1,5 @@
+import "../System.sch";
+
 /// <summary>When a player's score reaches a given quantity.</summary>
 [TriggerCondition]
 function score(Player player, ScoreType scoreType, Comparison comparison, Quantity quantity);

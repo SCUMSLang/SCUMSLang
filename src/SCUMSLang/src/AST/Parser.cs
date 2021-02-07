@@ -4,33 +4,52 @@ using static SCUMSLang.AST.ParserTools;
 
 namespace SCUMSLang.AST
 {
-    public static class Parser
+    public class Parser
     {
-        public static BlockNode Parse(ReadOnlySpan<Token> span)
+        public static Parser Default = new Parser();
+
+        /// <summary>
+        /// Parses tokens.
+        /// </summary>
+        /// <param name="span"></param>
+        /// <returns></returns>
+        public BlockNode Parse(ReadOnlySpan<Token> span, ParserOptions? options = null)
         {
-            var tokenReader = new Reader<Token>(span);
+            var tokenReader = new SpanReader<Token>(span, options?.TokenReaderBehaviour);
             var block = new StaticBlockNode();
 
             while (tokenReader.ConsumeNext()) {
                 int? newPosition;
 
-                if (tokenReader.View[0].TryRecognize(TokenType.CloseBrace)) {
+                if (tokenReader.ViewLastValue.TryRecognize(TokenType.CloseBrace)) {
                     block.CurrentBlock.EndBlock();
                     newPosition = tokenReader.UpperPosition;
                 } else {
                     newPosition = RecognizeNode(tokenReader, out var node);
 
                     if (newPosition == null) {
-                        throw new ParseException(tokenReader.View.Last(), "A valid programming structure could not be found.");
+                        throw new ParseException(tokenReader.ViewLastValue, "A valid programming structure could not be found.");
                     }
 
                     if (!(node is null)) {
-                        if (node is DeclarationNode declarationNode) {
+                        if (!options?.NodeSkipDelegate?.Invoke(node) ?? false) {
+                            continue;
+                        } else if (!options?.NodeEndDelegate?.Invoke(node) ?? false) {
+                            break;
+                        } else if (node is DeclarationNode declarationNode) {
                             block.CurrentBlock.AddDeclaration(declarationNode);
                         } else if (node is AssignNode assignNode) {
                             block.CurrentBlock.AddAssignment(assignNode);
+                        } else if (node is AttributeNode attribute){
+                            block.CurrentBlock.AddAttribute(attribute);
                         } else if (node is FunctionNode functionNode) {
-                            block.BeginBlock(functionNode);
+                            if (functionNode.IsAbstract) {
+                                block.AddFunction(functionNode);
+                            } else {
+                                block.BeginBlock(functionNode);
+                            }
+                        } else {
+                            block.AddNode(node);
                         }
                     }
                 }
@@ -41,13 +60,6 @@ namespace SCUMSLang.AST
             }
 
             return block;
-        }
-
-        public static BlockNode Parse(string content)
-        {
-            var tokens = Tokenizer.Tokenize(content);
-            var tokenArray = tokens.ToArray();
-            return Parse(tokenArray);
         }
     }
 }

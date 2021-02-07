@@ -1,4 +1,4 @@
-<Project Sdk="Microsoft.NET.Sdk">
+﻿<Project Sdk="Microsoft.NET.Sdk">
 
   <PropertyGroup>
     <OutputType>Exe</OutputType>
@@ -7,4 +7,12 @@
     <Nullable>enable</Nullable>
   </PropertyGroup>
 
+  <ItemGroup>
+    <None Include="$(MSBuildProjectDirectory)\..\..\SCUMSLang.Headers\src\**\*.sch" CopyToOutputDirectory="PreserveNewest" LinkBase="Headers\" />
+  </ItemGroup>
+
+  <ItemGroup>
+    <ProjectReference Include="..\..\..\..\..\Teronis.DotNet\src\NetStandard\Collections\Collections\src\Teronis.NetStandard.Collections.csproj" />
+  </ItemGroup>
+  
 </Project>

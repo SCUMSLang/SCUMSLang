@@ -1,6 +1,4 @@
-﻿using System;
-
-namespace SCUMSLang
+﻿namespace SCUMSLang
 {
     class Program
     {

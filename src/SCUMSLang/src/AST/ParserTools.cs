@@ -7,12 +7,26 @@ namespace SCUMSLang.AST
 {
     public static class ParserTools
     {
-        public static bool TryRecognizeDeclarationNode(Reader<Token> reader, TokenType tokenValueType, out int? newPosition, [MaybeNull] out Node node)
+        private static bool TryRecognizeImportNode(SpanReader<Token> reader, out int? newPosition, [MaybeNullWhen(false)] out Node node)
         {
-            var tokens = reader.View;
+            if (reader.ViewLastValue == TokenType.ImportKeyword
+                && reader.ConsumeNext(out Token stringToken)
+                && reader.ConsumeNext(TokenType.Semicolon)) {
+                newPosition = reader.UpperPosition;
+                node = new ImportNode(stringToken.GetValue<string>());
+                return true;
+            }
+
+            newPosition = null;
+            node = null;
+            return false;
+        }
+
+        public static bool TryRecognizeDeclarationNode(SpanReader<Token> reader, TokenType tokenValueType, out int? newPosition, [MaybeNull] out Node node)
+        {
             Scope scope;
 
-            if (tokens[0] == TokenType.StaticKeyword) {
+            if (reader.ViewLastValue == TokenType.StaticKeyword) {
                 scope = Scope.Static;
 
                 if (!reader.ConsumeNext()) {
@@ -22,9 +36,13 @@ namespace SCUMSLang.AST
                 scope = Scope.Local;
             }
 
-            if (reader.PeekNext(out var nameToken) && nameToken.Value.TokenType == TokenType.Name) {
-                if (reader.PeekNext(2, out var semicolonToken) && semicolonToken.Value.TokenType == TokenType.Semicolon) {
-                    newPosition = semicolonToken.UpperReaderPosition;
+            bool hasSemicolon;
+
+            if (reader.PeekNext(out var nameToken) && nameToken.Value.TokenType == TokenType.Name
+                && reader.PeekNext(2, out var afterNameToken)
+                && afterNameToken.Value.TryRecognize(TokenType.EqualSign, TokenType.Semicolon)) {
+                if (afterNameToken.Value.TokenType == TokenType.Semicolon) {
+                    newPosition = afterNameToken.UpperReaderPosition;
                 } else {
                     newPosition = reader.UpperPosition;
                 }
@@ -36,7 +54,6 @@ namespace SCUMSLang.AST
                     .ValueType;
 
                 node = new DeclarationNode(scope, nodeValueType, nameToken.Value.GetValue<string>());
-                //newPosition = reader.UpperPosition;
                 return true;
             }
 
@@ -45,11 +62,9 @@ namespace SCUMSLang.AST
             return false;
         }
 
-        public static bool TryRecognizeAssignmentNode(Reader<Token> reader, TokenType valueType, out int? newPosition, [MaybeNull] out Node node)
+        public static bool TryRecognizeAssignmentNode(SpanReader<Token> reader, TokenType valueType, out int? newPosition, [MaybeNull] out Node node)
         {
-            var tokens = reader.View;
-
-            if (tokens[0].TryRecognize(TokenType.Name, out string name)
+            if (reader.ViewLastValue.TryRecognize(TokenType.Name, out string name)
                 && reader.ConsumeNext(TokenType.EqualSign)
                 && reader.ConsumeNext(valueType, out var valueToken)) {
                 if (!reader.ConsumeNext(TokenType.Semicolon)) {
@@ -72,7 +87,7 @@ namespace SCUMSLang.AST
         /// <param name="reader"></param>
         /// <returns></returns>
         public static bool TryRecognizeParameters(
-            Reader<Token> reader,
+            SpanReader<Token> reader,
             TokenType openTokenType,
             TokenType closeTokenType,
             out List<DeclarationNode> functionParameters,
@@ -147,8 +162,35 @@ namespace SCUMSLang.AST
             return false;
         }
 
+        public static bool TryRecognizeAttributeNode(SpanReader<Token> reader, [NotNullWhen(true)] out int? newPosition, [MaybeNullWhen(false)] out Node node)
+        {
+            if (reader.ViewLastValue == TokenType.OpenSquareBracket
+                && reader.ConsumeNext(TokenType.Name, out var nameTokenPosition)) {
+                List<ConstantNode>? arguments;
+
+                if (reader.PeekNext(TokenType.OpenBracket)
+                    && TryRecognizeArgumentList(reader, TokenType.OpenBracket, TokenType.CloseBracket, out newPosition, out arguments, required: true, needConsume: true)) {
+                    reader.SetLengthTo(newPosition.Value);
+                } else {
+                    arguments = null;
+                }
+
+                if (reader.ConsumeNext(TokenType.CloseSquareBracket)) {
+                    newPosition = reader.UpperPosition;
+                    node = new AttributeNode(new FunctionCallNode(nameTokenPosition.GetValue<string>(), null, arguments));
+                    return true;
+                } else {
+                    throw new ParseException(reader.ViewLastValue, "The attribute needs to be closed by ']'.");
+                }
+            }
+
+            newPosition = null;
+            node = null;
+            return false;
+        }
+
         public static bool TryRecognizeArgumentList(
-            Reader<Token> reader,
+            SpanReader<Token> reader,
             TokenType openTokenType,
             TokenType endTokenType,
             [NotNullWhen(true)] out int? newPosition,
@@ -197,7 +239,7 @@ namespace SCUMSLang.AST
         }
 
         public static bool TryRecognizeFunctionCallNode(
-            Reader<Token> reader,
+            SpanReader<Token> reader,
             [NotNullWhen(true)] out int? newPosition,
             [MaybeNullWhen(false)] out FunctionCallNode node,
             bool required = false,
@@ -236,9 +278,9 @@ namespace SCUMSLang.AST
             return false;
         }
 
-        public static bool TryRecognizeFunctionOrEventHandlerNode(Reader<Token> reader, out int? newPosition, [MaybeNull] out Node node)
+        public static bool TryRecognizeFunctionOrEventHandlerNode(SpanReader<Token> reader, out int? newPosition, [MaybeNull] out Node node)
         {
-            if (reader.View[0].TryRecognize(TokenType.FunctionKeyword, out var functionToken)) {
+            if (reader.ViewLastValue.TryRecognize(TokenType.FunctionKeyword, out var functionToken)) {
                 if (!reader.ConsumeNext(TokenType.Name, out var functionNameToken)) {
                     throw new ParseException(functionToken, "Function must have a name.");
                 }
@@ -251,13 +293,20 @@ namespace SCUMSLang.AST
                     reader.SetLengthTo(newPosition.Value);
                 }
 
-                if (!reader.ConsumeNext(out Token openBracketNode) || !openBracketNode.TryRecognize(TokenType.OpenBrace, TokenType.WhenKeyword)) {
-                    throw new ParseException(reader.ViewLastValue, "Function must have a block (e.g. '{}') or 'when' keyword after the signature.");
+                if (!reader.ConsumeNext(out Token afterSignatureNode) || !afterSignatureNode.TryRecognize(TokenType.OpenBrace, TokenType.WhenKeyword, TokenType.Semicolon)) {
+                    throw new ParseException(reader.ViewLastValue, "Function must have a block (e.g. '{}'), followed by 'when' keyword or end with a semicolon after the signature.");
                 }
 
-                if (openBracketNode.TokenType == TokenType.OpenBrace) {
+                if (afterSignatureNode.TryRecognize(TokenType.OpenBrace, TokenType.Semicolon)) {
                     newPosition = reader.UpperPosition;
-                    node = new FunctionNode(functionNameToken.GetValue<string>(), genericParameters, parameters);
+                    var isFunctionAbstract = afterSignatureNode.TokenType == TokenType.Semicolon;
+
+                    node = new FunctionNode(
+                        functionNameToken.GetValue<string>(),
+                        genericParameters,
+                        parameters,
+                        isAbstract: isFunctionAbstract);
+
                     return true;
                 } else {
                     var conditions = new List<FunctionCallNode>();
@@ -286,9 +335,17 @@ namespace SCUMSLang.AST
             return false;
         }
 
-        public static int? RecognizeNode(Reader<Token> reader, [MaybeNull] out Node node)
+        public static int? RecognizeNode(SpanReader<Token> reader, [MaybeNull] out Node node)
         {
             int? newPosition;
+
+            if (TryRecognizeImportNode(reader, out newPosition, out node)) {
+                return newPosition;
+            }
+
+            if (TryRecognizeAttributeNode(reader, out newPosition, out node)) {
+                return newPosition;
+            }
 
             if (TryRecognizeFunctionOrEventHandlerNode(reader, out newPosition, out node)) {
                 return newPosition;

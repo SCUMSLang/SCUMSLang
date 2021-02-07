@@ -1,3 +1,5 @@
+import "../System.sch";
+
 /// <summary>When always. The function that make a function an event handler.</summary>
 function always();
 

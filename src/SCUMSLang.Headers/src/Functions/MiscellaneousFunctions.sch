@@ -1,3 +1,5 @@
+import "../EnumTypes/Index.sch";
+
 /// <summary>Prints a message, defaults to specified player.</summary>
 function print(Text text, Player player);
 

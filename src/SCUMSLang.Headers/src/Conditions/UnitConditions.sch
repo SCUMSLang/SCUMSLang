@@ -1,3 +1,5 @@
+import "../System.sch";
+
 /// <summary>When a player owns a quantity of units at location.</summary>
 [TriggerCondition]
 function bring(Player, Comparison, Quantity, Unit, Location);

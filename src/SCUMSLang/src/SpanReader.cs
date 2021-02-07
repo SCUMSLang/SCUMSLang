@@ -4,21 +4,20 @@ using System.Diagnostics;
 
 namespace SCUMSLang
 {
-    public ref struct Reader<T>
+    public ref struct SpanReader<T>
     {
         public readonly ReadOnlySpan<T> Span { get; }
 
         public readonly ReadOnlySpan<T> View {
             get {
-                Debug.Assert(viewReadLength >= 0, "Content read length should not be lesser than zero.");
+                Debug.Assert(viewLastPosition.View.Length >= 0, "Content read length should not be lesser than zero.");
                 return viewLastPosition.View;
             }
         }
 
         public readonly T ViewLastValue => View[View.Length - 1];
-
-        public readonly int ReadPosition => readPosition;
-        public readonly int ViewReadLength => viewReadLength;
+        public readonly int ReadPosition => viewLastPosition.LowerReaderPosition;
+        public readonly int ViewReadLength => viewLastPosition.View.Length;
         public readonly ReaderPosition<T> ViewLastPosition => viewLastPosition;
 
         /// <summary>
@@ -26,38 +25,53 @@ namespace SCUMSLang
         /// </summary>
         public readonly int UpperPosition {
             get {
-                if (viewReadLength == 0) {
-                    throw new InvalidOperationException("Not a single value has been consumed.");
+                if (ViewReadLength == 0) {
+                    return ReadPosition;
                 }
 
-                return readPosition + viewReadLength - 1;
+                return ReadPosition + ViewReadLength - 1;
             }
         }
 
-        private int readPosition;
-        private int viewReadLength;
         private ReaderPosition<T> viewLastPosition;
+        private readonly SpanReaderBehaviour<T> behaviour;
 
-        public Reader(ReadOnlySpan<T> span)
+        public SpanReader(ReadOnlySpan<T> span, SpanReaderBehaviour<T>? behaviour)
         {
             Span = span;
-            readPosition = 0;
-            viewReadLength = 0;
             viewLastPosition = default;
+            this.behaviour = behaviour ?? SpanReaderBehaviour<T>.Default;
         }
 
-        private void setCurrentPosition() =>
-            viewLastPosition = new ReaderPosition<T>(readPosition, Span.Slice(readPosition, viewReadLength), viewReadLength - 1);
+        public SpanReader(ReadOnlySpan<T> span)
+        {
+            Span = span;
+            viewLastPosition = default;
+            behaviour = SpanReaderBehaviour<T>.Default;
+        }
+
+        private void setCurrentPosition(int readPosition, int viewReadLength) =>
+            viewLastPosition = new ReaderPosition<T>(readPosition, Span.Slice(readPosition, viewReadLength));
 
         public bool ConsumeNext(int count)
         {
-            viewReadLength += count;
+            var viewReadLength = ViewReadLength + count;
 
-            if (readPosition + viewReadLength > Span.Length) {
-                return false;
-            }
+            do {
 
-            setCurrentPosition();
+                if (ReadPosition + viewReadLength > Span.Length) {
+                    return false;
+                }
+
+                setCurrentPosition(ReadPosition, viewReadLength);
+
+                if (behaviour.SkipCondition?.Invoke(ref viewLastPosition) ?? false) {
+                    viewReadLength++;
+                } else {
+                    break;
+                }
+            } while (true);
+
             return true;
         }
 
@@ -130,7 +144,7 @@ namespace SCUMSLang
             }
         }
 
-        public void ConsumeUntilNot(UntilDelegate<T> untilNot)
+        public void ConsumeUntilNot(ReaderPositionTruthyDelegate<T> untilNot)
         {
             while (PeekNext(out var position) && untilNot(ref position)) {
                 ConsumeNext();
@@ -144,7 +158,7 @@ namespace SCUMSLang
             }
         }
 
-        public void ConsumeUntil(UntilDelegate<T> until)
+        public void ConsumeUntil(ReaderPositionTruthyDelegate<T> until)
         {
             while (PeekNext(out ReaderPosition<T> position)) {
                 if (until(ref position)) {
@@ -157,8 +171,8 @@ namespace SCUMSLang
 
         public void ConsumePrevious(int valuesRead)
         {
-            viewReadLength -= valuesRead;
-            setCurrentPosition();
+            var viewReadLength = ViewReadLength - valuesRead;
+            setCurrentPosition(ReadPosition, viewReadLength);
         }
 
         public void ConsumePrevious(int amount, out ReaderPosition<T> position)
@@ -193,33 +207,11 @@ namespace SCUMSLang
             return false;
         }
 
-        public bool PeekNext(T value, IEqualityComparer<T> comparer) =>
-            PeekNext(1, value, comparer);
-
-        public void TakePositionView(int position)
+        public bool PeekNext(T value, IEqualityComparer<T> comparer)
         {
-            readPosition = position;
-            viewReadLength = 1;
-            setCurrentPosition();
-        }
+            var reader = this;
 
-        public void TakePositionView(ReaderPosition<T> position) =>
-            TakePositionView(position.UpperReaderPosition);
-
-        public bool TakeNextPositionView()
-        {
-            if (ConsumeNext()) {
-                TakePositionView(viewLastPosition);
-                return true;
-            }
-
-            return false;
-        }
-
-        public bool TakeNextPositionView(T value, IEqualityComparer<T> comparer)
-        {
-            if (ConsumeNext(value, comparer)) {
-                TakePositionView(viewLastPosition);
+            if (reader.ConsumeNext(value, comparer)) {
                 return true;
             }
 
@@ -229,9 +221,7 @@ namespace SCUMSLang
         public bool SetPositionTo(int newPosition)
         {
             if (newPosition < Span.Length) {
-                readPosition = newPosition;
-                viewReadLength = 0;
-                setCurrentPosition();
+                setCurrentPosition(newPosition, 0);
                 return true;
             }
 
@@ -240,9 +230,8 @@ namespace SCUMSLang
 
         public void SetLengthTo(int newPosition)
         {
-            var positionDistance = newPosition - readPosition + 1;
-            viewReadLength = positionDistance;
-            setCurrentPosition();
+            var positionDistance = newPosition - ReadPosition + 1;
+            setCurrentPosition(ReadPosition, viewReadLength: positionDistance);
         }
     }
 }

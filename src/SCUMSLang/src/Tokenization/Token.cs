@@ -3,29 +3,36 @@ using System.Diagnostics.CodeAnalysis;
 
 namespace SCUMSLang.Tokenization
 {
-    public class Token : IEquatable<Token>
+    public class Token
     {
         public TokenType TokenType { get; }
         public object? Value { get; }
         public int Position { get; }
         public int Length { get; }
+        /// <summary>
+        /// The channel at which the token is belonging. If not other 
+        /// specified it is by default <see cref="Channel.Parser"/>.
+        /// </summary>
+        public Channel Channel { get; }
         public int UpperBound => Position + Length;
 
-        public Token(TokenType tokenType, int position, int length, object? value)
+        public Token(TokenType tokenType, int position, int length, object? value, Channel channel)
         {
             TokenType = tokenType;
             Value = value;
+            Channel = channel;
             Position = position;
             Length = length;
         }
 
+        public Token(TokenType tokenType, int position, int length, object? value)
+            : this(tokenType, position, length, value, Channel.Parser) { }
+
+        public Token(TokenType tokenType, int position, int length, Channel channel)
+            : this(tokenType, position, length, default, channel) { }
+
         public Token(TokenType tokenType, int position, int length)
-        {
-            TokenType = tokenType;
-            Value = default!;
-            Position = position;
-            Length = length;
-        }
+            : this(tokenType, position, length, default, Channel.Parser) { }
 
         public bool TryRecognize<T>(TokenType tokenType, [NotNullWhen(true)] out T value)
         {
@@ -34,7 +41,7 @@ namespace SCUMSLang.Tokenization
                 return true;
             }
 
-            value = default;
+            value = default!;
             return false;
         }
 
@@ -65,7 +72,8 @@ namespace SCUMSLang.Tokenization
         public T GetValue<T>() =>
             (T)Value ?? throw new InvalidOperationException();
 
-        public bool TryGetValue<T>([MaybeNullWhen(false)]out T value) {
+        public bool TryGetValue<T>([MaybeNullWhen(false)] out T value)
+        {
             if (Value is T typedValue) {
                 value = typedValue;
                 return true;
@@ -75,8 +83,11 @@ namespace SCUMSLang.Tokenization
             return false;
         }
 
-        public bool Equals([AllowNull] Token other) =>
-            ReferenceEquals(this, other) || (!(other is null) && TokenType == other.TokenType);
+        public override bool Equals(object? obj) =>
+            obj is Token other && (ReferenceEquals(this, other) || (!(other is null) && TokenType == other.TokenType));
+
+        public override int GetHashCode() =>
+            HashCode.Combine(TokenType, Value, Position, Length);
 
         public override string ToString() =>
             Enum.GetName(typeof(TokenType), TokenType) ?? "";

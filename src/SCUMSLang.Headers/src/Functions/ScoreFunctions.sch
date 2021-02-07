@@ -1,3 +1,5 @@
+import "../EnumTypes/Index.sch";
+
 /// <summary>Sets the score of a player.</summary>
 function set_score(Player player, ScoreType scoreType, int expression);
 

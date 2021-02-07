@@ -180,7 +180,18 @@ namespace SCUMSLang.Tokenization
         /// --
         /// </summary>
         DecrementOperator,
+        /// <summary>
+        /// // text
+        /// </summary>
         Comment,
-        XmlComment
+        /// <summary>
+        /// /// <summary>text</summary>
+        /// </summary>
+        XmlComment,
+        /// <summary>
+        /// import
+        /// </summary>
+        [TokenKeyword("import")]
+        ImportKeyword
     }
 }

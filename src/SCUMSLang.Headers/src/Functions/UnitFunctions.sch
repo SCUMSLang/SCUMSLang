@@ -1,3 +1,5 @@
+import "../EnumTypes/Index.sch";
+
 /// <summary>Spawns units at a location with optional properties.</summary>
 function spawn(Unit unit, Player player, int expression, Location location);
 

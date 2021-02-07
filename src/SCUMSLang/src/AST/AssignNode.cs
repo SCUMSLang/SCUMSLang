@@ -6,19 +6,20 @@ namespace SCUMSLang.AST
     {
         public override NodeType NodeType => NodeType.Assignment;
 
-        public string Name { get; }
+        public string DeclarationName { get; }
         public ConstantNode Constant { get; }
+        public DeclarationNode Declaration { get; internal set; } = null!;
 
-        public AssignNode(string name, ConstantNode constant)
+        public AssignNode(string declarationName, ConstantNode constant)
         {
-            Name = name;
+            DeclarationName = declarationName;
             Constant = constant;
         }
 
         public override bool Equals(object? obj) =>
-            obj is AssignNode node && Name.Equals(node.Name) && Constant.Equals(node.Constant);
+            obj is AssignNode node && DeclarationName.Equals(node.DeclarationName) && Constant.Equals(node.Constant);
 
         public override int GetHashCode() =>
-            HashCode.Combine(NodeType, Name, Constant);
+            HashCode.Combine(NodeType, DeclarationName, Constant);
     }
 }

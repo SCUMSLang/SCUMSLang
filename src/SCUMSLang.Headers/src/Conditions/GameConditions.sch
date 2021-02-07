@@ -1,3 +1,5 @@
+import "../System.sch";
+
 /// <summary>When a certain amount of time has elapsed.</summary>
 [TriggerCondition]
 function elapsed_time(Comparison comparison, Quantity quantity);

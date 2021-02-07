@@ -11,6 +11,8 @@
         Block,
         Function,
         FunctionCall,
-        EventHandler
+        EventHandler,
+        Import,
+        Attribute
     }
 }
