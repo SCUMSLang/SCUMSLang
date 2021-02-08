@@ -7,7 +7,7 @@ namespace SCUMSLang.AST
 {
     public static class ParserTools
     {
-        private static bool TryRecognizeImportNode(SpanReader<Token> reader, out int? newPosition, [MaybeNullWhen(false)] out Node node)
+        public static bool TryRecognizeImportNode(SpanReader<Token> reader, [NotNullWhen(true)] out int? newPosition, [MaybeNullWhen(false)] out Node node)
         {
             if (reader.ViewLastValue == TokenType.ImportKeyword
                 && reader.ConsumeNext(out Token stringToken)
@@ -22,7 +22,151 @@ namespace SCUMSLang.AST
             return false;
         }
 
-        public static bool TryRecognizeDeclarationNode(SpanReader<Token> reader, TokenType tokenValueType, out int? newPosition, [MaybeNull] out Node node)
+        public static bool TryRecognizeNameList(
+            SpanReader<Token> reader,
+            TokenType openToken,
+            TokenType closeToken,
+            [NotNullWhen(true)] out int? newPosition,
+            [MaybeNullWhen(false)] out List<string> nameList,
+            bool required = false,
+            bool needConsume = false)
+        {
+            if (reader.ConsumeNext(needConsume)) {
+                if (reader.ViewLastValue == openToken) {
+                    nameList = new List<string>();
+
+                    while (reader.PeekNext(out ReaderPosition<Token> nameTokenPosition)
+                        && nameTokenPosition.Value.Value is string name
+                        && !string.IsNullOrEmpty(name)) {
+                        reader.SetLengthTo(nameTokenPosition.UpperReaderPosition);
+                        nameList.Add(name);
+
+                        if (reader.PeekNext(TokenType.Comma)) {
+                            reader.SetPositionTo(reader.UpperPosition + 1, length: 1);
+                            continue;
+                        }
+                    }
+
+                    if (!reader.ConsumeNext(closeToken)) {
+                        throw new ParseException(reader.ViewLastPosition, $"The list needs to be closed by brace (\"{TokenTypeLibrary.SequenceExampleDictionary[closeToken]}\").");
+                    }
+
+                    newPosition = reader.UpperPosition;
+                    return true;
+                }
+            }
+
+            if (required) {
+                throw new ParseException(reader.ViewLastPosition, "The enumeration needs to be openend by a brace ('{').");
+            }
+
+            newPosition = null;
+            nameList = null;
+            return false;
+        }
+
+        public static bool TryRecognizeTypeDefinition(SpanReader<Token> reader, [NotNullWhen(true)] out int? newPosition, [MaybeNullWhen(false)] out Node node)
+        {
+            if (reader.ViewLastValue == TokenType.TypeDefKeyword) {
+                if (!reader.ConsumeNext(out ReaderPosition<Token> typeTokenPosition)) {
+                    throw new ParseException(typeTokenPosition, "A type was expected.");
+                }
+
+                static ReaderPosition<Token> expectNameAndEndToken(ref SpanReader<Token> reader, out int? newPosition)
+                {
+                    if (!reader.ConsumeNext(out ReaderPosition<Token> nameToken)
+                        || string.IsNullOrEmpty(nameToken.Value?.ToString())) {
+                        throw new ParseException(reader.ViewLastPosition, "A name was expected.");
+                    }
+
+                    if (!reader.ConsumeNext(TokenType.Semicolon)) {
+                        throw new ParseException(reader.ViewLastPosition, "A semicolon was expected.");
+                    }
+
+                    newPosition = reader.UpperPosition;
+                    return nameToken;
+                }
+
+                if (reader.ViewLastValue == TokenType.EnumKeyword) {
+                    _ = TryRecognizeNameList(reader, TokenType.OpenBrace, TokenType.CloseBrace, out newPosition, out var nameList, required: true, needConsume: true);
+                    reader.SetLengthTo(newPosition!.Value);
+                    var nameToken = expectNameAndEndToken(ref reader, out newPosition!);
+                    var name = nameToken.Value.GetValue<string>();
+                    node = new EnumerationDefinitionNode(name, hasReservedNames: true, nameList!);
+                    return true;
+                }
+
+                if (reader.ViewLastValue == TokenType.IntKeyword) {
+                    var nameToken = expectNameAndEndToken(ref reader, out newPosition!);
+                    var name = nameToken.Value.GetValue<string>();
+                    node = new TypeDefinitionNode(name, InBuiltType.Integer);
+                    return true;
+                }
+
+                if (reader.ViewLastValue == TokenType.StringKeyword) {
+                    var nameToken = expectNameAndEndToken(ref reader, out newPosition!);
+                    var name = nameToken.Value.GetValue<string>();
+                    node = new TypeDefinitionNode(name, InBuiltType.String);
+                    return true;
+                }
+
+                throw new ParseException(reader.ViewLastValue, "You can only use the in-built types int, bool and enum.");
+            }
+
+            newPosition = null;
+            node = null;
+            return false;
+        }
+
+        public static bool TryRecognizeEnumerationNode(SpanReader<Token> reader, [NotNullWhen(true)] out int? newPosition, [MaybeNullWhen(false)] out Node node)
+        {
+            if (reader.ViewLastValue == TokenType.EnumKeyword) {
+                if (!reader.ConsumeNext(out ReaderPosition<Token> enumNameTokenPosition)
+                    || enumNameTokenPosition.Value != TokenType.Name) {
+                    throw new ParseException(reader.ViewLastPosition, "A name after the keyword 'enum' was expected.");
+                }
+
+                _ = TryRecognizeNameList(reader, TokenType.OpenBrace, TokenType.CloseBrace, out newPosition, out var nameList, required: true, needConsume: true);
+                reader.SetLengthTo(newPosition!.Value);
+                newPosition = reader.UpperPosition;
+                node = new EnumerationDefinitionNode(enumNameTokenPosition.Value.GetValue<string>(), hasReservedNames: false, nameList!);
+                return true;
+            }
+
+            newPosition = null;
+            node = null;
+            return false;
+        }
+
+        public static TypeDefinitionNode RecognizeTypeDefinitionFromTypeToken(BlockNode block, Token variableTypeToken)
+        {
+            if (!(variableTypeToken.Value is string typeName) || string.IsNullOrEmpty(typeName)) {
+                throw new ParseException(variableTypeToken, "A type was expected.");
+            }
+
+            if (TokenTypeLibrary.InBuiltTypes.TryGetValue(variableTypeToken.TokenType, out var inBuiltType)) {
+                return block.GetInBuiltTypeDefinition(inBuiltType);
+            } else {
+                return block.GetEnumerationTypeDefinitionFromType(new[] { typeName });
+            }
+        }
+
+        public static TypeDefinitionNode RecognizeTypeDefinitionFromValueToken(BlockNode block, Token valueTypeToken)
+        {
+            if (valueTypeToken is MemberAccessToken memberAccessToken) {
+                return block.GetEnumerationTypeDefinitionFromValue(memberAccessToken.PathFragments);
+            }
+
+            if (TokenTypeLibrary.InBuiltTypes.TryGetValue(valueTypeToken.TokenType, out var inBuiltType)) {
+                return block.GetInBuiltTypeDefinition(inBuiltType);
+            } else if (!(valueTypeToken.Value is string valueName) || string.IsNullOrEmpty(valueName)) {
+                throw new ParseException(valueTypeToken, "A type was expected.");
+            } else {
+                return block.GetEnumerationTypeDefinitionFromValue(new[] { valueName });
+            }
+        }
+
+        public static bool TryRecognizeDeclarationNode(BlockNode block, SpanReader<Token> reader, out int? newPosition, [MaybeNull] out Node node)
         {
             Scope scope;
 
@@ -36,24 +180,20 @@ namespace SCUMSLang.AST
                 scope = Scope.Local;
             }
 
-            bool hasSemicolon;
+            var variableTypeToken = reader.ViewLastValue;
 
-            if (reader.PeekNext(out var nameToken) && nameToken.Value.TokenType == TokenType.Name
-                && reader.PeekNext(2, out var afterNameToken)
-                && afterNameToken.Value.TryRecognize(TokenType.EqualSign, TokenType.Semicolon)) {
-                if (afterNameToken.Value.TokenType == TokenType.Semicolon) {
-                    newPosition = afterNameToken.UpperReaderPosition;
+            if (reader.PeekNext(out var variableNameToken) && variableNameToken.Value.TokenType == TokenType.Name
+                && reader.PeekNext(2, out var equalSignOrSemicolonToken)
+                && equalSignOrSemicolonToken.Value.TryRecognize(TokenType.EqualSign, TokenType.Semicolon)) {
+                var typeDefinition = RecognizeTypeDefinitionFromTypeToken(block, variableTypeToken);
+
+                if (equalSignOrSemicolonToken.Value.TokenType == TokenType.Semicolon) {
+                    newPosition = equalSignOrSemicolonToken.UpperReaderPosition;
                 } else {
                     newPosition = reader.UpperPosition;
                 }
 
-                var nodeValueType = (Attribute.GetCustomAttribute(
-                    TokenTypeLibrary.TypeOfTokenType.GetField(Enum.GetName(TokenTypeLibrary.TypeOfTokenType, tokenValueType)!)!,
-                    typeof(NodeValueTypeAttribute)) as NodeValueTypeAttribute
-                    ?? throw new ArgumentException("The token type has not the information about a node value type."))
-                    .ValueType;
-
-                node = new DeclarationNode(scope, nodeValueType, nameToken.Value.GetValue<string>());
+                node = new DeclarationNode(scope, typeDefinition, variableNameToken.Value.GetValue<string>());
                 return true;
             }
 
@@ -62,7 +202,7 @@ namespace SCUMSLang.AST
             return false;
         }
 
-        public static bool TryRecognizeAssignmentNode(SpanReader<Token> reader, TokenType valueType, out int? newPosition, [MaybeNull] out Node node)
+        public static bool TryRecognizeAssignmentNode(BlockNode block, SpanReader<Token> reader, TokenType valueType, out int? newPosition, [MaybeNull] out Node node)
         {
             if (reader.ViewLastValue.TryRecognize(TokenType.Name, out string name)
                 && reader.ConsumeNext(TokenType.EqualSign)
@@ -71,8 +211,12 @@ namespace SCUMSLang.AST
                     throw new MissingTokenException(valueToken, TokenType.Semicolon);
                 }
 
+                if (!block.TryGetFirstNode<DeclarationNode>(name, out var declaration)) {
+                    throw new ParseException(reader.ViewLastValue, $"There is no declaration by name '{name}' for assignment.");
+                }
+
                 newPosition = reader.UpperPosition;
-                node = new AssignNode(name, new ConstantNode(NodeValueType.Integer, valueToken.Value!));
+                node = new AssignNode(declaration, new ConstantNode(declaration.Type, valueToken.Value!));
                 return true;
             }
 
@@ -82,11 +226,12 @@ namespace SCUMSLang.AST
         }
 
         /// <summary>
-        /// 
+        /// E.g. (Unit unit_id, int int_var)
         /// </summary>
         /// <param name="reader"></param>
         /// <returns></returns>
         public static bool TryRecognizeParameters(
+            BlockNode block,
             SpanReader<Token> reader,
             TokenType openTokenType,
             TokenType closeTokenType,
@@ -99,28 +244,29 @@ namespace SCUMSLang.AST
 
             if (reader.ConsumeNext(needConsume)
                 && reader.ViewLastValue.TryRecognize(openTokenType)) {
-                while (reader.ConsumeNext(out Token lastToken)) {
-                    var hasValueType = lastToken.TryRecognize(TokenTypeLibrary.ValueTypes);
-                    var hasEndCloseType = lastToken.TokenType == closeTokenType;
+                while (reader.ConsumeNext(out Token variableTypeOrCloseToken)) {
+                    //var isVariableTypeToken = Recogn;
+                    var hasEndCloseType = variableTypeOrCloseToken.TokenType == closeTokenType;
 
-                    if (!hasValueType && !hasEndCloseType) {
-                        if (reader.PeekNext(TokenType.Name)) {
-                            throw new ParseException(reader.ViewLastValue, "Parameter unit type is incorrect.");
-                        } else {
-                            throw new ParseException(reader.ViewLastValue, "Parameter list must be closed.");
-                        }
-                    }
+                    //if (!isVariableTypeToken && !hasEndCloseType) {
+                    //    if (reader.PeekNext(TokenType.Name)) {
+                    //        throw new ParseException(reader.ViewLastValue, "Parameter unit type is incorrect.");
+                    //    } else {
+                    //        throw new ParseException(reader.ViewLastValue, "Parameter list must be closed.");
+                    //    }
+                    //}
 
                     if (hasEndCloseType) {
                         break;
                     }
 
+                    var typeDefinition = RecognizeTypeDefinitionFromTypeToken(block, variableTypeOrCloseToken);
+
                     if (!reader.ConsumeNext(TokenType.Name, out var parameterNameToken)) {
                         throw new ParseException(reader.ViewLastValue, "Parameter name is missing.");
                     }
 
-                    var nodeValueType = TokenTypeTools.GetNodeValueType(lastToken.TokenType);
-                    functionParameters.Add(new DeclarationNode(Scope.Local, nodeValueType, parameterNameToken.GetValue<string>()));
+                    functionParameters.Add(new DeclarationNode(Scope.Local, typeDefinition, parameterNameToken.GetValue<string>()));
 
                     if (reader.PeekNext(TokenType.Comma)) {
                         reader.ConsumeNext();
@@ -137,59 +283,14 @@ namespace SCUMSLang.AST
             return false;
         }
 
-        public static bool TryRecognizeConstantNode(ReaderPosition<Token> position, [NotNullWhen(true)] out int? newPosition, [MaybeNullWhen(false)] out ConstantNode constant)
+        public static ConstantNode RecognizeConstantNode(BlockNode block, Token valueToken)
         {
-            var token = position.Value;
-            NodeValueType? nullableValueType;
-
-            if (TokenTypeTools.TryGetNodeValueType(token.TokenType, out nullableValueType)) {
-                newPosition = position.UpperReaderPosition;
-                constant = new ConstantNode(nullableValueType.Value, position.Value);
-                return true;
-            }
-
-            if (token.TokenType == TokenType.Name
-                && token.TryGetValue(out string? stringValue)) {
-                if (Enum.TryParse<Player>(stringValue, out var valueType)) {
-                    newPosition = position.UpperReaderPosition;
-                    constant = new ConstantNode(NodeValueType.Player, valueType);
-                    return true;
-                }
-            }
-
-            newPosition = null;
-            constant = null;
-            return false;
-        }
-
-        public static bool TryRecognizeAttributeNode(SpanReader<Token> reader, [NotNullWhen(true)] out int? newPosition, [MaybeNullWhen(false)] out Node node)
-        {
-            if (reader.ViewLastValue == TokenType.OpenSquareBracket
-                && reader.ConsumeNext(TokenType.Name, out var nameTokenPosition)) {
-                List<ConstantNode>? arguments;
-
-                if (reader.PeekNext(TokenType.OpenBracket)
-                    && TryRecognizeArgumentList(reader, TokenType.OpenBracket, TokenType.CloseBracket, out newPosition, out arguments, required: true, needConsume: true)) {
-                    reader.SetLengthTo(newPosition.Value);
-                } else {
-                    arguments = null;
-                }
-
-                if (reader.ConsumeNext(TokenType.CloseSquareBracket)) {
-                    newPosition = reader.UpperPosition;
-                    node = new AttributeNode(new FunctionCallNode(nameTokenPosition.GetValue<string>(), null, arguments));
-                    return true;
-                } else {
-                    throw new ParseException(reader.ViewLastValue, "The attribute needs to be closed by ']'.");
-                }
-            }
-
-            newPosition = null;
-            node = null;
-            return false;
+            var typeDefinition = RecognizeTypeDefinitionFromValueToken(block, valueToken);
+            return new ConstantNode(typeDefinition, valueToken.Value!);
         }
 
         public static bool TryRecognizeArgumentList(
+            BlockNode block,
             SpanReader<Token> reader,
             TokenType openTokenType,
             TokenType endTokenType,
@@ -209,16 +310,13 @@ namespace SCUMSLang.AST
                     }
 
                     if (!hadPreviousComma && tokenPosition.Value == endTokenType) {
-                        newPosition = reader.UpperPosition;
+                        newPosition = tokenPosition.UpperReaderPosition;
                         return true;
                     }
 
-                    if (!TryRecognizeConstantNode(tokenPosition, out _, out var node)) {
-                        // When you cannot consume or can consume but can not recognize constant, then throw.
-                        throw new ParseException(reader.ViewLastValue, $"A value was expected."); // TODO: Concrete error
-                    }
-
-                    arguments.Add(node);
+                    var constantNode = RecognizeConstantNode(block, reader.ViewLastValue);
+                    //reader.SetLengthTo(newPosition.Value);
+                    arguments.Add(constantNode);
 
                     if (reader.PeekNext(out var peekedToken) && peekedToken.Value == TokenType.Comma) {
                         hadPreviousComma = true;
@@ -238,7 +336,37 @@ namespace SCUMSLang.AST
             return false;
         }
 
+        public static bool TryRecognizeAttributeNode(BlockNode block, SpanReader<Token> reader, [NotNullWhen(true)] out int? newPosition, [MaybeNullWhen(false)] out Node node)
+        {
+            if (reader.ViewLastValue == TokenType.OpenSquareBracket
+                && reader.ConsumeNext(TokenType.Name, out var nameTokenPosition)) {
+                List<ConstantNode>? arguments;
+
+                if (reader.PeekNext(TokenType.OpenBracket)
+                    && TryRecognizeArgumentList(block, reader, TokenType.OpenBracket, TokenType.CloseBracket, out newPosition, out arguments, required: true, needConsume: true)) {
+                    reader.SetLengthTo(newPosition.Value);
+                } else {
+                    arguments = null;
+                }
+
+                if (reader.ConsumeNext(TokenType.CloseSquareBracket)) {
+                    newPosition = reader.UpperPosition;
+                    var functionName = nameTokenPosition.GetValue<string>();
+                    block.TryGetFirstFunctionNode(functionName, null, arguments, out var function, required: true);
+                    node = new AttributeNode(new FunctionCallNode(function!, null, arguments));
+                    return true;
+                } else {
+                    throw new ParseException(reader.ViewLastValue, "The attribute needs to be closed by ']'.");
+                }
+            }
+
+            newPosition = null;
+            node = null;
+            return false;
+        }
+
         public static bool TryRecognizeFunctionCallNode(
+            BlockNode block,
             SpanReader<Token> reader,
             [NotNullWhen(true)] out int? newPosition,
             [MaybeNullWhen(false)] out FunctionCallNode node,
@@ -253,6 +381,7 @@ namespace SCUMSLang.AST
 
                 if (peekedToken.Value == TokenType.OpenAngleBracket
                     && TryRecognizeArgumentList(
+                        block,
                         reader,
                         TokenType.OpenAngleBracket,
                         TokenType.CloseAngleBracket,
@@ -264,9 +393,19 @@ namespace SCUMSLang.AST
                     genericArguments = new List<ConstantNode>();
                 }
 
-                if (TryRecognizeArgumentList(reader, TokenType.OpenBracket, TokenType.CloseBracket, out newPosition, out var arguments, required: true, needConsume: true)) {
+                if (TryRecognizeArgumentList(
+                        block,
+                        reader,
+                        TokenType.OpenBracket,
+                        TokenType.CloseBracket,
+                        out newPosition,
+                        out var arguments,
+                        required: true,
+                        needConsume: true)) {
                     reader.SetLengthTo(newPosition.Value);
-                    node = new FunctionCallNode(nameToken.GetValue<string>(), genericArguments, arguments);
+                    var functionName = nameToken.GetValue<string>();
+                    block.TryGetFirstFunctionNode(functionName, genericArguments, arguments, out var function, required: true);
+                    node = new FunctionCallNode(function!, genericArguments, arguments);
                     return true;
                 }
             } else if (required) {
@@ -278,18 +417,18 @@ namespace SCUMSLang.AST
             return false;
         }
 
-        public static bool TryRecognizeFunctionOrEventHandlerNode(SpanReader<Token> reader, out int? newPosition, [MaybeNull] out Node node)
+        public static bool TryRecognizeFunctionOrEventHandlerNode(BlockNode block, SpanReader<Token> reader, out int? newPosition, [MaybeNull] out Node node)
         {
             if (reader.ViewLastValue.TryRecognize(TokenType.FunctionKeyword, out var functionToken)) {
                 if (!reader.ConsumeNext(TokenType.Name, out var functionNameToken)) {
                     throw new ParseException(functionToken, "Function must have a name.");
                 }
 
-                if (TryRecognizeParameters(reader, TokenType.OpenAngleBracket, TokenType.CloseAngleBracket, out var genericParameters, out newPosition, needConsume: true)) {
+                if (TryRecognizeParameters(block, reader, TokenType.OpenAngleBracket, TokenType.CloseAngleBracket, out var genericParameters, out newPosition, needConsume: true)) {
                     reader.SetLengthTo(newPosition.Value);
                 }
 
-                if (TryRecognizeParameters(reader, TokenType.OpenBracket, TokenType.CloseBracket, out var parameters, out newPosition, required: true, needConsume: true)) {
+                if (TryRecognizeParameters(block, reader, TokenType.OpenBracket, TokenType.CloseBracket, out var parameters, out newPosition, required: true, needConsume: true)) {
                     reader.SetLengthTo(newPosition.Value);
                 }
 
@@ -312,7 +451,7 @@ namespace SCUMSLang.AST
                     var conditions = new List<FunctionCallNode>();
 
                     do {
-                        if (TryRecognizeFunctionCallNode(reader, out newPosition, out var condition, required: true, needConsume: true)) {
+                        if (TryRecognizeFunctionCallNode(block, reader, out newPosition, out var condition, required: true, needConsume: true)) {
                             reader.SetLengthTo(newPosition.Value);
                             conditions.Add(condition);
                         }
@@ -335,7 +474,7 @@ namespace SCUMSLang.AST
             return false;
         }
 
-        public static int? RecognizeNode(SpanReader<Token> reader, [MaybeNull] out Node node)
+        public static int? RecognizeNode(BlockNode block, SpanReader<Token> reader, [MaybeNull] out Node node)
         {
             int? newPosition;
 
@@ -343,19 +482,27 @@ namespace SCUMSLang.AST
                 return newPosition;
             }
 
-            if (TryRecognizeAttributeNode(reader, out newPosition, out node)) {
+            if (TryRecognizeTypeDefinition(reader, out newPosition, out node)) {
                 return newPosition;
             }
 
-            if (TryRecognizeFunctionOrEventHandlerNode(reader, out newPosition, out node)) {
+            if (TryRecognizeEnumerationNode(reader, out newPosition, out node)) {
                 return newPosition;
             }
 
-            if (TryRecognizeDeclarationNode(reader, TokenType.IntKeyword, out newPosition, out node)) {
+            if (TryRecognizeAttributeNode(block, reader, out newPosition, out node)) {
                 return newPosition;
             }
 
-            if (TryRecognizeAssignmentNode(reader, TokenType.Integer, out newPosition, out node)) {
+            if (TryRecognizeFunctionOrEventHandlerNode(block, reader, out newPosition, out node)) {
+                return newPosition;
+            }
+
+            if (TryRecognizeDeclarationNode(block, reader, out newPosition, out node)) {
+                return newPosition;
+            }
+
+            if (TryRecognizeAssignmentNode(block, reader, TokenType.Integer, out newPosition, out node)) {
                 return newPosition;
             }
 

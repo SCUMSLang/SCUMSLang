@@ -1,7 +1,6 @@
 ﻿using System;
 using System.Collections.Generic;
 using System.Diagnostics.CodeAnalysis;
-using System.Linq;
 using static SCUMSLang.Tokenization.TokenTools;
 
 namespace SCUMSLang.Tokenization
@@ -60,44 +59,92 @@ namespace SCUMSLang.Tokenization
             return false;
         }
 
-        public static bool TryRecognizeKeywordOrName(SpanReader<char> reader, out int? newPosition, [MaybeNull] out Token token)
+        public static bool TryRecognizeName(
+            SpanReader<char> reader,
+            [NotNullWhen(true)] out int? newPosition,
+            [MaybeNullWhen(false)] out string name,
+            bool required = false)
         {
-            var characters = reader.View;
-            token = null;
+            if (reader.ViewReadLength > 0
+                || reader.ConsumeNext()) {
+                var characters = reader.View;
 
-            static bool isBeginningToken(char letter) =>
-                    char.IsLetter(letter) || letter == '_';
+                static bool isBeginningToken(char letter) =>
+                        char.IsLetter(letter) || letter == '_';
 
-            if (isBeginningToken(characters[0])) {
-                static bool isValidCharacter(char letter) =>
-                    isBeginningToken(letter) || char.IsDigit(letter);
+                if (isBeginningToken(characters[0])) {
+                    static bool isValidCharacter(char letter) =>
+                        isBeginningToken(letter) || char.IsDigit(letter);
 
-                while (reader.PeekNext(out var peekedPosition) && isValidCharacter(peekedPosition.View.Last())) {
-                    reader.ConsumeNext(out characters);
-                    continue;
-                }
-
-                string name = characters.ToString();
-
-                foreach (var (TokenType, Keyword) in TokenTypeLibrary.TokenAscendedKeywords) {
-                    if (name == Keyword) {
-                        token = CreateToken(TokenType, reader);
-                        break;
+                    while (reader.PeekNext(out var peekedPosition) && isValidCharacter(peekedPosition.View.Last())) {
+                        reader.ConsumeNext(out characters);
+                        continue;
                     }
-                }
 
-                if (token is null) {
-                    token = CreateToken(TokenType.Name, name.ToString(), reader);
                     newPosition = reader.UpperPosition;
+                    name = characters.ToString();
                     return true;
                 }
-
-                newPosition = reader.UpperPosition;
-                return true;
+            } else if (required) {
+                throw new ParseException(reader.UpperPosition, 0, "A name was expected.");
             }
 
             newPosition = null;
+            name = null;
             return false;
+        }
+
+        private static bool TryRecognizeMemberAccess(SpanReader<char> reader, [NotNullWhen(true)] out int? newPosition, [MaybeNullWhen(false)] out Token token)
+        {
+            var pathFragments = new List<string>();
+
+            do {
+                if (!TryRecognizeName(reader, out newPosition, out var pathFragment)) {
+
+                    if (pathFragments.Count >= 1) {
+                        throw new TokenizationException(reader.UpperPosition, "After a dot another path fragment was expected.");
+                    }
+
+                    break;
+                }
+
+                reader.SetLengthTo(newPosition.Value);
+                pathFragments.Add(pathFragment);
+            } while (reader.PeekNext('.', EqualityComparer<char>.Default)
+                && reader.SetPositionTo(reader.UpperPosition + 2));
+
+            if (pathFragments.Count > 1) {
+                newPosition = reader.UpperPosition;
+                token = new MemberAccessToken(reader.ReadPosition, reader.ViewReadLength, pathFragments);
+                return true;
+            } else if (pathFragments.Count == 1) {
+                var pathFragment = pathFragments[0];
+                token = new Token(TokenType.Name, reader.ReadPosition, pathFragment.Length, pathFragment);
+                return false;
+            }
+
+            newPosition = null;
+            token = null;
+            return false;
+        }
+
+        public static bool RecognizeKeywordOrName(Token nameToken, [MaybeNullWhen(false)] out Token token)
+        {
+            var name = nameToken.GetValue<string>();
+            token = null;
+
+            foreach (var (TokenType, Keyword) in TokenTypeLibrary.TokenAscendedKeywords) {
+                if (name == Keyword) {
+                    token = new Token(TokenType, nameToken.Position, nameToken.Length, nameToken.Value);
+                    break;
+                }
+            }
+
+            if (token is null) {
+                token = nameToken;
+            }
+
+            return true;
         }
 
         public static bool TryRecognizeInteger(SpanReader<char> reader, out int? newPosition, [MaybeNull] out Token token)
@@ -246,8 +293,12 @@ namespace SCUMSLang.Tokenization
                 return newPosition;
             }
 
-            if (TryRecognizeKeywordOrName(reader, out newPosition, out token)) {
+            if (TryRecognizeMemberAccess(reader, out newPosition, out token)) {
                 return newPosition;
+            }
+
+            if (!(token is null) && RecognizeKeywordOrName(token, out token)) {
+                return token.UpperPosition;
             }
 
             if (TryRecognizeInteger(reader, out newPosition, out token)) {
@@ -288,7 +339,7 @@ namespace SCUMSLang.Tokenization
             }
 
             token = null;
-            return reader.View.Length;
+            return null;
         }
 
         //public static List<Token> FilterTokens(IEnumerable<Token> tokens, Channel[]? channels = null)

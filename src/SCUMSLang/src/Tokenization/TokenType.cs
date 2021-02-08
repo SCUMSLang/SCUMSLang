@@ -17,32 +17,36 @@ namespace SCUMSLang.Tokenization
         /// int
         /// </summary>
         [TokenKeyword("int")]
-        [TokenValueType]
-        [NodeValueType(NodeValueType.Integer, IsDeclarable = true)]
+        [InBuiltType(InBuiltType.Integer)]
         IntKeyword,
         /// <summary>
-        /// unit
+        /// A 32-bit integer value.
         /// </summary>
-        [TokenKeyword("unit")]
-        [TokenValueType]
-        [NodeValueType(NodeValueType.Unit)]
-        UnitKeyword,
+        [InBuiltType(InBuiltType.Integer)]
+        Integer,
+        [TokenKeyword("string")]
+        [InBuiltType(InBuiltType.String)]
+        StringKeyword,
         /// <summary>
-        /// player
+        /// string
         /// </summary>
-        [TokenKeyword("player")]
-        [TokenValueType]
-        [NodeValueType(NodeValueType.Player)]
-        PlayerKeyword,
+        [InBuiltType(InBuiltType.String)]
+        String,
+        /// <summary>
+        /// bool
+        /// </summary>
+        [InBuiltType(InBuiltType.Boolean, IsEnumeration = true)]
+        [TokenKeyword("bool")]
+        BoolKeyword,
+        ///// <summary>
+        ///// true or false
+        ///// </summary>
+        //[TokenKeyword("true", "false")]
+        //Boolean,
         /// <summary>
         /// =
         /// </summary>
         EqualSign,
-        /// <summary>
-        /// A 32-bit integer value.
-        /// </summary>
-        [NodeValueType(NodeValueType.Integer)]
-        Integer,
         /// <summary>
         /// function
         /// </summary>
@@ -51,10 +55,12 @@ namespace SCUMSLang.Tokenization
         /// <summary>
         /// (
         /// </summary>
+        [SequenceExample("(")]
         OpenBracket,
         /// <summary>
         /// )
         /// </summary>
+        [SequenceExample(")")]
         CloseBracket,
         /// <summary>
         /// ,
@@ -63,10 +69,12 @@ namespace SCUMSLang.Tokenization
         /// <summary>
         /// {
         /// </summary>
+        [SequenceExample("{")]
         OpenBrace,
         /// <summary>
         /// }
         /// </summary>
+        [SequenceExample("}")]
         CloseBrace,
         /// <summary>
         /// when
@@ -76,17 +84,13 @@ namespace SCUMSLang.Tokenization
         /// <summary>
         /// [
         /// </summary>
+        [SequenceExample("[")]
         OpenSquareBracket,
         /// <summary>
         /// ]
         /// </summary>
+        [SequenceExample("]")]
         CloseSquareBracket,
-        /// <summary>
-        /// string
-        /// </summary>
-        [TokenValueType]
-        [NodeValueType(NodeValueType.String)]
-        String,
         /// <summary>
         /// template
         /// </summary>
@@ -95,10 +99,12 @@ namespace SCUMSLang.Tokenization
         /// <summary>
         /// &lt;
         /// </summary>
+        [SequenceExample("<")]
         OpenAngleBracket,
         /// <summary>
         /// &gt;
         /// </summary>
+        [SequenceExample(">")]
         CloseAngleBracket,
         /// <summary>
         /// ordered
@@ -150,12 +156,6 @@ namespace SCUMSLang.Tokenization
         [TokenKeyword("while")]
         WhileKeyword,
         /// <summary>
-        /// true or false
-        /// </summary>
-        [TokenKeyword("true", "false")]
-        [NodeValueType(NodeValueType.Boolean)]
-        Boolean,
-        /// <summary>
         /// ;
         /// </summary>
         Semicolon,
@@ -185,13 +185,24 @@ namespace SCUMSLang.Tokenization
         /// </summary>
         Comment,
         /// <summary>
-        /// /// <summary>text</summary>
+        /// /// &lt;summary&gt;text&lt;/summary&gt;
         /// </summary>
         XmlComment,
         /// <summary>
         /// import
         /// </summary>
         [TokenKeyword("import")]
-        ImportKeyword
+        ImportKeyword,
+        /// <summary>
+        /// import
+        /// </summary>
+        [TokenKeyword("enum")]
+        EnumKeyword,
+        /// <summary>
+        /// E.g. Player.Player1 or Unit.ProtossProbe
+        /// </summary>
+        MemberAccess,
+        [TokenKeyword("typedef")]
+        TypeDefKeyword
     }
 }

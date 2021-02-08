@@ -218,15 +218,23 @@ namespace SCUMSLang
             return false;
         }
 
-        public bool SetPositionTo(int newPosition)
+        public bool SetPositionTo(int newPosition, int length)
         {
-            if (newPosition < Span.Length) {
-                setCurrentPosition(newPosition, 0);
+            if (newPosition + length < Span.Length) {
+                setCurrentPosition(newPosition, length);
                 return true;
             }
 
             return false;
         }
+
+        /// <summary>
+        /// Sets position to <paramref name="newPosition"/> and resets the length <see cref="View"/> to zero.
+        /// </summary>
+        /// <param name="newPosition"></param>
+        /// <returns></returns>
+        public bool SetPositionTo(int newPosition) =>
+            SetPositionTo(newPosition, 0);
 
         public void SetLengthTo(int newPosition)
         {

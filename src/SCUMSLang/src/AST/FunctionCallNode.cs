@@ -6,13 +6,13 @@ namespace SCUMSLang.AST
     {
         public override NodeType NodeType => NodeType.FunctionCall;
 
-        public string FunctionName { get; }
+        public FunctionNode Function { get; }
         public IReadOnlyList<ConstantNode> GenericArguments { get; }
         public IReadOnlyList<ConstantNode> Arguments { get; }
 
-        public FunctionCallNode(string functionName, IReadOnlyList<ConstantNode>? genericArguments, IReadOnlyList<ConstantNode>? arguments)
+        public FunctionCallNode(FunctionNode function, IReadOnlyList<ConstantNode>? genericArguments, IReadOnlyList<ConstantNode>? arguments)
         {
-            FunctionName = functionName ?? throw new System.ArgumentNullException(nameof(functionName));
+            Function = function;
             GenericArguments = genericArguments ?? new List<ConstantNode>();
             Arguments = arguments ?? new List<ConstantNode>();
         }

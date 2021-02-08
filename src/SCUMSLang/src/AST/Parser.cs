@@ -25,7 +25,7 @@ namespace SCUMSLang.AST
                     block.CurrentBlock.EndBlock();
                     newPosition = tokenReader.UpperPosition;
                 } else {
-                    newPosition = RecognizeNode(tokenReader, out var node);
+                    newPosition = RecognizeNode(block.CurrentBlock, tokenReader, out var node);
 
                     if (newPosition == null) {
                         throw new ParseException(tokenReader.ViewLastValue, "A valid programming structure could not be found.");
@@ -36,12 +36,12 @@ namespace SCUMSLang.AST
                             continue;
                         } else if (!options?.NodeEndDelegate?.Invoke(node) ?? false) {
                             break;
+                        } else if (node is TypeDefinitionNode typeDefinition) {
+                            block.AddTypeDefintion(typeDefinition);
                         } else if (node is DeclarationNode declarationNode) {
                             block.CurrentBlock.AddDeclaration(declarationNode);
                         } else if (node is AssignNode assignNode) {
                             block.CurrentBlock.AddAssignment(assignNode);
-                        } else if (node is AttributeNode attribute){
-                            block.CurrentBlock.AddAttribute(attribute);
                         } else if (node is FunctionNode functionNode) {
                             if (functionNode.IsAbstract) {
                                 block.AddFunction(functionNode);

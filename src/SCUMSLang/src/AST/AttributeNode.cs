@@ -1,6 +1,4 @@
-﻿using System.Collections.Generic;
-
-namespace SCUMSLang.AST
+﻿namespace SCUMSLang.AST
 {
     public class AttributeNode : Node
     {

@@ -18,7 +18,7 @@ namespace SCUMSLang.Tokenization
                 var newPosition = RecognizeToken(charReader, out var token);
 
                 if (newPosition == null) {
-                    throw new TokenizationException(charReader.UpperPosition);
+                    throw new TokenizationException(charReader.UpperPosition, "Character(s) couldn't be recognized as token.");
                 }
 
                 if (!(token is null)) {

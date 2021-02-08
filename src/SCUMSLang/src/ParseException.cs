@@ -7,23 +7,47 @@ namespace SCUMSLang
     [Serializable]
     public class ParseException : Exception
     {
-        public Token LastToken { get; }
+        public int Position { get; }
+        public int Length { get; }
 
-        public ParseException(Token lastToken)
+        public ParseException(Token nearToken)
         {
-            LastToken = lastToken;
+            Position = nearToken.Position;
+            Length = nearToken.Length;
         }
 
-        public ParseException(Token lastToken, string? message)
+        public ParseException(Token nearToken, string? message)
             : base(message)
         {
-            LastToken = lastToken;
+            Position = nearToken.Position;
+            Length = nearToken.Length;
         }
 
-        public ParseException(Token lastToken, string? message, Exception? innerException)
+        public ParseException(Token nearToken, string? message, Exception? innerException)
             : base(message, innerException)
         {
-            LastToken = lastToken;
+            Position = nearToken.Position;
+            Length = nearToken.Length;
+        }
+
+        public ParseException(int position, int length)
+        {
+            Position = position;
+            Length = length;
+        }
+
+        public ParseException(int position, int length, string? message)
+            : base(message)
+        {
+            Position = position;
+            Length = length;
+        }
+
+        public ParseException(int position, int length, string? message, Exception? innerException)
+            : base(message, innerException)
+        {
+            Position = position;
+            Length = length;
         }
 
         protected ParseException(SerializationInfo info, StreamingContext context)

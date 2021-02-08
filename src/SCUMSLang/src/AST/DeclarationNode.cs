@@ -1,26 +1,38 @@
 ﻿using System;
+using System.Diagnostics;
 
 namespace SCUMSLang.AST
 {
-    public class DeclarationNode : Node, INameableNode
+    public class DeclarationNode : Node, INameReservedNode
     {
         public override NodeType NodeType => NodeType.Declaration;
 
         public Scope Scope { get; }
-        public NodeValueType ValueType { get; }
+        public TypeDefinitionNode Type { get; }
         public string Name { get; }
 
-        public DeclarationNode(Scope scope, NodeValueType valueType, string name)
+        public DeclarationNode(Scope scope, TypeDefinitionNode type, string name)
         {
             Scope = scope;
-            ValueType = valueType;
-            Name = name;
+            Type = type ?? throw new ArgumentNullException(nameof(type));
+            Name = name ?? throw new ArgumentNullException(nameof(name));
         }
 
-        public override bool Equals(object? obj) =>
-            obj is DeclarationNode declaration && Scope == declaration.Scope && Name == declaration.Name;
+        public override bool Equals(object? obj)
+        {
+            if (!(obj is DeclarationNode declaration)) {
+                return false;
+            }
+
+            var equals = Scope == declaration.Scope
+                && Type.Equals(declaration.Type)
+                && Name == declaration.Name;
+
+            Debug.WriteLineIf(!equals, $"{nameof(DeclarationNode)} not equals.");
+            return equals;
+        }
 
         public override int GetHashCode() =>
-            HashCode.Combine(NodeType, Scope, Name);
+            HashCode.Combine(NodeType, Scope, Type, Name);
     }
 }

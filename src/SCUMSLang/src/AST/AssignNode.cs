@@ -1,4 +1,5 @@
 ﻿using System;
+using System.Diagnostics;
 
 namespace SCUMSLang.AST
 {
@@ -6,20 +7,29 @@ namespace SCUMSLang.AST
     {
         public override NodeType NodeType => NodeType.Assignment;
 
-        public string DeclarationName { get; }
         public ConstantNode Constant { get; }
-        public DeclarationNode Declaration { get; internal set; } = null!;
+        public DeclarationNode Declaration { get; }
 
-        public AssignNode(string declarationName, ConstantNode constant)
+        public AssignNode(DeclarationNode declaration, ConstantNode constant)
         {
-            DeclarationName = declarationName;
-            Constant = constant;
+            Declaration = declaration ?? throw new ArgumentNullException(nameof(declaration));
+            Constant = constant ?? throw new ArgumentNullException(nameof(constant));
         }
 
-        public override bool Equals(object? obj) =>
-            obj is AssignNode node && DeclarationName.Equals(node.DeclarationName) && Constant.Equals(node.Constant);
+        public override bool Equals(object? obj)
+        {
+            if (!(obj is AssignNode assignment)) {
+                return false;
+            }
+
+            var equals = Declaration.Equals(assignment.Declaration)
+                && Constant.Equals(assignment.Constant);
+
+            Debug.WriteLineIf(!equals, $"{nameof(AssignNode)} not equals.");
+            return equals;
+        }
 
         public override int GetHashCode() =>
-            HashCode.Combine(NodeType, DeclarationName, Constant);
+            HashCode.Combine(NodeType, Declaration, Constant);
     }
 }

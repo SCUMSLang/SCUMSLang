@@ -1,45 +1,47 @@
 ﻿using System;
 using System.Collections.Generic;
+using SCUMSLang.AST;
+using static SCUMSLang.SCUMSLangTools;
 
 namespace SCUMSLang.Tokenization
 {
     public static class TokenTypeLibrary
     {
-        internal static Type TypeOfTokenType;
         internal static List<(TokenType TokenType, string Keyword)> TokenAscendedKeywords { get; }
-        internal static TokenType[] ValueTypes { get; }
+        internal static Dictionary<TokenType, string> SequenceExampleDictionary { get; }
+        internal static Dictionary<TokenType, InBuiltType> InBuiltTypes { get; }
+        internal static Dictionary<TokenType, InBuiltType> InBuiltEnumerableTypes { get; }
 
         static TokenTypeLibrary()
         {
-            TypeOfTokenType = typeof(TokenType);
             TokenAscendedKeywords = new List<(TokenType TokenType, string Keyword)>();
-            var tokenTypeValues = Enum.GetValues(TypeOfTokenType);
-            var index = tokenTypeValues.Length;
-            var keywordAttributeType = typeof(TokenKeywordAttribute);
-            var valueTypeAttributeType = typeof(TokenValueTypeAttribute);
-            var valueTypeTokens = new List<TokenType>();
+            SequenceExampleDictionary = new Dictionary<TokenType, string>();
+            InBuiltTypes = new Dictionary<TokenType, InBuiltType>();
+            InBuiltEnumerableTypes = new Dictionary<TokenType, InBuiltType>();
 
-            while (--index >= 0) {
-                var tokenType = (TokenType)tokenTypeValues.GetValue(index)!;
-                var tokenTypeName = Enum.GetName(TypeOfTokenType, tokenType)!;
-                var memberInfo = TypeOfTokenType.GetField(tokenTypeName)!;
-                var keywordAttributes = Attribute.GetCustomAttribute(memberInfo, keywordAttributeType) as TokenKeywordAttribute;
+            ForEachEnum<TokenType>(tokenType => {
+                var memberInfo = GetEnumField(tokenType);
 
-                if (!(keywordAttributes is null)) {
-                    foreach (var keyword in keywordAttributes.Keywords) {
+                if (TryGetAttribute<TokenKeywordAttribute>(memberInfo, out var tokenKeyword)) {
+                    foreach (var keyword in tokenKeyword.Keywords) {
                         TokenAscendedKeywords.Add((tokenType, keyword));
                     }
                 }
 
-                var valueTypeAttributes = Attribute.GetCustomAttribute(memberInfo, valueTypeAttributeType) as TokenValueTypeAttribute;
-
-                if (!(keywordAttributes is null)) {
-                    valueTypeTokens.Add(tokenType);
+                if (TryGetAttribute<InBuiltTypeAttribute>(memberInfo, out var inBuiltType)) {
+                    if (inBuiltType.IsEnumeration) {
+                        InBuiltEnumerableTypes.Add(tokenType, inBuiltType.InBuiltType);
+                    } else {
+                        InBuiltTypes.Add(tokenType, inBuiltType.InBuiltType);
+                    }
                 }
-            }
+
+                if (TryGetAttribute<SequenceExampleAttribute>(memberInfo, out var sequenceExample)) {
+                    SequenceExampleDictionary.Add(tokenType, sequenceExample.Sequence);
+                }
+            });
 
             TokenAscendedKeywords.Sort(Comparer<(TokenType TokenType, string Keyword)>.Create((x, y) => x.Keyword.CompareTo(y.Keyword)));
-            ValueTypes = valueTypeTokens.ToArray();
         }
     }
 }

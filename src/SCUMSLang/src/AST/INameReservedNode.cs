@@ -1,6 +1,6 @@
 ﻿namespace SCUMSLang.AST
 {
-    public interface INameableNode
+    public interface INameReservedNode
     {
         public string Name { get; }
     }

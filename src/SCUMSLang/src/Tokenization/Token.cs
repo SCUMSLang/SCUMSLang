@@ -14,7 +14,7 @@ namespace SCUMSLang.Tokenization
         /// specified it is by default <see cref="Channel.Parser"/>.
         /// </summary>
         public Channel Channel { get; }
-        public int UpperBound => Position + Length;
+        public int UpperPosition => Position + Length - 1;
 
         public Token(TokenType tokenType, int position, int length, object? value, Channel channel)
         {

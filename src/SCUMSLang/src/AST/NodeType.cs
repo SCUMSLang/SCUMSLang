@@ -2,17 +2,17 @@
 {
     public enum NodeType
     {
+        Block,
         StaticScope,
         LocalScope,
-        Assignment,
-        LinkedAssignment,
-        Constant,
+        Import,
+        TypeDefinition,
+        Attribute,
         Declaration,
-        Block,
+        Assignment,
+        Constant,
         Function,
         FunctionCall,
         EventHandler,
-        Import,
-        Attribute
     }
 }
