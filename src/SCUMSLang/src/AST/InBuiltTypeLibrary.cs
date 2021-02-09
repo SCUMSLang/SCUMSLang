@@ -5,18 +5,18 @@ using static SCUMSLang.SCUMSLangTools;
 namespace SCUMSLang.AST
 {
     public static class InBuiltTypeLibrary {
-        public static IReadOnlyDictionary<InBuiltType, string> SequenceExamples => sequenceExamples;
+        public static IReadOnlyDictionary<DefinitionType, string> Sequences => sequences;
 
-        private static Dictionary<InBuiltType, string> sequenceExamples;
+        private static Dictionary<DefinitionType, string> sequences;
 
         static InBuiltTypeLibrary() {
-            sequenceExamples = new Dictionary<InBuiltType, string>();
+            sequences = new Dictionary<DefinitionType, string>();
 
-            ForEachEnum<InBuiltType>(enumValue => {
+            ForEachEnum<DefinitionType>(enumValue => {
                 var memberInfo = GetEnumField(enumValue);
 
-                if (TryGetAttribute<SequenceExampleAttribute>(memberInfo, out var sequenceExample)) {
-                    sequenceExamples[enumValue] = sequenceExample.Sequence;
+                if (TryGetAttribute<SequenceAttribute>(memberInfo, out var sequenceExample)) {
+                    sequences[enumValue] = sequenceExample.Sequence;
                 }
             });
         }

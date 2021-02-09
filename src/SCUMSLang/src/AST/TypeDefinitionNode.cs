@@ -3,20 +3,24 @@ using System.Diagnostics;
 
 namespace SCUMSLang.AST
 {
-    public class TypeDefinitionNode : Node, INameReservedNode
+    public class TypeDefinitionNode : Node, INameReservableNode
     {
         public override NodeType NodeType => NodeType.TypeDefinition;
 
         public string Name { get; }
-        public virtual InBuiltType Type { get; }
+        public virtual DefinitionType DefinitionType { get; }
+
+        internal bool AllowOverwriteOnce { get; set; }
+
+        public virtual TypeDefinitionNode SourceType => this;
 
         protected TypeDefinitionNode(string name) =>
             Name = name ?? throw new ArgumentNullException(nameof(name));
 
-        public TypeDefinitionNode(string name, InBuiltType type)
+        public TypeDefinitionNode(string name, DefinitionType type)
         {
             Name = name ?? throw new ArgumentNullException(nameof(name));
-            Type = type;
+            DefinitionType = type;
         }
 
         public override bool Equals(object? obj)
@@ -27,9 +31,9 @@ namespace SCUMSLang.AST
 
             var equals = NodeType == node.NodeType
                 && Name == node.Name
-                && Type == node.Type;
+                && DefinitionType == node.DefinitionType;
 
-            Debug.WriteLineIf(!equals, $"{nameof(TypeDefinitionNode)} not equals.");
+            Trace.WriteLineIf(!equals, $"{nameof(TypeDefinitionNode)} not equals.");
             return equals;
         }
 
@@ -37,6 +41,6 @@ namespace SCUMSLang.AST
             Equals(obj);
 
         public override int GetHashCode() =>
-            HashCode.Combine(base.GetHashCode(), NodeType, Name, Type);
+            HashCode.Combine(base.GetHashCode(), NodeType, Name, DefinitionType);
     }
 }

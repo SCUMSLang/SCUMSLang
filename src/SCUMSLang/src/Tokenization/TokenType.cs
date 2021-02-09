@@ -16,28 +16,28 @@ namespace SCUMSLang.Tokenization
         /// <summary>
         /// int
         /// </summary>
-        [TokenKeyword("int")]
-        [InBuiltType(InBuiltType.Integer)]
+        [TokenKeyword("Int32")]
+        [DefinitionType(DefinitionType.Integer)]
         IntKeyword,
         /// <summary>
         /// A 32-bit integer value.
         /// </summary>
-        [InBuiltType(InBuiltType.Integer)]
+        [DefinitionType(DefinitionType.Integer)]
         Integer,
-        [TokenKeyword("string")]
-        [InBuiltType(InBuiltType.String)]
+        [TokenKeyword("String")]
+        [DefinitionType(DefinitionType.String)]
         StringKeyword,
         /// <summary>
         /// string
         /// </summary>
-        [InBuiltType(InBuiltType.String)]
+        [DefinitionType(DefinitionType.String)]
         String,
-        /// <summary>
-        /// bool
-        /// </summary>
-        [InBuiltType(InBuiltType.Boolean, IsEnumeration = true)]
-        [TokenKeyword("bool")]
-        BoolKeyword,
+        ///// <summary>
+        ///// bool
+        ///// </summary>
+        //[DefinitionType(DefinitionType.Boolean, IsEnumeration = true)]
+        //[TokenKeyword("Boolean")]
+        //BoolKeyword,
         ///// <summary>
         ///// true or false
         ///// </summary>
@@ -55,12 +55,12 @@ namespace SCUMSLang.Tokenization
         /// <summary>
         /// (
         /// </summary>
-        [SequenceExample("(")]
+        [Sequence("(")]
         OpenBracket,
         /// <summary>
         /// )
         /// </summary>
-        [SequenceExample(")")]
+        [Sequence(")")]
         CloseBracket,
         /// <summary>
         /// ,
@@ -69,12 +69,12 @@ namespace SCUMSLang.Tokenization
         /// <summary>
         /// {
         /// </summary>
-        [SequenceExample("{")]
+        [Sequence("{")]
         OpenBrace,
         /// <summary>
         /// }
         /// </summary>
-        [SequenceExample("}")]
+        [Sequence("}")]
         CloseBrace,
         /// <summary>
         /// when
@@ -84,12 +84,12 @@ namespace SCUMSLang.Tokenization
         /// <summary>
         /// [
         /// </summary>
-        [SequenceExample("[")]
+        [Sequence("[")]
         OpenSquareBracket,
         /// <summary>
         /// ]
         /// </summary>
-        [SequenceExample("]")]
+        [Sequence("]")]
         CloseSquareBracket,
         /// <summary>
         /// template
@@ -99,12 +99,12 @@ namespace SCUMSLang.Tokenization
         /// <summary>
         /// &lt;
         /// </summary>
-        [SequenceExample("<")]
+        [Sequence("<")]
         OpenAngleBracket,
         /// <summary>
         /// &gt;
         /// </summary>
-        [SequenceExample(">")]
+        [Sequence(">")]
         CloseAngleBracket,
         /// <summary>
         /// ordered

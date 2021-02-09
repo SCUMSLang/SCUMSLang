@@ -25,7 +25,7 @@ namespace SCUMSLang.AST
             var equals = Declaration.Equals(assignment.Declaration)
                 && Constant.Equals(assignment.Constant);
 
-            Debug.WriteLineIf(!equals, $"{nameof(AssignNode)} not equals.");
+            Trace.WriteLineIf(!equals, $"{nameof(AssignNode)} not equals.");
             return equals;
         }
 

@@ -6,7 +6,7 @@
             : base(parent, owner)
         {
             foreach (var parameter in owner.Parameters) {
-                AddDeclaration(parameter);
+                AddNode(parameter);
             }
         }
     }

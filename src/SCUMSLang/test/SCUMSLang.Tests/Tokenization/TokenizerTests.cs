@@ -19,7 +19,7 @@ namespace SCUMSLang.Tokenization
         [Fact]
         public void Should_tokenize_static_variable_declaration_and_assignment()
         {
-            var content = @"static int goofy = 7;";
+            var content = @"static Int32 goofy = 7;";
             var tokens = Tokenizer.Tokenize(content);
 
             Assert.Equal(new Token[] {

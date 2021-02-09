@@ -37,14 +37,14 @@ namespace SCUMSLang.AST
                         } else if (!options?.NodeEndDelegate?.Invoke(node) ?? false) {
                             break;
                         } else if (node is TypeDefinitionNode typeDefinition) {
-                            block.AddTypeDefintion(typeDefinition);
+                            block.AddNode(typeDefinition);
                         } else if (node is DeclarationNode declarationNode) {
-                            block.CurrentBlock.AddDeclaration(declarationNode);
+                            block.CurrentBlock.AddNode(declarationNode);
                         } else if (node is AssignNode assignNode) {
                             block.CurrentBlock.AddAssignment(assignNode);
                         } else if (node is FunctionNode functionNode) {
                             if (functionNode.IsAbstract) {
-                                block.AddFunction(functionNode);
+                                block.AddNode(functionNode);
                             } else {
                                 block.BeginBlock(functionNode);
                             }

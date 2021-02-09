@@ -5,7 +5,7 @@ using System.Linq;
 
 namespace SCUMSLang.AST
 {
-    public class FunctionNode : Node, INameReservedNode
+    public class FunctionNode : Node, INameReservableNode, INameDuplicationHandleableNode
     {
         public override NodeType NodeType => NodeType.Function;
 
@@ -26,6 +26,16 @@ namespace SCUMSLang.AST
             IsAbstract = isAbstract;
         }
 
+        bool INameDuplicationHandleableNode.HandleNameDuplication(BlockNode block) {
+            List<FunctionNode>? candidates = block.GetCastedNodesByName<FunctionNode>(Name);
+
+            if (candidates is null || !block.TryGetFirstNode(candidates, this, out _, AbstractionlessFunctionNodeEqualityComparer.Default)) {
+                return true;
+            } else {
+                throw new ArgumentException("Function with same name and same overload exists already.");
+            }
+        }
+
         public override bool Equals(object? obj)
         {
             if (!(obj is FunctionNode function)) {
@@ -36,7 +46,7 @@ namespace SCUMSLang.AST
                 && Enumerable.SequenceEqual(Parameters, function.Parameters)
                 && IsAbstract == function.IsAbstract;
 
-            Debug.WriteLineIf(!equals, $"{nameof(FunctionNode)} not equals.");
+            Trace.WriteLineIf(!equals, $"{nameof(FunctionNode)} not equals.");
             return equals;
         }
 

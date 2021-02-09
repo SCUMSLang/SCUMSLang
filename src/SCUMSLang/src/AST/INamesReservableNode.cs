@@ -2,7 +2,7 @@
 
 namespace SCUMSLang.AST
 {
-    public interface IHasReservedNames
+    public interface INamesReservableNode
     {
         bool HasReservedNames { get; }
 
@@ -10,6 +10,6 @@ namespace SCUMSLang.AST
         /// Own name is not included.
         /// </summary>
         /// <returns></returns>
-        public IEnumerable<(string, Node)> GetReservedNames();
+        public IEnumerable<Node> GetReservedNames();
     }
 }

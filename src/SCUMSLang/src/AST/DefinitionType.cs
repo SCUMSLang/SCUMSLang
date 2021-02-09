@@ -2,14 +2,15 @@
 
 namespace SCUMSLang.AST
 {
-    public enum InBuiltType
+    public enum DefinitionType
     {
-        [SequenceExample("int")]
+        [Sequence("Int32")]
         Integer,
-        [SequenceExample("string")]
+        [Sequence("String")]
         String,
-        [SequenceExample("bool")]
+        [Sequence("Boolean")]
         Boolean,
+        [Sequence("enum")]
         Enumeration,
         EnumerationMember
     }

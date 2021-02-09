@@ -48,7 +48,7 @@ namespace SCUMSLang.AST
                     }
 
                     if (!reader.ConsumeNext(closeToken)) {
-                        throw new ParseException(reader.ViewLastPosition, $"The list needs to be closed by brace (\"{TokenTypeLibrary.SequenceExampleDictionary[closeToken]}\").");
+                        throw new ParseException(reader.ViewLastPosition, $"The list needs to be closed by brace (\"{TokenTypeLibrary.SequenceDictionary[closeToken]}\").");
                     }
 
                     newPosition = reader.UpperPosition;
@@ -65,7 +65,7 @@ namespace SCUMSLang.AST
             return false;
         }
 
-        public static bool TryRecognizeTypeDefinition(SpanReader<Token> reader, [NotNullWhen(true)] out int? newPosition, [MaybeNullWhen(false)] out Node node)
+        public static bool TryRecognizeTypeAlias(BlockNode block, SpanReader<Token> reader, [NotNullWhen(true)] out int? newPosition, [MaybeNullWhen(false)] out Node node)
         {
             if (reader.ViewLastValue == TokenType.TypeDefKeyword) {
                 if (!reader.ConsumeNext(out ReaderPosition<Token> typeTokenPosition)) {
@@ -87,30 +87,38 @@ namespace SCUMSLang.AST
                     return nameToken;
                 }
 
-                if (reader.ViewLastValue == TokenType.EnumKeyword) {
+                // TODO: Determine here DefinitionType based on string
+
+                if (typeTokenPosition.Value == TokenType.EnumKeyword) {
                     _ = TryRecognizeNameList(reader, TokenType.OpenBrace, TokenType.CloseBrace, out newPosition, out var nameList, required: true, needConsume: true);
                     reader.SetLengthTo(newPosition!.Value);
+
                     var nameToken = expectNameAndEndToken(ref reader, out newPosition!);
                     var name = nameToken.Value.GetValue<string>();
                     node = new EnumerationDefinitionNode(name, hasReservedNames: true, nameList!);
+
                     return true;
                 }
 
-                if (reader.ViewLastValue == TokenType.IntKeyword) {
+                if (TokenTypeLibrary.DefinitionTypes.TryGetValue(typeTokenPosition.Value.TokenType, out var definitionType)) {
+                    var sourceTypeDefinition = block.GetTypeDefinition(new[] { typeTokenPosition.Value.GetValue<string>() }, TypeDefinitionViewpoint.Type);
+
                     var nameToken = expectNameAndEndToken(ref reader, out newPosition!);
                     var name = nameToken.Value.GetValue<string>();
-                    node = new TypeDefinitionNode(name, InBuiltType.Integer);
+                    node = new TypeAliasNode(name, sourceTypeDefinition);
+
                     return true;
                 }
 
-                if (reader.ViewLastValue == TokenType.StringKeyword) {
-                    var nameToken = expectNameAndEndToken(ref reader, out newPosition!);
-                    var name = nameToken.Value.GetValue<string>();
-                    node = new TypeDefinitionNode(name, InBuiltType.String);
-                    return true;
-                }
+                //if (reader.ViewLastValue == TokenType.StringKeyword) {
+                //    var nameToken = expectNameAndEndToken(ref reader, out newPosition!);
+                //    var name = nameToken.Value.GetValue<string>();
+                //    node = new TypeDefinitionNode(name, DefinitionType.String);
+                //    return true;
+                //}
 
-                throw new ParseException(reader.ViewLastValue, "You can only use the in-built types int, bool and enum.");
+                throw new ParseException(reader.ViewLastValue, $"For type definitions you can only use the in-built types {InBuiltTypeLibrary.Sequences[DefinitionType.Integer]}, " +
+                    $"{InBuiltTypeLibrary.Sequences[DefinitionType.String]}, {InBuiltTypeLibrary.Sequences[DefinitionType.Boolean]} and {InBuiltTypeLibrary.Sequences[DefinitionType.Enumeration]}.");
             }
 
             newPosition = null;
@@ -138,32 +146,34 @@ namespace SCUMSLang.AST
             return false;
         }
 
-        public static TypeDefinitionNode RecognizeTypeDefinitionFromTypeToken(BlockNode block, Token variableTypeToken)
+        public static TypeDefinitionNode GetTypeDefinition(BlockNode block, Token typeToken)
         {
-            if (!(variableTypeToken.Value is string typeName) || string.IsNullOrEmpty(typeName)) {
-                throw new ParseException(variableTypeToken, "A type was expected.");
+            if (!(typeToken.Value is string typeName) || string.IsNullOrEmpty(typeName)) {
+                throw new ParseException(typeToken, "A type was expected.");
             }
 
-            if (TokenTypeLibrary.InBuiltTypes.TryGetValue(variableTypeToken.TokenType, out var inBuiltType)) {
-                return block.GetInBuiltTypeDefinition(inBuiltType);
+            if (TokenTypeLibrary.DefinitionTypes.TryGetValue(typeToken.TokenType, out var definitionType)) {
+                return block.GetTypeDefinition(definitionType);
             } else {
-                return block.GetEnumerationTypeDefinitionFromType(new[] { typeName });
+                return block.GetTypeDefinition(new[] { typeName }, TypeDefinitionViewpoint.Type);
             }
         }
 
-        public static TypeDefinitionNode RecognizeTypeDefinitionFromValueToken(BlockNode block, Token valueTypeToken)
+        public static TypeDefinitionNode GetValueTypeDefinition(BlockNode block, Token valueTypeToken)
         {
             if (valueTypeToken is MemberAccessToken memberAccessToken) {
-                return block.GetEnumerationTypeDefinitionFromValue(memberAccessToken.PathFragments);
+                return block.GetTypeDefinition(memberAccessToken.PathFragments, TypeDefinitionViewpoint.Value);
             }
 
-            if (TokenTypeLibrary.InBuiltTypes.TryGetValue(valueTypeToken.TokenType, out var inBuiltType)) {
-                return block.GetInBuiltTypeDefinition(inBuiltType);
-            } else if (!(valueTypeToken.Value is string valueName) || string.IsNullOrEmpty(valueName)) {
-                throw new ParseException(valueTypeToken, "A type was expected.");
-            } else {
-                return block.GetEnumerationTypeDefinitionFromValue(new[] { valueName });
+            if (TokenTypeLibrary.DefinitionTypes.TryGetValue(valueTypeToken.TokenType, out var definitionType)) {
+                return block.GetTypeDefinition(definitionType);
             }
+
+            if (!(valueTypeToken.Value is string valueName) || string.IsNullOrEmpty(valueName)) {
+                throw new ParseException(valueTypeToken, "A type was expected.");
+            }
+
+            return block.GetTypeDefinition(new[] { valueName }, TypeDefinitionViewpoint.Value);
         }
 
         public static bool TryRecognizeDeclarationNode(BlockNode block, SpanReader<Token> reader, out int? newPosition, [MaybeNull] out Node node)
@@ -185,7 +195,7 @@ namespace SCUMSLang.AST
             if (reader.PeekNext(out var variableNameToken) && variableNameToken.Value.TokenType == TokenType.Name
                 && reader.PeekNext(2, out var equalSignOrSemicolonToken)
                 && equalSignOrSemicolonToken.Value.TryRecognize(TokenType.EqualSign, TokenType.Semicolon)) {
-                var typeDefinition = RecognizeTypeDefinitionFromTypeToken(block, variableTypeToken);
+                var typeDefinition = GetTypeDefinition(block, variableTypeToken);
 
                 if (equalSignOrSemicolonToken.Value.TokenType == TokenType.Semicolon) {
                     newPosition = equalSignOrSemicolonToken.UpperReaderPosition;
@@ -248,19 +258,11 @@ namespace SCUMSLang.AST
                     //var isVariableTypeToken = Recogn;
                     var hasEndCloseType = variableTypeOrCloseToken.TokenType == closeTokenType;
 
-                    //if (!isVariableTypeToken && !hasEndCloseType) {
-                    //    if (reader.PeekNext(TokenType.Name)) {
-                    //        throw new ParseException(reader.ViewLastValue, "Parameter unit type is incorrect.");
-                    //    } else {
-                    //        throw new ParseException(reader.ViewLastValue, "Parameter list must be closed.");
-                    //    }
-                    //}
-
                     if (hasEndCloseType) {
                         break;
                     }
 
-                    var typeDefinition = RecognizeTypeDefinitionFromTypeToken(block, variableTypeOrCloseToken);
+                    var typeDefinition = GetTypeDefinition(block, variableTypeOrCloseToken);
 
                     if (!reader.ConsumeNext(TokenType.Name, out var parameterNameToken)) {
                         throw new ParseException(reader.ViewLastValue, "Parameter name is missing.");
@@ -285,7 +287,7 @@ namespace SCUMSLang.AST
 
         public static ConstantNode RecognizeConstantNode(BlockNode block, Token valueToken)
         {
-            var typeDefinition = RecognizeTypeDefinitionFromValueToken(block, valueToken);
+            var typeDefinition = GetValueTypeDefinition(block, valueToken);
             return new ConstantNode(typeDefinition, valueToken.Value!);
         }
 
@@ -482,7 +484,7 @@ namespace SCUMSLang.AST
                 return newPosition;
             }
 
-            if (TryRecognizeTypeDefinition(reader, out newPosition, out node)) {
+            if (TryRecognizeTypeAlias(block, reader, out newPosition, out node)) {
                 return newPosition;
             }
 

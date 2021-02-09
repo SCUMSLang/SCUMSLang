@@ -5,38 +5,41 @@ using System.Linq;
 
 namespace SCUMSLang.AST
 {
-    public class EnumerationDefinitionNode : TypeDefinitionNode, IHasReservedNames
+    public class EnumerationDefinitionNode : TypeDefinitionNode, INamesReservableNode
     {
         public IReadOnlyDictionary<string, EnumerationMemberNode> Members => members;
-        public override InBuiltType Type => InBuiltType.Enumeration;
+        public override DefinitionType DefinitionType { get => definitionType; }
         /// <summary>
         /// Specified whether the types are accessible without enum type.
         /// </summary>
         public bool HasReservedNames { get; }
 
+        private DefinitionType definitionType;
+
         private int currentMemberIndex;
         private Dictionary<string, EnumerationMemberNode> members;
 
-        public EnumerationDefinitionNode(string name, bool hasReservedNames)
+        public EnumerationDefinitionNode(string name, bool hasReservedNames, IReadOnlyList<string> memberNames)
             : base(name)
         {
+            definitionType = DefinitionType.Enumeration;
             members = new Dictionary<string, EnumerationMemberNode>();
             HasReservedNames = hasReservedNames;
-        }
 
-        public EnumerationDefinitionNode(string name, bool hasReservedNames, IReadOnlyList<string> memberNames)
-            : this(name, hasReservedNames)
-        {
             foreach (var memberName in memberNames) {
                 AddMember(memberName);
             }
         }
 
-        IEnumerable<(string, Node)> IHasReservedNames.GetReservedNames() =>
-            members.Values.Select(x => (x.Name, (Node)x));
+        internal EnumerationDefinitionNode(string name, bool hasReservedNames, IReadOnlyList<string> memberNames, DefinitionType definitionType)
+            : this(name, hasReservedNames, memberNames) =>
+            this.definitionType = definitionType;
+
+        IEnumerable<Node> INamesReservableNode.GetReservedNames() =>
+            members.Values.Select(x => (Node)x);
 
         /// <exception cref="ArgumentException">Member already exists</exception>
-        internal void AddMember(string memberName)
+        protected void AddMember(string memberName)
         {
             if (members.ContainsKey(memberName)) {
                 throw new ArgumentException($"The enumeration {Name} has already a member called '{memberName}'.");
@@ -63,12 +66,12 @@ namespace SCUMSLang.AST
                 return false;
             }
 
-            var equals = Type == enumeration.Type
+            var equals = DefinitionType == enumeration.DefinitionType
                 && Name == enumeration.Name
                 && HasReservedNames == enumeration.HasReservedNames
                 && Enumerable.SequenceEqual(Members, enumeration.Members);
 
-            Debug.WriteLineIf(!equals, $"{nameof(EnumerationDefinitionNode)} not equals.");
+            Trace.WriteLineIf(!equals, $"{nameof(EnumerationDefinitionNode)} not equals.");
             return equals;
         }
 
@@ -78,7 +81,7 @@ namespace SCUMSLang.AST
                 var equals = Members.TryGetValue(otherEnumerationMember.Name, out var enumerationMember)
                     && enumerationMember.Equals(otherEnumerationMember);
 
-                Debug.WriteLineIf(!equals, $"{nameof(EnumerationDefinitionNode)} is not subset of {nameof(EnumerationMemberNode)}.");
+                Trace.WriteLineIf(!equals, $"{nameof(EnumerationDefinitionNode)} is not subset of {nameof(EnumerationMemberNode)}.");
                 return equals;
             } else {
                 return Equals(obj);

@@ -17,7 +17,6 @@ namespace SCUMSLang.AST
         public IReadOnlyList<Node> Nodes => nodes;
 
         protected abstract LinkedBucketList<string, Node> ReservedNames { get; }
-        protected abstract Dictionary<InBuiltType, TypeDefinitionNode> InBuiltTypeDefinitions { get; }
         protected BlockNode Parent;
 
         private List<Node> nodes;
@@ -50,16 +49,16 @@ namespace SCUMSLang.AST
             } while (!ReferenceEquals(StaticBlock, parentBlock));
         }
 
-        public bool IsNameCrossBlockReserved(string name)
-        {
-            foreach (var block in YieldBlocks()) {
-                if (block.ReservedNames.TryGetBucket(name, out _)) {
-                    return true;
-                }
-            }
+        //public bool IsNameCrossBlockReserved(string name)
+        //{
+        //    foreach (var block in YieldBlocks()) {
+        //        if (block.ReservedNames.TryGetBucket(name, out _)) {
+        //            return true;
+        //        }
+        //    }
 
-            return false;
-        }
+        //    return false;
+        //}
 
         public bool TryGetNodesByName(string name, [MaybeNullWhen(false)] out List<Node> foundNodes)
         {
@@ -133,11 +132,11 @@ namespace SCUMSLang.AST
             TryGetFirstNode(name, (node) => node is T, out function);
 
         public bool TryGetFirstNode<T>(T template, [MaybeNullWhen(false)] out T function)
-            where T : Node, INameReservedNode =>
+            where T : Node, INameReservableNode =>
             TryGetFirstNode(template.Name, (node) => node.Equals(template), out function);
 
         public bool TryGetFirstNode<T>(IEnumerable<T> candidates, T template, [MaybeNullWhen(false)] out T function, IEqualityComparer<T>? comparer = null)
-            where T : Node, INameReservedNode
+            where T : Node, INameReservableNode
         {
             comparer ??= EqualityComparer<T>.Default;
             return TryGetFirstNode(candidates, (node) => node is T typedNode && comparer.Equals(typedNode, template), out function);
@@ -195,22 +194,13 @@ namespace SCUMSLang.AST
             return false;
         }
 
-        public bool TryGetInBuiltTypeDefinition(InBuiltType inBuiltType, [MaybeNullWhen(false)] out TypeDefinitionNode typeDefinition)
+        public TypeDefinitionNode GetTypeDefinition(DefinitionType definitionType)
         {
-            if (!InBuiltTypeDefinitions.TryGetValue(inBuiltType, out typeDefinition)) {
-                return false;
+            if (!ReservedNames.TryGetBucket(InBuiltTypeLibrary.Sequences[definitionType], out var bucket)) {
+                throw new NotSupportedException("This in-built type does not have a one-to one mapping.");
             }
 
-            return true;
-        }
-
-        public TypeDefinitionNode GetInBuiltTypeDefinition(InBuiltType inBuiltType)
-        {
-            if (!TryGetInBuiltTypeDefinition(inBuiltType, out var typeDefinition)) {
-                throw new ArgumentException($"A type definition for in-built type {InBuiltTypeLibrary.SequenceExamples[inBuiltType]} is missing.");
-            }
-
-            return typeDefinition;
+            return (TypeDefinitionNode)bucket.First!.Value;
         }
 
         /// <summary>
@@ -218,122 +208,76 @@ namespace SCUMSLang.AST
         /// </summary>
         /// <param name="pathFragments"></param>
         /// <returns>Either <see cref="EnumerationMemberNode"/> or <see cref="EnumerationDefinitionNode"/>.</returns>
-        public TypeDefinitionNode GetEnumerationTypeDefinitionFromValue(IReadOnlyList<string> pathFragments)
+        public TypeDefinitionNode GetTypeDefinition(IReadOnlyList<string> pathFragments, TypeDefinitionViewpoint viewpoint)
         {
             if (pathFragments.Count == 0) {
                 throw new ArgumentException("Insufficient path fragments.");
             }
 
-            if (pathFragments.Count > 2) {
-                throw new ArgumentException($"A member access across two programming structures are not supported.");
+            if (viewpoint == TypeDefinitionViewpoint.Type && pathFragments.Count > 1) {
+                throw new ArgumentException($"You are specifiying a type. You cannot use a member access.");
+            }
+
+            if (viewpoint == TypeDefinitionViewpoint.Value && pathFragments.Count > 2) {
+                throw new ArgumentException($"A member access across two type definitions are not supported.");
             }
 
             var nodeName = pathFragments[0];
             var candidates = GetCastedNodesByName<TypeDefinitionNode>(nodeName);
 
             if (candidates is null) {
-                throw new ArgumentException($"The programming structure {nodeName} does not exist.");
+                throw new ArgumentException($"The type definition {nodeName} does not exist.");
             } else if (candidates.Count > 1) {
-                throw new ArgumentException($"There are two or more programming structures named by {nodeName}.");
+                throw new ArgumentException($"There are two or more type definition named by {nodeName}.");
             }
 
-            if (candidates[0] is EnumerationDefinitionNode enumeration) {
+            var candidate = candidates[0];
+
+            if (candidate is EnumerationDefinitionNode enumeration) {
                 if (pathFragments.Count == 1) {
                     return enumeration;
-                } else {
+                }
+                // Enum member is only allowed as value.
+                else if (viewpoint == TypeDefinitionViewpoint.Value) {
                     return enumeration.GetMemberByName(pathFragments[1]);
                 }
-            } else if (pathFragments.Count == 1 && candidates[0] is EnumerationMemberNode enumerationMember) {
-                return enumerationMember;
+            } else if (pathFragments.Count == 1) {
+                return candidate;
             }
 
-            throw new ArgumentException($"The programming structure '{nodeName}' does not support member access.");
+            throw new ArgumentException($"The type definition '{nodeName}' does not support member access.");
         }
 
-        /// <summary>
-        /// 
-        /// </summary>
-        /// <param name="pathFragments"></param>
-        /// <returns>Either <see cref="EnumerationMemberNode"/> or <see cref="EnumerationDefinitionNode"/>.</returns>
-        public TypeDefinitionNode GetEnumerationTypeDefinitionFromType(IReadOnlyList<string> pathFragments)
+        public void AddNode(Node node)
         {
-            if (pathFragments.Count == 0) {
-                throw new ArgumentException("Insufficient path fragments.");
+            void handleNameReservation(Node node)
+            {
+                if (node is INameReservableNode nameReservableNode) {
+                    var hasDuplication = ReservedNames.TryGetBucket(nameReservableNode.Name, out _);
+
+                    // If node has name, then it can handle name duplications.
+                    if (hasDuplication && node is INameDuplicationHandleableNode nameDuplicationHandleableNode) {
+                        nameDuplicationHandleableNode.HandleNameDuplication(this);
+                    } else if (hasDuplication) {
+                        throw new ArgumentException($"The name '{nameReservableNode.Name}' is already reserved.");
+                    }
+
+                    ReservedNames.AddLast(nameReservableNode.Name, node);
+                }
+
+                if (node is INamesReservableNode namesReservableNode && namesReservableNode.HasReservedNames) {
+                    foreach (var namedNode in namesReservableNode.GetReservedNames()) {
+                        handleNameReservation(namedNode);
+                    }
+                }
             }
 
-            if (pathFragments.Count > 1) {
-                throw new ArgumentException($"A member access as type is not allowed.");
-            }
-
-            var nodeName = pathFragments[0];
-            var candidates = GetCastedNodesByName<TypeDefinitionNode>(nodeName);
-
-            if (candidates is null) {
-                throw new ArgumentException($"The programming structure {nodeName} does not exist.");
-            } else if (candidates.Count > 1) {
-                throw new ArgumentException($"There are two or more programming structures named by {nodeName}.");
-            }
-
-            if (pathFragments.Count == 1 && candidates[0] is EnumerationDefinitionNode enumeration) {
-                return enumeration;
-            }
-
-            throw new ArgumentException($"The programming structure '{nodeName}' does not support member access.");
-        }
-
-        public void AddNode(Node node) =>
-            nodes.Add(node);
-
-        protected void AddNameReservedNodeBlindly(string name, Node nameableNode)
-        {
-            nodes.Add(nameableNode);
-            ReservedNames.AddLast(name, nameableNode);
-        }
-
-        protected void AddNameReservedNodeBlindly<T>(T nameableNode)
-            where T : Node, INameReservedNode
-        {
-            nodes.Add(nameableNode);
-            ReservedNames.AddLast(nameableNode.Name, nameableNode);
-        }
-
-        protected void AddNonCrossBlockNameReservedNode(string name, Node nameableNode)
-        {
-            if (IsNameCrossBlockReserved(name)) {
-                throw new ArgumentException($"Name '{name} is already reserved.'");
-            }
-
-            AddNameReservedNodeBlindly(name, nameableNode);
-        }
-
-        protected void AddNonCrossBlockNameReservedNode<T>(T nameableNode)
-            where T : Node, INameReservedNode =>
-            AddNonCrossBlockNameReservedNode(nameableNode.Name, nameableNode);
-
-        /// <summary>
-        /// Adds only reserved names of nodes that implements <see cref="IHasReservedNames"/>.
-        /// </summary>
-        /// <typeparam name="T"></typeparam>
-        /// <param name="reservedNamesHavingNode"></param>
-        protected void AddNonCrossBlockReservedNames<T>(T reservedNamesHavingNode)
-            where T : Node, IHasReservedNames
-        {
-            if (!reservedNamesHavingNode.HasReservedNames) {
-                return;
-            }
-
-            foreach (var (Name, Node) in reservedNamesHavingNode.GetReservedNames()) {
-                ReservedNames.AddLast(Name, Node);
-            }
-        }
-
-        public void AddDeclaration(DeclarationNode declaration)
-        {
-            if (declaration.Scope != Scope) {
+            if (node is IScopableNode scopableNode && scopableNode.Scope != Scope) {
                 throw new ArgumentException("Declaration has invalid scope.");
             }
 
-            AddNonCrossBlockNameReservedNode(declaration);
+            handleNameReservation(node);
+            nodes.Add(node);
         }
 
         public void AddAssignment(AssignNode assignment) =>
@@ -363,7 +307,7 @@ namespace SCUMSLang.AST
             var equals = blockClosed == block.blockClosed
                 && nodes.SequenceEqual(block.nodes);
 
-            Debug.WriteLineIf(!equals, $"{nameof(BlockNode)} not equals.");
+            Trace.WriteLineIf(!equals, $"{nameof(BlockNode)} not equals.");
             return equals;
         }
 
@@ -376,7 +320,7 @@ namespace SCUMSLang.AST
             public override BlockNode StaticBlock => Parent.StaticBlock;
             public Node Owner { get; }
 
-            protected override Dictionary<InBuiltType, TypeDefinitionNode> InBuiltTypeDefinitions => Parent.InBuiltTypeDefinitions;
+            //protected override Dictionary<DefinitionType, TypeDefinitionNode> InBuiltTypeDefinitions => Parent.InBuiltTypeDefinitions;
             protected override LinkedBucketList<string, Node> ReservedNames => Parent.ReservedNames;
 
             public LocalBlockNode(BlockNode parent, Node owner)

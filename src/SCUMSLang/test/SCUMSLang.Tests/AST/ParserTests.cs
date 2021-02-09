@@ -27,8 +27,8 @@ namespace SCUMSLANG.AST
                 }
             };
 
-            IntegerDefinition = new TypeDefinitionNode("int", InBuiltType.Integer);
-            StringDefinition = new TypeDefinitionNode("string", InBuiltType.Integer);
+            IntegerDefinition = new TypeDefinitionNode("int", DefinitionType.Integer);
+            StringDefinition = new TypeDefinitionNode("string", DefinitionType.Integer);
             PlayerDefinition = new EnumerationDefinitionNode("Player", hasReservedNames: false, new[] { "Player2", "Player1" });
             UnitDefinition = new EnumerationDefinitionNode("Unit", hasReservedNames: false, new string[] { });
             BoolDefinition = new EnumerationDefinitionNode("bool", hasReservedNames: true, new[] { "false", "true" });
@@ -38,15 +38,15 @@ namespace SCUMSLANG.AST
         public void Should_parse_static_int_declaration_and_assignment()
         {
             var content = @"
-typedef int int;
+typedef Int32 int;
 static int goofy = 4;";
 
             var block = Parser.Default.Parse(content);
 
             var staticBlock = new StaticBlockNode();
-            staticBlock.AddTypeDefintion(IntegerDefinition);
+            staticBlock.AddNode(IntegerDefinition);
             var goofyDeclaration = new DeclarationNode(Scope.Static, IntegerDefinition, "goofy");
-            staticBlock.AddDeclaration(goofyDeclaration);
+            staticBlock.AddNode(goofyDeclaration);
             staticBlock.AddAssignment(new AssignNode(goofyDeclaration, new ConstantNode(IntegerDefinition, 4)));
 
             // Assert
@@ -70,14 +70,14 @@ static int goofy = 4;";
         public void Should_parse_parameterized_function_and_function()
         {
             var content = @"
-typedef int int;
+typedef Int32 int;
 function daisy(int hello) {}
 function daisy() {}";
 
             var block = Parser.Default.Parse(content);
 
             var expectedBlock = new StaticBlockNode();
-            expectedBlock.AddTypeDefintion(IntegerDefinition);
+            expectedBlock.AddNode(IntegerDefinition);
             var helloDeclaration = new DeclarationNode(Scope.Local, IntegerDefinition, "hello");
 
             expectedBlock.BeginBlock(new FunctionNode("daisy", null, new[] { helloDeclaration }));
@@ -100,7 +100,7 @@ function daisy<Player PlayerId>() {}";
 
             var expectedBlock = new StaticBlockNode();
             var genericDeclaration = new DeclarationNode(Scope.Local, PlayerDefinition, "PlayerId");
-            expectedBlock.AddTypeDefintion(PlayerDefinition);
+            expectedBlock.AddNode(PlayerDefinition);
 
             expectedBlock.BeginBlock(new FunctionNode("daisy", new DeclarationNode[] { genericDeclaration }, null));
             expectedBlock.CurrentBlock.EndBlock();
@@ -112,7 +112,7 @@ function daisy<Player PlayerId>() {}";
         public void Should_parse_function_with_declared_assignment()
         {
             var content = @"
-typedef int int;
+typedef Int32 int;
 
 function daisy() {
     int local_var = 2;
@@ -123,9 +123,9 @@ function daisy() {
             var expectedBlock = new StaticBlockNode();
             var localVarDeclration = new DeclarationNode(Scope.Local, IntegerDefinition, "local_var");
 
-            expectedBlock.AddTypeDefintion(IntegerDefinition);
+            expectedBlock.AddNode(IntegerDefinition);
             expectedBlock.BeginBlock(new FunctionNode("daisy", null, null));
-            expectedBlock.CurrentBlock.AddDeclaration(localVarDeclration);
+            expectedBlock.CurrentBlock.AddNode(localVarDeclration);
             expectedBlock.CurrentBlock.AddAssignment(new AssignNode(localVarDeclration, new ConstantNode(IntegerDefinition, 2)));
             expectedBlock.CurrentBlock.EndBlock();
 
@@ -136,7 +136,7 @@ function daisy() {
         public void Should_parse_function_with_static_declaration_and_local_assignment()
         {
             var content = @"
-typedef int int;
+typedef Int32 int;
 static int global_var;
 
 function daisy() {
@@ -147,8 +147,8 @@ function daisy() {
             var globalVarDeclaration = new DeclarationNode(Scope.Static, IntegerDefinition, "global_var");
 
             var expectedBlock = new StaticBlockNode();
-            expectedBlock.AddTypeDefintion(IntegerDefinition);
-            expectedBlock.AddDeclaration(globalVarDeclaration);
+            expectedBlock.AddNode(IntegerDefinition);
+            expectedBlock.AddNode(globalVarDeclaration);
             expectedBlock.BeginBlock(new FunctionNode("daisy", null, null));
             expectedBlock.CurrentBlock.AddAssignment(new AssignNode(globalVarDeclaration, new ConstantNode(IntegerDefinition, 2)));
             expectedBlock.CurrentBlock.EndBlock();
@@ -160,7 +160,7 @@ function daisy() {
         public void Should_parse_generic_parameterized_event_handler()
         {
             var content = @"
-typedef int int;
+typedef Int32 int;
 enum Player { Player2, Player1 }
 enum Unit {}
 function cond_one<Player PlayerId>(int some_val);
@@ -179,10 +179,10 @@ function daisy<Unit UnitId>() when cond_one<Player.Player1>(0xf) {}";
             var daisyEventHandler = new EventHandlerNode("daisy", new[] { unitIdDeclaration }, null, new[] { condOneFunctionCall });
 
             var expectedBlock = new StaticBlockNode();
-            expectedBlock.AddTypeDefintion(IntegerDefinition);
-            expectedBlock.AddTypeDefintion(PlayerDefinition);
-            expectedBlock.AddTypeDefintion(UnitDefinition);
-            expectedBlock.AddFunction(condOneEventHandler);
+            expectedBlock.AddNode(IntegerDefinition);
+            expectedBlock.AddNode(PlayerDefinition);
+            expectedBlock.AddNode(UnitDefinition);
+            expectedBlock.AddNode((Node)condOneEventHandler);
             expectedBlock.BeginBlock(daisyEventHandler);
             expectedBlock.CurrentBlock.EndBlock();
 
@@ -193,7 +193,7 @@ function daisy<Unit UnitId>() when cond_one<Player.Player1>(0xf) {}";
         public void Should_parse_static_int_declaration_with_comment()
         {
             var content = @"
-typedef int int;
+typedef Int32 int;
 // IGNORE ME
 static int goofy;";
 
@@ -201,8 +201,8 @@ static int goofy;";
 
             var goofyDeclaration = new DeclarationNode(Scope.Static, IntegerDefinition, "goofy");
             var expectedBlock = new StaticBlockNode();
-            expectedBlock.AddTypeDefintion(IntegerDefinition);
-            expectedBlock.AddDeclaration(goofyDeclaration);
+            expectedBlock.AddNode(IntegerDefinition);
+            expectedBlock.AddNode(goofyDeclaration);
 
             Assert.Equal(expectedBlock, block);
         }
@@ -220,7 +220,7 @@ function TriggerCondition();
             var expectedBlock = new StaticBlockNode();
             var triggerConditionFunction = new FunctionNode("TriggerCondition", null, null, isAbstract: true);
             var triggerConditionAttribute = new AttributeNode(new FunctionCallNode(triggerConditionFunction, null, null));
-            expectedBlock.AddFunction(triggerConditionFunction);
+            expectedBlock.AddNode((Node)triggerConditionFunction);
             expectedBlock.AddNode(triggerConditionAttribute);
 
             Assert.Equal(expectedBlock, block);
@@ -239,7 +239,7 @@ enum Unit {
 
             var expectedBlock = new StaticBlockNode();
             var unitTypeDefinition = new EnumerationDefinitionNode("Unit", false, new[] { "ProtossProbe", "ProtossZealot" });
-            expectedBlock.AddTypeDefintion(unitTypeDefinition);
+            expectedBlock.AddNode(unitTypeDefinition);
 
             Assert.Equal(expectedBlock, block);
         }
@@ -264,8 +264,8 @@ function goofy() when daisy(false) {}";
             var daisyFunctionCall = new FunctionCallNode(daisyFunction, null, new[] { new ConstantNode(BoolDefinition, "false") });
             var goofyFunction = new EventHandlerNode("goofy", null, null, new[] { daisyFunctionCall });
 
-            expectedBlock.AddTypeDefintion(BoolDefinition);
-            expectedBlock.AddFunction(daisyFunction);
+            expectedBlock.AddNode(BoolDefinition);
+            expectedBlock.AddNode(daisyFunction);
 
             expectedBlock.BeginBlock(goofyFunction);
             expectedBlock.CurrentBlock.EndBlock();

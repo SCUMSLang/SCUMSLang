@@ -27,7 +27,7 @@ namespace SCUMSLang.AST
             var equals = base.Equals(obj)
                 && Enumerable.SequenceEqual(Conditions, node.Conditions);
 
-            Debug.WriteLineIf(!equals, $"{nameof(EventHandlerNode)} not equals.");
+            Trace.WriteLineIf(!equals, $"{nameof(EventHandlerNode)} not equals.");
             return equals;
         }
 

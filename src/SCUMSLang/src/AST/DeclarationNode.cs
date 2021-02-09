@@ -3,7 +3,7 @@ using System.Diagnostics;
 
 namespace SCUMSLang.AST
 {
-    public class DeclarationNode : Node, INameReservedNode
+    public class DeclarationNode : Node, INameReservableNode, IScopableNode
     {
         public override NodeType NodeType => NodeType.Declaration;
 
@@ -28,7 +28,7 @@ namespace SCUMSLang.AST
                 && Type.Equals(declaration.Type)
                 && Name == declaration.Name;
 
-            Debug.WriteLineIf(!equals, $"{nameof(DeclarationNode)} not equals.");
+            Trace.WriteLineIf(!equals, $"{nameof(DeclarationNode)} not equals.");
             return equals;
         }
 

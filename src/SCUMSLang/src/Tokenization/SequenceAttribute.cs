@@ -3,11 +3,11 @@
 namespace SCUMSLang.Tokenization
 {
     [AttributeUsage(AttributeTargets.Field, AllowMultiple = false)]
-    internal class SequenceExampleAttribute : Attribute
+    internal class SequenceAttribute : Attribute
     {
         public string Sequence { get; }
 
-        public SequenceExampleAttribute(string sequence) =>
+        public SequenceAttribute(string sequence) =>
             Sequence = sequence;
     }
 }

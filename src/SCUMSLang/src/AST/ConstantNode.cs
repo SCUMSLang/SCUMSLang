@@ -24,7 +24,7 @@ namespace SCUMSLang.AST
             var equals = Type.Equals(node.Type)
                 && Equals(Value, node.Value);
 
-            Debug.WriteLineIf(!equals, $"{nameof(ConstantNode)} not equals.");
+            Trace.WriteLineIf(!equals, $"{nameof(ConstantNode)} not equals.");
             return equals;
         }
 

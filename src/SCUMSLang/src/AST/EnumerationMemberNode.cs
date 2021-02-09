@@ -3,9 +3,9 @@ using System.Diagnostics;
 
 namespace SCUMSLang.AST
 {
-    public class EnumerationMemberNode : TypeDefinitionNode
+    public class EnumerationMemberNode : TypeDefinitionNode, INameReservableNode
     {
-        public override InBuiltType Type => InBuiltType.EnumerationMember;
+        public override DefinitionType DefinitionType => DefinitionType.EnumerationMember;
         public EnumerationDefinitionNode Enumeration { get; }
         public int Value { get; }
 
@@ -23,10 +23,10 @@ namespace SCUMSLang.AST
             }
 
             var equals = Name == member.Name
-                && Type == member.Type
+                && DefinitionType == member.DefinitionType
                 && Value == member.Value;
 
-            Debug.WriteLineIf(!equals, $"{nameof(EnumerationMemberNode)} not equals.");
+            Trace.WriteLineIf(!equals, $"{nameof(EnumerationMemberNode)} not equals.");
             return equals;
         }
 
