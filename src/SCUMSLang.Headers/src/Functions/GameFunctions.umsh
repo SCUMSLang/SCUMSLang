@@ -1,4 +1,4 @@
-import "../EnumTypes/Index.sch";
+import "../EnumTypes/Index.umsh";
 
 /// <summary>Ends the game for player with EndCondition.</summary>
 function end(Player player, EndCondition endCondition);

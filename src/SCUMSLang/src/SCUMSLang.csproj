@@ -8,7 +8,7 @@
   </PropertyGroup>
 
   <ItemGroup>
-    <None Include="$(MSBuildProjectDirectory)\..\..\SCUMSLang.Headers\src\**\*.sch" CopyToOutputDirectory="PreserveNewest" LinkBase="Headers\" />
+    <None Include="$(MSBuildProjectDirectory)\..\..\SCUMSLang.Headers\src\**\*.umsh" CopyToOutputDirectory="PreserveNewest" LinkBase="Headers\" />
   </ItemGroup>
 
   <ItemGroup>

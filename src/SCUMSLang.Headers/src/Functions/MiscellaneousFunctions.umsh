@@ -1,4 +1,4 @@
-import "../EnumTypes/Index.sch";
+import "../EnumTypes/Index.umsh";
 
 /// <summary>Prints a message, defaults to specified player.</summary>
 function print(Text text, Player player);

@@ -1,4 +1,4 @@
-import "../System.sch";
+import "../System.umsh";
 
 /// <summary>When a certain amount of time has elapsed.</summary>
 [TriggerCondition]

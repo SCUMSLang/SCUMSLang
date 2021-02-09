@@ -1,32 +1,32 @@
 <Project Sdk="Microsoft.Build.Traversal/3.0.3">
   <ItemGroup>
-    <None Include="*.scl" />
-    <None Include="*.sch" />
+    <None Include="*.umsl" />
+    <None Include="*.umsh" />
   </ItemGroup>
   <ItemGroup>
-    <None Include="Conditions\Index.sch" />
-    <None Include="EnumTypes\Comparison.sch" />
-    <None Include="EnumTypes\AIScript.sch" />
-    <None Include="EnumTypes\AllianceStatus.sch" />
-    <None Include="EnumTypes\EndCondition.sch" />
-    <None Include="EnumTypes\Index.sch" />
-    <None Include="EnumTypes\Order.sch" />
-    <None Include="EnumTypes\Player.sch" />
-    <None Include="EnumTypes\ResourceType.sch" />
-    <None Include="EnumTypes\ScoreType.sch" />
-    <None Include="EnumTypes\State.sch" />
-    <None Include="EnumTypes\Unit.sch" />
-    <None Include="EnumTypes\UnitProperty.sch" />
-    <None Include="Functions\UnitFunctions.sch" />
-    <None Include="Functions\UserInterfaceFunctions.sch" />
-    <None Include="Functions\ResourceFunctions.sch" />
-    <None Include="Functions\MiscellaneousFunctions.sch" />
-    <None Include="Functions\GameFunctions.sch" />
-    <None Include="Conditions\UnitConditions.sch" />
-    <None Include="Conditions\ResourceConditions.sch" />
-    <None Include="Conditions\GameConditions.sch" />
-    <None Include="Conditions\ScoreConditions.sch" />
-    <None Include="Conditions\MiscellaneousConditions.sch" />
-    <None Include="Functions\ScoreFunctions.sch" />
+    <None Include="Conditions\Index.umsh" />
+    <None Include="EnumTypes\Comparison.umsh" />
+    <None Include="EnumTypes\AIScript.umsh" />
+    <None Include="EnumTypes\AllianceStatus.umsh" />
+    <None Include="EnumTypes\EndCondition.umsh" />
+    <None Include="EnumTypes\Index.umsh" />
+    <None Include="EnumTypes\Order.umsh" />
+    <None Include="EnumTypes\Player.umsh" />
+    <None Include="EnumTypes\ResourceType.umsh" />
+    <None Include="EnumTypes\ScoreType.umsh" />
+    <None Include="EnumTypes\State.umsh" />
+    <None Include="EnumTypes\Unit.umsh" />
+    <None Include="EnumTypes\UnitProperty.umsh" />
+    <None Include="Functions\UnitFunctions.umsh" />
+    <None Include="Functions\UserInterfaceFunctions.umsh" />
+    <None Include="Functions\ResourceFunctions.umsh" />
+    <None Include="Functions\MiscellaneousFunctions.umsh" />
+    <None Include="Functions\GameFunctions.umsh" />
+    <None Include="Conditions\UnitConditions.umsh" />
+    <None Include="Conditions\ResourceConditions.umsh" />
+    <None Include="Conditions\GameConditions.umsh" />
+    <None Include="Conditions\ScoreConditions.umsh" />
+    <None Include="Conditions\MiscellaneousConditions.umsh" />
+    <None Include="Functions\ScoreFunctions.umsh" />
   </ItemGroup>
 </Project>

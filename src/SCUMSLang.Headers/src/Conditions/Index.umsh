@@ -1,0 +1,5 @@
+import "GameCondition.umsh";
+import "MiscellaneousConditions.umsh";
+import "ResourceConditions.umsh";
+import "ScoreConditions.umsh";
+import "UnitConditions.umsh";

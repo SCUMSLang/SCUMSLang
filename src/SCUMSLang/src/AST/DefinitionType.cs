@@ -4,7 +4,7 @@ namespace SCUMSLang.AST
 {
     public enum DefinitionType
     {
-        [Sequence("Int32")]
+        [Sequence("UInt32")]
         Integer,
         [Sequence("String")]
         String,

@@ -16,7 +16,7 @@ namespace SCUMSLang.Tokenization
         /// <summary>
         /// int
         /// </summary>
-        [TokenKeyword("Int32")]
+        [TokenKeyword("UInt32")]
         [DefinitionType(DefinitionType.Integer)]
         IntKeyword,
         /// <summary>

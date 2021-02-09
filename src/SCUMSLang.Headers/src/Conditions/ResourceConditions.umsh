@@ -1,4 +1,4 @@
-import "../System.sch";
+import "../System.umsh";
 
 /// <summary>When a player owns a quantity of resources.</summary>
 [TriggerCondition]

@@ -1,4 +1,4 @@
-import "../EnumTypes/Index.sch";
+import "../EnumTypes/Index.umsh";
 
 /// <summary>Centers the view on a location for a player.</summary>
 function center_view(Player player, Location location);
