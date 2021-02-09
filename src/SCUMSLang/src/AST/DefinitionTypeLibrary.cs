@@ -4,12 +4,12 @@ using static SCUMSLang.SCUMSLangTools;
 
 namespace SCUMSLang.AST
 {
-    public static class InBuiltTypeLibrary {
+    public static class DefinitionTypeLibrary {
         public static IReadOnlyDictionary<DefinitionType, string> Sequences => sequences;
 
         private static Dictionary<DefinitionType, string> sequences;
 
-        static InBuiltTypeLibrary() {
+        static DefinitionTypeLibrary() {
             sequences = new Dictionary<DefinitionType, string>();
 
             ForEachEnum<DefinitionType>(enumValue => {

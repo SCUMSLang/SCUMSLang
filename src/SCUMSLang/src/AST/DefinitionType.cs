@@ -8,6 +8,7 @@ namespace SCUMSLang.AST
         Integer,
         [Sequence("String")]
         String,
+        // Only used for name lookup.
         [Sequence("Boolean")]
         Boolean,
         [Sequence("enum")]

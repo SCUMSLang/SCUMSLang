@@ -22,7 +22,7 @@ namespace SCUMSLang.AST
                 && SourceType.Name == node.SourceType.Name
                 && DefinitionType == node.DefinitionType;
 
-            Trace.WriteLineIf(!equals, $"{nameof(TypeAliasNode)} not equals.");
+            Trace.WriteLineIf(!equals, $"{nameof(TypeAliasNode)} is not subset of {nameof(TypeDefinitionNode)}.");
             return equals;
         }
     }

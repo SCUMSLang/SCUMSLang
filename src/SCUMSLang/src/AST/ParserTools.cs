@@ -100,7 +100,7 @@ namespace SCUMSLang.AST
                     return true;
                 }
 
-                if (TokenTypeLibrary.DefinitionTypes.TryGetValue(typeTokenPosition.Value.TokenType, out var definitionType)) {
+                {
                     var sourceTypeDefinition = block.GetTypeDefinition(new[] { typeTokenPosition.Value.GetValue<string>() }, TypeDefinitionViewpoint.Type);
 
                     var nameToken = expectNameAndEndToken(ref reader, out newPosition!);
@@ -117,8 +117,8 @@ namespace SCUMSLang.AST
                 //    return true;
                 //}
 
-                throw new ParseException(reader.ViewLastValue, $"For type definitions you can only use the in-built types {InBuiltTypeLibrary.Sequences[DefinitionType.Integer]}, " +
-                    $"{InBuiltTypeLibrary.Sequences[DefinitionType.String]}, {InBuiltTypeLibrary.Sequences[DefinitionType.Boolean]} and {InBuiltTypeLibrary.Sequences[DefinitionType.Enumeration]}.");
+                //throw new ParseException(reader.ViewLastValue, $"For type definitions you can only use the in-built types {DefinitionTypeLibrary.Sequences[DefinitionType.Integer]}, " +
+                //    $"{DefinitionTypeLibrary.Sequences[DefinitionType.String]}, {DefinitionTypeLibrary.Sequences[DefinitionType.Boolean]} and {DefinitionTypeLibrary.Sequences[DefinitionType.Enumeration]}.");
             }
 
             newPosition = null;

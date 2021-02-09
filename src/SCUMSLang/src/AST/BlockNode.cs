@@ -49,17 +49,6 @@ namespace SCUMSLang.AST
             } while (!ReferenceEquals(StaticBlock, parentBlock));
         }
 
-        //public bool IsNameCrossBlockReserved(string name)
-        //{
-        //    foreach (var block in YieldBlocks()) {
-        //        if (block.ReservedNames.TryGetBucket(name, out _)) {
-        //            return true;
-        //        }
-        //    }
-
-        //    return false;
-        //}
-
         public bool TryGetNodesByName(string name, [MaybeNullWhen(false)] out List<Node> foundNodes)
         {
             foundNodes = new List<Node>();
@@ -196,7 +185,7 @@ namespace SCUMSLang.AST
 
         public TypeDefinitionNode GetTypeDefinition(DefinitionType definitionType)
         {
-            if (!ReservedNames.TryGetBucket(InBuiltTypeLibrary.Sequences[definitionType], out var bucket)) {
+            if (!ReservedNames.TryGetBucket(DefinitionTypeLibrary.Sequences[definitionType], out var bucket)) {
                 throw new NotSupportedException("This in-built type does not have a one-to one mapping.");
             }
 
@@ -231,7 +220,7 @@ namespace SCUMSLang.AST
                 throw new ArgumentException($"There are two or more type definition named by {nodeName}.");
             }
 
-            var candidate = candidates[0];
+            var candidate = candidates[0].SourceType;
 
             if (candidate is EnumerationDefinitionNode enumeration) {
                 if (pathFragments.Count == 1) {
@@ -250,15 +239,23 @@ namespace SCUMSLang.AST
 
         public void AddNode(Node node)
         {
-            void handleNameReservation(Node node)
+            bool handleNameReservation(Node node)
             {
                 if (node is INameReservableNode nameReservableNode) {
-                    var hasDuplication = ReservedNames.TryGetBucket(nameReservableNode.Name, out _);
+                    bool hasDuplication = ReservedNames.TryGetBucket(nameReservableNode.Name, out _);
 
                     // If node has name, then it can handle name duplications.
                     if (hasDuplication && node is INameDuplicationHandleableNode nameDuplicationHandleableNode) {
-                        nameDuplicationHandleableNode.HandleNameDuplication(this);
-                    } else if (hasDuplication) {
+                        var result = nameDuplicationHandleableNode.CanReserveName(this);
+
+                        if (result == ConditionalNameReservationResult.True) {
+                            hasDuplication = false;
+                        } else if (result == ConditionalNameReservationResult.Skip) {
+                            return false;
+                        }
+                    }
+
+                    if (hasDuplication) {
                         throw new ArgumentException($"The name '{nameReservableNode.Name}' is already reserved.");
                     }
 
@@ -270,14 +267,17 @@ namespace SCUMSLang.AST
                         handleNameReservation(namedNode);
                     }
                 }
+
+                return true;
             }
 
             if (node is IScopableNode scopableNode && scopableNode.Scope != Scope) {
                 throw new ArgumentException("Declaration has invalid scope.");
             }
 
-            handleNameReservation(node);
-            nodes.Add(node);
+            if (handleNameReservation(node)) {
+                nodes.Add(node);
+            }
         }
 
         public void AddAssignment(AssignNode assignment) =>
@@ -320,7 +320,6 @@ namespace SCUMSLang.AST
             public override BlockNode StaticBlock => Parent.StaticBlock;
             public Node Owner { get; }
 
-            //protected override Dictionary<DefinitionType, TypeDefinitionNode> InBuiltTypeDefinitions => Parent.InBuiltTypeDefinitions;
             protected override LinkedBucketList<string, Node> ReservedNames => Parent.ReservedNames;
 
             public LocalBlockNode(BlockNode parent, Node owner)

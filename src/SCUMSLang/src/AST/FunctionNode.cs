@@ -26,16 +26,6 @@ namespace SCUMSLang.AST
             IsAbstract = isAbstract;
         }
 
-        bool INameDuplicationHandleableNode.HandleNameDuplication(BlockNode block) {
-            List<FunctionNode>? candidates = block.GetCastedNodesByName<FunctionNode>(Name);
-
-            if (candidates is null || !block.TryGetFirstNode(candidates, this, out _, AbstractionlessFunctionNodeEqualityComparer.Default)) {
-                return true;
-            } else {
-                throw new ArgumentException("Function with same name and same overload exists already.");
-            }
-        }
-
         public override bool Equals(object? obj)
         {
             if (!(obj is FunctionNode function)) {
@@ -52,5 +42,20 @@ namespace SCUMSLang.AST
 
         public override int GetHashCode() =>
             HashCode.Combine(NodeType, Name, GenericParameters, Parameters, IsAbstract);
+
+        #region IConditionalNameReservableNode
+
+        ConditionalNameReservationResult INameDuplicationHandleableNode.CanReserveName(BlockNode block)
+        {
+            List<FunctionNode>? candidates = block.GetCastedNodesByName<FunctionNode>(Name);
+
+            if (candidates is null || !block.TryGetFirstNode(candidates, this, out _, AbstractionlessFunctionNodeEqualityComparer.Default)) {
+                return ConditionalNameReservationResult.True;
+            } else {
+                throw new ArgumentException("Function with same name and same overload exists already.");
+            }
+        }
+
+        #endregion
     }
 }

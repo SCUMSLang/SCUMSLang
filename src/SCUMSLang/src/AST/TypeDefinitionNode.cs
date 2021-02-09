@@ -3,7 +3,7 @@ using System.Diagnostics;
 
 namespace SCUMSLang.AST
 {
-    public class TypeDefinitionNode : Node, INameReservableNode
+    public class TypeDefinitionNode : Node, INameReservableNode, INameDuplicationHandleableNode
     {
         public override NodeType NodeType => NodeType.TypeDefinition;
 
@@ -42,5 +42,31 @@ namespace SCUMSLang.AST
 
         public override int GetHashCode() =>
             HashCode.Combine(base.GetHashCode(), NodeType, Name, DefinitionType);
+
+        #region IConditionalNameReservableNode
+
+        protected virtual ConditionalNameReservationResult CanReserveName(BlockNode blockNode) {
+            var candidates = blockNode.GetCastedNodesByName<TypeDefinitionNode>(Name);
+
+            if (candidates is null) {
+                return ConditionalNameReservationResult.True;
+            } else if (candidates.Count == 1) {
+                var candidate = candidates[0];
+
+                if (candidate.AllowOverwriteOnce && candidate.Equals(this)) {
+                    AllowOverwriteOnce = false;
+                    return ConditionalNameReservationResult.Skip;
+                } else {
+                    return ConditionalNameReservationResult.False;
+                }
+            }
+
+            throw new NotImplementedException("More than two type definition with the name have been found that got name reserved without checking.");
+        }
+
+        ConditionalNameReservationResult INameDuplicationHandleableNode.CanReserveName(BlockNode blockNode) =>
+            CanReserveName(blockNode);
+
+        #endregion
     }
 }

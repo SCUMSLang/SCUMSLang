@@ -3,7 +3,7 @@ using System.Diagnostics;
 
 namespace SCUMSLang.AST
 {
-    public class EnumerationMemberNode : TypeDefinitionNode, INameReservableNode
+    public class EnumerationMemberNode : TypeDefinitionNode
     {
         public override DefinitionType DefinitionType => DefinitionType.EnumerationMember;
         public EnumerationDefinitionNode Enumeration { get; }

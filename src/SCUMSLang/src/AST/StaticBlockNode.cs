@@ -12,26 +12,19 @@ namespace SCUMSLang.AST
 
         public StaticBlockNode()
         {
-            ReservedNames = new LinkedBucketList<string, Node>(EqualityComparer<string>.Default) {
-                {
-                    InBuiltTypeLibrary.Sequences[DefinitionType.Integer],
-                    new TypeDefinitionNode(InBuiltTypeLibrary.Sequences[DefinitionType.Integer], DefinitionType.Integer) {
-                        AllowOverwriteOnce = true
-                    }
-                },
-                {
-                    InBuiltTypeLibrary.Sequences[DefinitionType.String],
-                    new TypeDefinitionNode(InBuiltTypeLibrary.Sequences[DefinitionType.String], DefinitionType.String) {
-                        AllowOverwriteOnce = true
-                    }
-                },
-                {
-                    InBuiltTypeLibrary.Sequences[DefinitionType.Boolean],
-                    new EnumerationDefinitionNode(InBuiltTypeLibrary.Sequences[DefinitionType.Boolean], hasReservedNames: true, new []{ "false", "true" }, DefinitionType.Boolean) {
-                        AllowOverwriteOnce = true
-                    }
-                }
-            };
+            ReservedNames = new LinkedBucketList<string, Node>(EqualityComparer<string>.Default);
+
+            AddNode(new TypeDefinitionNode(DefinitionTypeLibrary.Sequences[DefinitionType.Integer], DefinitionType.Integer) {
+                AllowOverwriteOnce = true
+            });
+
+            AddNode(new TypeDefinitionNode(DefinitionTypeLibrary.Sequences[DefinitionType.String], DefinitionType.String) {
+                AllowOverwriteOnce = true
+            });
+
+            AddNode(new EnumerationDefinitionNode(DefinitionTypeLibrary.Sequences[DefinitionType.Boolean], hasReservedNames: true, new[] { "false", "true" }, DefinitionType.Enumeration) {
+                AllowOverwriteOnce = true
+            });
         }
 
         /// <summary>
