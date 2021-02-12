@@ -22,7 +22,7 @@ function move(Unit unit, Player player, int expression, Location sourceLocation,
 function order(Unit unit, Player player, Order order, Location sourceLocation, Location destinationLocation);
 
 /// <summary>Modifies a unit's HP, SP, energy or hangar count.</summary>
-function modify(Unit unit, Player player, int expression, UnitMod unitMod, int modQuantity, Location location);
+function modify(Unit unit, Player player, int expression, UnitProperty unitProperty, int modQuantity, Location location);
 
 /// <summary>Gives units to another player.</summary>
 function give(Unit unit, Player sourcePlayer, Player destinationPlayer, int expression, Location location);
@@ -34,7 +34,7 @@ function set_doodad(Player player, Unit unit, State state, Location location);
 function set_invincibility(Player player, Unit unit, State state, Location location);
 
 /// <summary>Runs an AI script at a location.</summary>
-function run_ai_script(Player player, AIScript aiScript, location Location);
+function run_ai_script(Player player, AIScript aiScript, Location location);
 
 /// <summary>Runs an AI script.</summary>
 function run_ai_script(Player player, AIScript aiScript);

@@ -7,4 +7,4 @@ function set_resource(Player player, ResourceType resourceType, int expression);
 function add_resource(Player player, ResourceType resourceType, int expression);
 
 /// <summary>Takes resources from a player.</summary>
-function take_resource(Player player, ResourceType resourceType, int expression) 	
+function take_resource(Player player, ResourceType resourceType, int expression);

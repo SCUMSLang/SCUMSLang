@@ -1,31 +1,26 @@
-﻿using System.Collections.Generic;
-using Teronis.Collections.Specialized;
-
-namespace SCUMSLang.AST
+﻿namespace SCUMSLang.AST
 {
     public partial class StaticBlockNode : BlockNode
     {
         public override Scope Scope => Scope.Static;
-        public override BlockNode StaticBlock => this;
+        public override StaticBlockNode StaticBlock => this;
+        public string WorkingDirectory { get; }
 
-        protected override LinkedBucketList<string, Node> ReservedNames { get; }
+        internal protected override NameReservableNodePool NameReservableNodes => nameReservableNodes;
+
+        internal NameReservableNodePool nameReservableNodes = null!;
+
+        public StaticBlockNode(NameReservableNodePool? nameReservableNodes, string? workingDirectory)
+        {
+            this.nameReservableNodes = nameReservableNodes ?? new NameReservableNodePool();
+            WorkingDirectory = workingDirectory ?? string.Empty;
+        }
+
+        public StaticBlockNode(NameReservableNodePool? nameReservableNodes)
+            : this(nameReservableNodes, null) { }
 
         public StaticBlockNode()
-        {
-            ReservedNames = new LinkedBucketList<string, Node>(EqualityComparer<string>.Default);
-
-            AddNode(new TypeDefinitionNode(DefinitionTypeLibrary.Sequences[DefinitionType.Integer], DefinitionType.Integer) {
-                AllowOverwriteOnce = true
-            });
-
-            AddNode(new TypeDefinitionNode(DefinitionTypeLibrary.Sequences[DefinitionType.String], DefinitionType.String) {
-                AllowOverwriteOnce = true
-            });
-
-            AddNode(new EnumerationDefinitionNode(DefinitionTypeLibrary.Sequences[DefinitionType.Boolean], hasReservedNames: true, new[] { "false", "true" }, DefinitionType.Enumeration) {
-                AllowOverwriteOnce = true
-            });
-        }
+            : this(null, null) { }
 
         /// <summary>
         /// Begins a block in <see cref="BlockNode.CurrentBlock"/>.

@@ -1,10 +1,11 @@
-<Project Sdk="Microsoft.Build.Traversal/3.0.3">
+﻿<Project Sdk="Microsoft.Build.Traversal/3.0.3">
   <ItemGroup>
     <None Include="*.umsl" />
     <None Include="*.umsh" />
   </ItemGroup>
   <ItemGroup>
     <None Include="Conditions\Index.umsh" />
+    <None Include="EnumTypes\Location.umsh" />
     <None Include="EnumTypes\Comparison.umsh" />
     <None Include="EnumTypes\AIScript.umsh" />
     <None Include="EnumTypes\AllianceStatus.umsh" />
@@ -17,6 +18,7 @@
     <None Include="EnumTypes\State.umsh" />
     <None Include="EnumTypes\Unit.umsh" />
     <None Include="EnumTypes\UnitProperty.umsh" />
+    <None Include="Functions\Index.umsh" />
     <None Include="Functions\UnitFunctions.umsh" />
     <None Include="Functions\UserInterfaceFunctions.umsh" />
     <None Include="Functions\ResourceFunctions.umsh" />

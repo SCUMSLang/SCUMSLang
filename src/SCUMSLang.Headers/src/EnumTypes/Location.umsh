@@ -1,0 +1,3 @@
+enum Location {
+    // These values are parsed from map dynamically
+}

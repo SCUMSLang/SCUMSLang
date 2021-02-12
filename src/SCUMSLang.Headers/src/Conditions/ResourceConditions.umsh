@@ -2,7 +2,7 @@ import "../System.umsh";
 
 /// <summary>When a player owns a quantity of resources.</summary>
 [TriggerCondition]
-function accumulate(Player player, Comparison comparison, Quantity quantity, ResourceType resourceType);
+function accumulate(Player player, Comparison comparison, int quantity, ResourceType resourceType);
 
 /// <summary>When a player owns the most of a given resource.</summary>
 [TriggerCondition]

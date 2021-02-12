@@ -7,7 +7,7 @@ function center_view(Player player, Location location);
 function ping(Player player, Location location);
 
 /// <summary>Shows the unit talking portrait for an amount of seconds.</summary>
-function talking_portrait(Player player, Unit unit, Quantity quantity);
+function talking_portrait(Player player, Unit unit, int quantity);
 
 /// <summary>Sets whether destination player will share vision with source player.</summary>
-function set_vision(Player sourcePlayer, Player destinationPlayer, boolean vision);
+function set_vision(Player sourcePlayer, Player destinationPlayer, bool vision);

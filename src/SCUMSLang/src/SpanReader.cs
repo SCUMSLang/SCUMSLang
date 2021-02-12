@@ -144,7 +144,7 @@ namespace SCUMSLang
             }
         }
 
-        public void ConsumeUntilNot(ReaderPositionTruthyDelegate<T> untilNot)
+        public void ConsumeUntilNot(TruthyReaderPositionDelegate<T> untilNot)
         {
             while (PeekNext(out var position) && untilNot(ref position)) {
                 ConsumeNext();
@@ -158,7 +158,7 @@ namespace SCUMSLang
             }
         }
 
-        public void ConsumeUntil(ReaderPositionTruthyDelegate<T> until)
+        public void ConsumeUntil(TruthyReaderPositionDelegate<T> until)
         {
             while (PeekNext(out ReaderPosition<T> position)) {
                 if (until(ref position)) {

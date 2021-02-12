@@ -44,7 +44,7 @@ namespace SCUMSLang.Tokenization
 
                 if (reader.ConsumeNext()) {
                     reader.SetPositionTo(reader.UpperPosition);
-                    reader.ConsumeUntil((ref ReaderPosition<char> character) => character.Value == '\r' || character.Value == 'n');
+                    reader.ConsumeUntil((ref ReaderPosition<char> character) => character.Value == '\r' || character.Value == '\n');
                     token = new Token(tokenType, reader.ReadPosition, reader.ViewReadLength, reader.View.ToString().Trim(), Channel.Comments);
                 } else {
                     token = new Token(tokenType, reader.UpperPosition, 0, string.Empty, Channel.Comments);

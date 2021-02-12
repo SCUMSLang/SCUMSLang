@@ -2,18 +2,21 @@
 using System;
 using System.Collections.Generic;
 using System.Diagnostics.CodeAnalysis;
+using System.IO;
 
 namespace SCUMSLang.AST
 {
     public static class ParserTools
     {
-        public static bool TryRecognizeImportNode(SpanReader<Token> reader, [NotNullWhen(true)] out int? newPosition, [MaybeNullWhen(false)] out Node node)
+        public static bool TryRecognizeImportNode(BlockNode block, SpanReader<Token> reader, [NotNullWhen(true)] out int? newPosition, [MaybeNullWhen(false)] out Node node)
         {
             if (reader.ViewLastValue == TokenType.ImportKeyword
                 && reader.ConsumeNext(out Token stringToken)
                 && reader.ConsumeNext(TokenType.Semicolon)) {
+                var importBasePath = stringToken.GetValue<string>();
+                var importAbsolutPath = Path.GetFullPath(importBasePath, block.StaticBlock.WorkingDirectory);
                 newPosition = reader.UpperPosition;
-                node = new ImportNode(stringToken.GetValue<string>());
+                node = new ImportNode(importAbsolutPath);
                 return true;
             }
 
@@ -48,7 +51,7 @@ namespace SCUMSLang.AST
                     }
 
                     if (!reader.ConsumeNext(closeToken)) {
-                        throw new ParseException(reader.ViewLastPosition, $"The list needs to be closed by brace (\"{TokenTypeLibrary.SequenceDictionary[closeToken]}\").");
+                        throw new ParseException(reader.ViewLastPosition, $"The list needs to be closed by '{TokenTypeLibrary.SequenceDictionary[closeToken]}'.");
                     }
 
                     newPosition = reader.UpperPosition;
@@ -87,8 +90,6 @@ namespace SCUMSLang.AST
                     return nameToken;
                 }
 
-                // TODO: Determine here DefinitionType based on string
-
                 if (typeTokenPosition.Value == TokenType.EnumKeyword) {
                     _ = TryRecognizeNameList(reader, TokenType.OpenBrace, TokenType.CloseBrace, out newPosition, out var nameList, required: true, needConsume: true);
                     reader.SetLengthTo(newPosition!.Value);
@@ -109,16 +110,6 @@ namespace SCUMSLang.AST
 
                     return true;
                 }
-
-                //if (reader.ViewLastValue == TokenType.StringKeyword) {
-                //    var nameToken = expectNameAndEndToken(ref reader, out newPosition!);
-                //    var name = nameToken.Value.GetValue<string>();
-                //    node = new TypeDefinitionNode(name, DefinitionType.String);
-                //    return true;
-                //}
-
-                //throw new ParseException(reader.ViewLastValue, $"For type definitions you can only use the in-built types {DefinitionTypeLibrary.Sequences[DefinitionType.Integer]}, " +
-                //    $"{DefinitionTypeLibrary.Sequences[DefinitionType.String]}, {DefinitionTypeLibrary.Sequences[DefinitionType.Boolean]} and {DefinitionTypeLibrary.Sequences[DefinitionType.Enumeration]}.");
             }
 
             newPosition = null;
@@ -476,35 +467,42 @@ namespace SCUMSLang.AST
             return false;
         }
 
-        public static int? RecognizeNode(BlockNode block, SpanReader<Token> reader, [MaybeNull] out Node node)
+        public static int? RecognizeNode(BlockNode block, SpanReader<Token> reader, RecognizableNodes recognizableNodes, [MaybeNull] out Node node)
         {
             int? newPosition;
 
-            if (TryRecognizeImportNode(reader, out newPosition, out node)) {
+            if (recognizableNodes.HasFlag(RecognizableNodes.Import)
+                && TryRecognizeImportNode(block, reader, out newPosition, out node)) {
                 return newPosition;
             }
 
-            if (TryRecognizeTypeAlias(block, reader, out newPosition, out node)) {
+            if (recognizableNodes.HasFlag(RecognizableNodes.TypeAlias)
+                && TryRecognizeTypeAlias(block, reader, out newPosition, out node)) {
                 return newPosition;
             }
 
-            if (TryRecognizeEnumerationNode(reader, out newPosition, out node)) {
+            if (recognizableNodes.HasFlag(RecognizableNodes.Enumeration)
+                && TryRecognizeEnumerationNode(reader, out newPosition, out node)) {
                 return newPosition;
             }
 
-            if (TryRecognizeAttributeNode(block, reader, out newPosition, out node)) {
+            if (recognizableNodes.HasFlag(RecognizableNodes.Attribute)
+                && TryRecognizeAttributeNode(block, reader, out newPosition, out node)) {
                 return newPosition;
             }
 
-            if (TryRecognizeFunctionOrEventHandlerNode(block, reader, out newPosition, out node)) {
+            if (recognizableNodes.HasFlag(RecognizableNodes.FunctionOrEventHandler)
+                && TryRecognizeFunctionOrEventHandlerNode(block, reader, out newPosition, out node)) {
                 return newPosition;
             }
 
-            if (TryRecognizeDeclarationNode(block, reader, out newPosition, out node)) {
+            if (recognizableNodes.HasFlag(RecognizableNodes.Declaration)
+                && TryRecognizeDeclarationNode(block, reader, out newPosition, out node)) {
                 return newPosition;
             }
 
-            if (TryRecognizeAssignmentNode(block, reader, TokenType.Integer, out newPosition, out node)) {
+            if (recognizableNodes.HasFlag(RecognizableNodes.Assignment)
+                && TryRecognizeAssignmentNode(block, reader, TokenType.Integer, out newPosition, out node)) {
                 return newPosition;
             }
 

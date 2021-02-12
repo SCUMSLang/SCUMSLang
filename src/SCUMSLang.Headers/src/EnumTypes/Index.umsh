@@ -2,6 +2,7 @@ import "AIScript.umsh";
 import "AllianceStatus.umsh";
 import "Comparison.umsh";
 import "EndCondition.umsh";
+import "Location.umsh";
 import "Order.umsh";
 import "Player.umsh";
 import "ResourceType.umsh";

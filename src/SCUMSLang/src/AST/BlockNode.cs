@@ -11,12 +11,12 @@ namespace SCUMSLang.AST
     {
         public override NodeType NodeType => NodeType.Block;
         public abstract Scope Scope { get; }
-        public abstract BlockNode StaticBlock { get; }
+        public abstract StaticBlockNode StaticBlock { get; }
 
         public BlockNode CurrentBlock { get; protected set; }
         public IReadOnlyList<Node> Nodes => nodes;
 
-        protected abstract LinkedBucketList<string, Node> ReservedNames { get; }
+        internal protected abstract NameReservableNodePool NameReservableNodes { get; }
         protected BlockNode Parent;
 
         private List<Node> nodes;
@@ -54,7 +54,7 @@ namespace SCUMSLang.AST
             foundNodes = new List<Node>();
 
             foreach (var block in YieldBlocks()) {
-                if (block.ReservedNames.TryGetBucket(name, out ILinkedBucketList<string, Node>? nodes)) {
+                if (block.NameReservableNodes.TryGetBucket(name, out ILinkedBucketList<string, Node>? nodes)) {
                     foreach (var node in nodes) {
                         foundNodes.Add(node);
                     }
@@ -185,7 +185,7 @@ namespace SCUMSLang.AST
 
         public TypeDefinitionNode GetTypeDefinition(DefinitionType definitionType)
         {
-            if (!ReservedNames.TryGetBucket(DefinitionTypeLibrary.Sequences[definitionType], out var bucket)) {
+            if (!NameReservableNodes.TryGetBucket(DefinitionTypeLibrary.Sequences[definitionType], out var bucket)) {
                 throw new NotSupportedException("This in-built type does not have a one-to one mapping.");
             }
 
@@ -242,7 +242,7 @@ namespace SCUMSLang.AST
             bool handleNameReservation(Node node)
             {
                 if (node is INameReservableNode nameReservableNode) {
-                    bool hasDuplication = ReservedNames.TryGetBucket(nameReservableNode.Name, out _);
+                    bool hasDuplication = NameReservableNodes.TryGetBucket(nameReservableNode.Name, out _);
 
                     // If node has name, then it can handle name duplications.
                     if (hasDuplication && node is INameDuplicationHandleableNode nameDuplicationHandleableNode) {
@@ -259,7 +259,7 @@ namespace SCUMSLang.AST
                         throw new ArgumentException($"The name '{nameReservableNode.Name}' is already reserved.");
                     }
 
-                    ReservedNames.AddLast(nameReservableNode.Name, node);
+                    NameReservableNodes.AddLast(nameReservableNode.Name, node);
                 }
 
                 if (node is INamesReservableNode namesReservableNode && namesReservableNode.HasReservedNames) {
@@ -317,10 +317,10 @@ namespace SCUMSLang.AST
         public abstract class LocalBlockNode : BlockNode
         {
             public override Scope Scope => Scope.Local;
-            public override BlockNode StaticBlock => Parent.StaticBlock;
+            public override StaticBlockNode StaticBlock => Parent.StaticBlock;
             public Node Owner { get; }
 
-            protected override LinkedBucketList<string, Node> ReservedNames => Parent.ReservedNames;
+            internal protected override NameReservableNodePool NameReservableNodes => Parent.NameReservableNodes;
 
             public LocalBlockNode(BlockNode parent, Node owner)
                 : base(parent) =>

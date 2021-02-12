@@ -36,16 +36,16 @@ namespace SCUMSLang.Tokenization
         public static List<Token> Tokenize(string content) =>
             Tokenize(content.AsSpan());
 
-        public static async Task<List<Token>> TokenizeAsync(Stream stream)
+        public static async Task<List<Token>> TokenizeAsync(FileStream fileStream)
         {
-            var fileBytes = new byte[stream.Length];
+            var fileBytes = new byte[fileStream.Length];
 
             {
-                var fileBytesLeft = (int)stream.Length;
+                var fileBytesLeft = (int)fileStream.Length;
                 var fileBytesRead = 0;
 
                 while (fileBytesLeft > 0) {
-                    var bytesProcessed = await stream.ReadAsync(fileBytes, fileBytesRead, fileBytesLeft).ConfigureAwait(false);
+                    var bytesProcessed = await fileStream.ReadAsync(fileBytes, fileBytesRead, fileBytesLeft).ConfigureAwait(false);
 
                     if (bytesProcessed == 0) {
                         break;

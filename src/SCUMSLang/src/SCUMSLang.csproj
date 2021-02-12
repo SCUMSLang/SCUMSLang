@@ -12,6 +12,10 @@
   </ItemGroup>
 
   <ItemGroup>
+    <PackageReference Include="CommandLineParser" Version="2.9.0-preview1" />
+  </ItemGroup>
+
+  <ItemGroup>
     <ProjectReference Include="..\..\..\..\..\Teronis.DotNet\src\NetStandard\Collections\Collections\src\Teronis.NetStandard.Collections.csproj" />
   </ItemGroup>
   

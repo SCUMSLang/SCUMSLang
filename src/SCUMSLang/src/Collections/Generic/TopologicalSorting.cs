@@ -15,36 +15,37 @@ namespace SCUMSLang.Collections.Generic
                 var valueTupleComparer = new ValueTypeComparer<T>(comparer);
                 var nodeSet = new HashSet<T>(nodes, comparer);
                 var edgeSet = new HashSet<ValueTuple<T, T>>(edges, valueTupleComparer);
-                var topologicalSortedNodes = new List<T>();
+                var L = new List<T>();
 
                 // Start nodes which have no incoming edges.
-                var startNodes = new List<T>(
+                var S = new List<T>(
                     nodeSet.Where(node =>
                         edgeSet.All(edge =>
-                            !comparer.Equals(node, edge.Item2))));
+                            comparer.Equals(node, edge.Item2) == false)));
 
-                for (var index = startNodes.Count - 1; index >= 0; index++) {
-                    var startNode = startNodes[index];
-                    startNodes.Remove(startNode);
-                    topologicalSortedNodes.Add(startNode);
+                while (S.Count > 0) {
+                    var n = S[0];
+                    S.RemoveAt(0);
+                    L.Insert(0, n);
 
-                    // For each incoming node with an edge from start node to incoming node do:
-                    foreach (var edge in edgeSet.Where(edge => comparer.Equals(startNode, edge.Item1)).ToList()) {
-                        var incomingNode = edge.Item2;
+                    // Each incoming node with an edge from start node to incoming node.
+                    var edges2 = edgeSet.Where(edge => comparer.Equals(n, edge.Item1)).ToList();
+
+                    foreach (var e in edges2) {
+                        var m = e.Item2;
 
                         // Remove edge from the graph.
-                        edgeSet.Remove(edge);
+                        edgeSet.Remove(e);
 
                         // If incoming node has no other incoming edges then:
-                        if (edges.All(scopedEdge => !comparer.Equals(incomingNode, scopedEdge.Item2))) {
+                        if (edgeSet.All(scopedEdge => comparer.Equals(m, scopedEdge.Item2) == false)) {
                             // Insert incoming node into list of start nodes.
-                            startNodes.Add(incomingNode);
-                            index++;
+                            S.Add(m);
                         }
                     }
                 }
 
-                return topologicalSortedNodes;
+                return L;
             }
 
             public class ValueTypeComparer<T> : EqualityComparer<ValueTuple<T, T>>

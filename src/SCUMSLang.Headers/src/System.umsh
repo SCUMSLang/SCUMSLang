@@ -1,4 +1,4 @@
-typedef Int32 int;
+typedef UInt32 int;
 typedef String string;
 
 typedef enum { false, true } Boolean;

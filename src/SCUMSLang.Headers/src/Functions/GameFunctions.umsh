@@ -7,7 +7,7 @@ function end(Player player, EndCondition endCondition);
 function set_alliance(Player player, Player targetPlayer, AllianceStatus allianceStatus);
 
 /// <summary>Sets the mission objectives, defaults to all players.</summary>
-function set_mission_objectives(Text text, Player player);
+function set_mission_objectives(string text, Player player);
 
 /// <summary>Sets the mission objectives, defaults to all players.</summary>
 function set_mission_objectives(string text);

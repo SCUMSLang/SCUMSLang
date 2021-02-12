@@ -1,0 +1,8 @@
+{
+  "profiles": {
+    "SCUMSLang": {
+      "commandName": "Project",
+      "commandLineArgs": "--i test"
+    }
+  }
+}

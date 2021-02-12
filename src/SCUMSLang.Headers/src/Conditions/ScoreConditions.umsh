@@ -2,7 +2,7 @@ import "../System.umsh";
 
 /// <summary>When a player's score reaches a given quantity.</summary>
 [TriggerCondition]
-function score(Player player, ScoreType scoreType, Comparison comparison, Quantity quantity);
+function score(Player player, ScoreType scoreType, Comparison comparison, int quantity);
 
 /// <summary>When a player has the lowest score.</summary>
 [TriggerCondition]

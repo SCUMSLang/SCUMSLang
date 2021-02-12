@@ -10,7 +10,7 @@ enum Player {
     Player9,
     Player10,
     Player11,
-    Player12,,
+    Player12,
     AllPlayers,
     NeutralPlayers,
     Force1,

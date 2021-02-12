@@ -1,4 +1,4 @@
-enum Player {
+enum Order {
     Move,
     Attack,
     Patrol
