@@ -30,7 +30,7 @@ namespace SCUMSLang.IO
         public string ImportPath { get; }
         public string ImportDirectory { get; }
         public IReadOnlyList<Token> Tokens => tokens;
-        public StaticBlockNode StaticBlock { get; private set; }
+        public ModuleDefinition Module { get; private set; }
         public int TokenReaderUpperPosition { get; private set; }
 
         private Token[] tokens = null!;
@@ -40,18 +40,23 @@ namespace SCUMSLang.IO
 
         private List<string> directImportPaths;
 
-        protected ImportEntry(string importPath, NameReservableNodePool nameReservableNodePool)
+        protected ImportEntry(string filePath, NameReservableNodePool nameReservableNodePool)
         {
             directImportPaths = new List<string>();
-            importPath = importPath ?? throw new System.ArgumentNullException(nameof(importPath));
+            filePath = filePath ?? throw new System.ArgumentNullException(nameof(filePath));
 
-            if (!File.Exists(importPath)) {
-                throw new IOException($"File '{importPath}' does not exist.");
+            if (!File.Exists(filePath)) {
+                throw new IOException($"File '{filePath}' does not exist.");
             }
 
-            ImportPath = importPath;
-            ImportDirectory = Path.GetDirectoryName(importPath)!;
-            StaticBlock = new StaticBlockNode(nameReservableNodePool, ImportDirectory);
+            ImportPath = filePath;
+
+            var moduleParameters = new ModuleParameters() {
+                NameReservableDefinitions = nameReservableNodePool,
+                FilePath = filePath
+            };
+
+            Module = ModuleDefinition.Create(moduleParameters);
         }
 
         protected async Task LoadTokensAsync(CancellationToken cancellationToken = default)
@@ -72,9 +77,9 @@ namespace SCUMSLang.IO
 
         public void LoadDirectImports()
         {
-            var parser = new Parser(options => {
-                options.StaticBlock = StaticBlock;
-                options.RecognizableNodes = RecognizableNodes.Import;
+            var parser = new ReferenceParser(options => {
+                options.Module = Module;
+                options.RecognizableNodes = RecognizableReferences.Import;
                 options.EmptyRecognizationResultsIntoWhileBreak = true;
                 options.TokenReaderBehaviour.SetNonParserChannelTokenSkipCondition();
             });
@@ -82,8 +87,8 @@ namespace SCUMSLang.IO
             var result = parser.Parse(tokens);
             TokenReaderUpperPosition = result.TokenReaderUpperPosition;
 
-            directImportPaths = StaticBlock.Nodes
-                .OfType<ImportNode>()
+            directImportPaths = Module.Definitions
+                .OfType<ImportDefinition>()
                 .Select(import => import.FilePath)
                 .ToList();
         }

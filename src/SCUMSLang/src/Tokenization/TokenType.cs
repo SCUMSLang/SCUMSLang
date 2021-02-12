@@ -17,20 +17,20 @@ namespace SCUMSLang.Tokenization
         /// int
         /// </summary>
         [TokenKeyword("UInt32")]
-        [DefinitionType(DefinitionType.Integer)]
+        [SystemType(SystemType.Integer)]
         IntKeyword,
         /// <summary>
         /// A 32-bit integer value.
         /// </summary>
-        [DefinitionType(DefinitionType.Integer)]
+        [SystemType(SystemType.Integer)]
         Integer,
         [TokenKeyword("String")]
-        [DefinitionType(DefinitionType.String)]
+        [SystemType(SystemType.String)]
         StringKeyword,
         /// <summary>
         /// string
         /// </summary>
-        [DefinitionType(DefinitionType.String)]
+        [SystemType(SystemType.String)]
         String,
         ///// <summary>
         ///// bool

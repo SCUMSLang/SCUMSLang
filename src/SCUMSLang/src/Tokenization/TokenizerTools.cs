@@ -341,18 +341,5 @@ namespace SCUMSLang.Tokenization
             token = null;
             return null;
         }
-
-        //public static List<Token> FilterTokens(IEnumerable<Token> tokens, Channel[]? channels = null)
-        //{
-        //    var filteredTokens = new List<Token>();
-
-        //    foreach (var token in tokens) {
-        //        if (channels is null || channels.Contains(token.Channel)) {
-        //            filteredTokens.Add(token);
-        //        }
-        //    }
-
-        //    return filteredTokens;
-        //}
     }
 }

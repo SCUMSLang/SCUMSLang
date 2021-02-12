@@ -1,6 +1,5 @@
 ﻿using System;
 using System.Diagnostics;
-using SCUMSLang;
 using SCUMSLang.AST;
 using SCUMSLang.Tokenization;
 using Xunit;
@@ -9,17 +8,17 @@ namespace SCUMSLANG.AST
 {
     public class ParserTests
     {
-        public Action<ParserOptions> ParserChannelParserOptionsCallback { get; }
-        public TypeDefinitionNode UInt32Type { get; }
-        public TypeAliasNode IntTypeAlias { get; }
-        public TypeDefinitionNode StringType { get; }
-        public TypeAliasNode StringTypeAlias { get; }
-        public EnumerationDefinitionNode PlayerType { get; }
-        public EnumerationDefinitionNode UnitType { get; }
-        public EnumerationDefinitionNode BooleanType { get; }
-        public TypeAliasNode BoolTypeAlias { get; }
-        public Parser DefaultParser { get; }
-        public StaticBlockNode ExpectedBlock { get; }
+        public Action<ReferenceParserOptions> ParserChannelParserOptionsCallback { get; }
+        public TypeDefinition UInt32Type { get; }
+        public TypeAliasReference IntTypeAlias { get; }
+        public TypeDefinition StringType { get; }
+        public TypeAliasReference StringTypeAlias { get; }
+        public EnumerationTypeReference PlayerType { get; }
+        public EnumerationTypeReference UnitType { get; }
+        public EnumerationTypeReference BooleanType { get; }
+        public TypeAliasReference BoolTypeAlias { get; }
+        public ReferenceParser DefaultParser { get; }
+        public ModuleDefinition ExpectedBlock { get; }
 
         public ParserTests()
         {
@@ -30,21 +29,21 @@ namespace SCUMSLANG.AST
                     .SetNonParserChannelTokenSkipCondition();
             };
 
-            UInt32Type = new TypeDefinitionNode("UInt32", DefinitionType.Integer);
-            IntTypeAlias = new TypeAliasNode("int", UInt32Type);
-            StringType = new TypeDefinitionNode("String", DefinitionType.Integer);
-            StringTypeAlias = new TypeAliasNode("string", StringType);
-            PlayerType = new EnumerationDefinitionNode("Player", hasReservedNames: false, new[] { "Player2", "Player1" });
-            UnitType = new EnumerationDefinitionNode("Unit", hasReservedNames: false, new string[] { });
-            BooleanType = new EnumerationDefinitionNode("Boolean", hasReservedNames: true, new[] { "false", "true" });
-            BoolTypeAlias = new TypeAliasNode("bool", BooleanType);
+            UInt32Type = new TypeDefinition("UInt32", SystemType.Integer);
+            IntTypeAlias = new TypeAliasReference("int", UInt32Type);
+            StringType = new TypeDefinition("String", SystemType.Integer);
+            StringTypeAlias = new TypeAliasReference("string", StringType);
+            PlayerType = new EnumerationTypeReference("Player", hasReservedNames: false, new[] { "Player2", "Player1" });
+            UnitType = new EnumerationTypeReference("Unit", hasReservedNames: false, new string[] { });
+            BooleanType = new EnumerationTypeReference("Boolean", hasReservedNames: true, new[] { "false", "true" });
+            BoolTypeAlias = new TypeAliasReference("bool", BooleanType);
 
-            DefaultParser = new Parser(options => {
-                options.StaticBlock.AddSystemTypes();
+            DefaultParser = new ReferenceParser(options => {
+                options.Module.AddSystemTypes();
             });
 
-            ExpectedBlock = new StaticBlockNode();
-            ExpectedBlock.AddSystemTypes();
+            ExpectedBlock = ModuleDefinition.Create()
+                .AddSystemTypes();
         }
 
         [Fact]
@@ -54,12 +53,12 @@ namespace SCUMSLANG.AST
 typedef UInt32 int;
 static int goofy = 4;";
 
-            var block = DefaultParser.Parse(content).StaticBlock;
+            var block = DefaultParser.Parse(content).Module;
 
             ExpectedBlock.AddNode(IntTypeAlias);
-            var goofyDeclaration = new DeclarationNode(Scope.Static, UInt32Type, "goofy");
+            var goofyDeclaration = new DeclarationReference(Scope.Static, UInt32Type, "goofy");
             ExpectedBlock.AddNode(goofyDeclaration);
-            ExpectedBlock.AddAssignment(new AssignNode(goofyDeclaration, new ConstantNode(UInt32Type, 4)));
+            ExpectedBlock.AddAssignment(new AssignDefinition(goofyDeclaration, new ConstantReference(UInt32Type, 4)));
 
             // Assert
             Assert.Equal(ExpectedBlock, block);
@@ -69,9 +68,9 @@ static int goofy = 4;";
         public void Should_parse_function()
         {
             var content = "function daisy() {}";
-            var block = DefaultParser.Parse(content).StaticBlock;
+            var block = DefaultParser.Parse(content).Module;
 
-            ExpectedBlock.BeginBlock(new FunctionNode("daisy", null, new DeclarationNode[] { }));
+            ExpectedBlock.BeginBlock(new FunctionReference("daisy", null, new DeclarationReference[] { }));
             ExpectedBlock.CurrentBlock.EndBlock();
 
             Assert.Equal(ExpectedBlock, block);
@@ -85,15 +84,15 @@ typedef UInt32 int;
 function daisy(int hello) {}
 function daisy() {}";
 
-            var block = DefaultParser.Parse(content).StaticBlock;
+            var block = DefaultParser.Parse(content).Module;
 
             ExpectedBlock.AddNode(IntTypeAlias);
-            var helloDeclaration = new DeclarationNode(Scope.Local, UInt32Type, "hello");
+            var helloDeclaration = new DeclarationReference(Scope.Local, UInt32Type, "hello");
 
-            ExpectedBlock.BeginBlock(new FunctionNode("daisy", null, new[] { helloDeclaration }));
+            ExpectedBlock.BeginBlock(new FunctionReference("daisy", null, new[] { helloDeclaration }));
             ExpectedBlock.CurrentBlock.EndBlock();
 
-            ExpectedBlock.BeginBlock(new FunctionNode("daisy", null, null));
+            ExpectedBlock.BeginBlock(new FunctionReference("daisy", null, null));
             ExpectedBlock.CurrentBlock.EndBlock();
 
             Assert.Equal(ExpectedBlock, block);
@@ -106,12 +105,12 @@ function daisy() {}";
 enum Player { Player2, Player1 }
 function daisy<Player PlayerId>() {}";
 
-            var block = DefaultParser.Parse(content).StaticBlock;
+            var block = DefaultParser.Parse(content).Module;
 
-            var genericDeclaration = new DeclarationNode(Scope.Local, PlayerType, "PlayerId");
+            var genericDeclaration = new DeclarationReference(Scope.Local, PlayerType, "PlayerId");
             ExpectedBlock.AddNode(PlayerType);
 
-            ExpectedBlock.BeginBlock(new FunctionNode("daisy", new DeclarationNode[] { genericDeclaration }, null));
+            ExpectedBlock.BeginBlock(new FunctionReference("daisy", new DeclarationReference[] { genericDeclaration }, null));
             ExpectedBlock.CurrentBlock.EndBlock();
 
             Assert.Equal(ExpectedBlock, block);
@@ -127,14 +126,14 @@ function daisy() {
     int local_var = 2;
 }";
 
-            var block = DefaultParser.Parse(content).StaticBlock;
+            var block = DefaultParser.Parse(content).Module;
 
-            var localVarDeclration = new DeclarationNode(Scope.Local, UInt32Type, "local_var");
+            var localVarDeclration = new DeclarationReference(Scope.Local, UInt32Type, "local_var");
 
             ExpectedBlock.AddNode(IntTypeAlias);
-            ExpectedBlock.BeginBlock(new FunctionNode("daisy", null, null));
+            ExpectedBlock.BeginBlock(new FunctionReference("daisy", null, null));
             ExpectedBlock.CurrentBlock.AddNode(localVarDeclration);
-            ExpectedBlock.CurrentBlock.AddAssignment(new AssignNode(localVarDeclration, new ConstantNode(UInt32Type, 2)));
+            ExpectedBlock.CurrentBlock.AddAssignment(new AssignDefinition(localVarDeclration, new ConstantReference(UInt32Type, 2)));
             ExpectedBlock.CurrentBlock.EndBlock();
 
             Assert.Equal(ExpectedBlock, block);
@@ -151,13 +150,13 @@ function daisy() {
     global_var = 2;
 }";
 
-            var block = DefaultParser.Parse(content).StaticBlock;
-            var globalVarDeclaration = new DeclarationNode(Scope.Static, UInt32Type, "global_var");
+            var block = DefaultParser.Parse(content).Module;
+            var globalVarDeclaration = new DeclarationReference(Scope.Static, UInt32Type, "global_var");
 
             ExpectedBlock.AddNode(IntTypeAlias);
             ExpectedBlock.AddNode(globalVarDeclaration);
-            ExpectedBlock.BeginBlock(new FunctionNode("daisy", null, null));
-            ExpectedBlock.CurrentBlock.AddAssignment(new AssignNode(globalVarDeclaration, new ConstantNode(UInt32Type, 2)));
+            ExpectedBlock.BeginBlock(new FunctionReference("daisy", null, null));
+            ExpectedBlock.CurrentBlock.AddAssignment(new AssignDefinition(globalVarDeclaration, new ConstantReference(UInt32Type, 2)));
             ExpectedBlock.CurrentBlock.EndBlock();
 
             Assert.Equal(ExpectedBlock, block);
@@ -173,17 +172,17 @@ enum Unit {}
 function cond_one<Player PlayerId>(int some_val);
 function daisy<Unit UnitId>() when cond_one<Player.Player1>(0xf) {}";
 
-            var block = DefaultParser.Parse(content).StaticBlock;
+            var block = DefaultParser.Parse(content).Module;
 
-            var playerIdDeclaration = new DeclarationNode(Scope.Local, PlayerType, "PlayerId");
-            var someValDeclaration = new DeclarationNode(Scope.Local, UInt32Type, "some_val");
-            var condOneEventHandler = new FunctionNode("cond_one", new[] { playerIdDeclaration }, new[] { someValDeclaration }, true);
+            var playerIdDeclaration = new DeclarationReference(Scope.Local, PlayerType, "PlayerId");
+            var someValDeclaration = new DeclarationReference(Scope.Local, UInt32Type, "some_val");
+            var condOneEventHandler = new FunctionReference("cond_one", new[] { playerIdDeclaration }, new[] { someValDeclaration }, true);
 
-            var playerPlayer1EnumerationMember = new EnumerationMemberNode(PlayerType, "Player.Player1", 0);
-            var condOneFunctionCall = new FunctionCallNode(condOneEventHandler, new[] { new ConstantNode(playerPlayer1EnumerationMember, null) }, new[] { new ConstantNode(UInt32Type, 15) });
+            var playerPlayer1EnumerationMember = new EnumerationMemberReference(PlayerType, "Player.Player1", 0);
+            var condOneFunctionCall = new FunctionCallReference(condOneEventHandler, new[] { new ConstantReference(playerPlayer1EnumerationMember, null) }, new[] { new ConstantReference(UInt32Type, 15) });
 
-            var unitIdDeclaration = new DeclarationNode(Scope.Local, UnitType, "UnitId");
-            var daisyEventHandler = new EventHandlerNode("daisy", new[] { unitIdDeclaration }, null, new[] { condOneFunctionCall });
+            var unitIdDeclaration = new DeclarationReference(Scope.Local, UnitType, "UnitId");
+            var daisyEventHandler = new EventHandlerReference("daisy", new[] { unitIdDeclaration }, null, new[] { condOneFunctionCall });
 
             ExpectedBlock.AddNode(IntTypeAlias);
             ExpectedBlock.AddNode(PlayerType);
@@ -203,10 +202,10 @@ typedef UInt32 int;
 // IGNORE ME
 static int goofy;";
 
-            var parser = new Parser(ParserChannelParserOptionsCallback);
-            var block = parser.Parse(content).StaticBlock;
+            var parser = new ReferenceParser(ParserChannelParserOptionsCallback);
+            var block = parser.Parse(content).Module;
 
-            var goofyDeclaration = new DeclarationNode(Scope.Static, UInt32Type, "goofy");
+            var goofyDeclaration = new DeclarationReference(Scope.Static, UInt32Type, "goofy");
             ExpectedBlock.AddNode(IntTypeAlias);
             ExpectedBlock.AddNode(goofyDeclaration);
 
@@ -221,10 +220,10 @@ function TriggerCondition();
 
 [TriggerCondition]";
 
-            var block = DefaultParser.Parse(content).StaticBlock;
+            var block = DefaultParser.Parse(content).Module;
 
-            var triggerConditionFunction = new FunctionNode("TriggerCondition", null, null, isAbstract: true);
-            var triggerConditionAttribute = new AttributeNode(new FunctionCallNode(triggerConditionFunction, null, null));
+            var triggerConditionFunction = new FunctionReference("TriggerCondition", null, null, isAbstract: true);
+            var triggerConditionAttribute = new AttributeDefinition(new FunctionCallReference(triggerConditionFunction, null, null));
             ExpectedBlock.AddNode(triggerConditionFunction);
             ExpectedBlock.AddNode(triggerConditionAttribute);
 
@@ -240,9 +239,9 @@ enum Unit {
     ProtossZealot
 }";
 
-            var block = DefaultParser.Parse(content).StaticBlock;
+            var block = DefaultParser.Parse(content).Module;
 
-            var unitTypeDefinition = new EnumerationDefinitionNode("Unit", false, new[] { "ProtossProbe", "ProtossZealot" });
+            var unitTypeDefinition = new EnumerationTypeReference("Unit", false, new[] { "ProtossProbe", "ProtossZealot" });
             ExpectedBlock.AddNode(unitTypeDefinition);
 
             Assert.Equal(ExpectedBlock, block);
@@ -262,12 +261,12 @@ typedef Boolean bool;
 function daisy(bool test_bool);
 function goofy() when daisy(false) {}";
 
-            var block = DefaultParser.Parse(content).StaticBlock;
+            var block = DefaultParser.Parse(content).Module;
 
-            var daisyFunction = new FunctionNode("daisy", null, new[] { new DeclarationNode(Scope.Local, BooleanType, "test_bool") }, isAbstract: true);
+            var daisyFunction = new FunctionReference("daisy", null, new[] { new DeclarationReference(Scope.Local, BooleanType, "test_bool") }, isAbstract: true);
 
-            var daisyFunctionCall = new FunctionCallNode(daisyFunction, null, new[] { new ConstantNode(BooleanType, "false") });
-            var goofyFunction = new EventHandlerNode("goofy", null, null, new[] { daisyFunctionCall });
+            var daisyFunctionCall = new FunctionCallReference(daisyFunction, null, new[] { new ConstantReference(BooleanType, "false") });
+            var goofyFunction = new EventHandlerReference("goofy", null, null, new[] { daisyFunctionCall });
 
             ExpectedBlock.AddNode(BoolTypeAlias);
             ExpectedBlock.AddNode(daisyFunction);

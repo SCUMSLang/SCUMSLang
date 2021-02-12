@@ -28,12 +28,16 @@ namespace SCUMSLang.Compilation
 
             //importPaths.Add(options.UserSource);
             var nameReservableNodePool = new NameReservableNodePool();
-            var systemBlock = new StaticBlockNode(nameReservableNodePool).AddSystemTypes();
+            var moduleParameters = new ModuleParameters() { NameReservableDefinitions = nameReservableNodePool };
+
+            var systemBlock = ModuleDefinition.Create(moduleParameters)
+                .AddSystemTypes();
+
             var importGraph = await DirectAcyclicImportGraph.CreateAsync(importPaths, nameReservableNodePool);
 
             foreach (var import in importGraph.SortedImports) {
-                var parser = new Parser(options => {
-                    options.StaticBlock = import.StaticBlock;
+                var parser = new ReferenceParser(options => {
+                    options.Module = import.Module;
                     options.TokenReaderStartPosition = import.TokenReaderUpperPosition + 1;
                     options.TokenReaderBehaviour.SetNonParserChannelTokenSkipCondition();
                 });
