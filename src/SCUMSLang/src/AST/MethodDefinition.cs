@@ -36,7 +36,7 @@ namespace SCUMSLang.AST
         {
             List<MethodReference>? candidates = block.GetMembersCasted<MethodReference>(Name);
 
-            if (candidates is null || !block.TryGetMemberFirst(candidates, this, out _, MethodReferenceEqualityComparer.OverloadComparer.Default)) {
+            if (candidates is null || !block.TryGetMemberFirst(candidates, this, out _, MethodReferenceEqualityComparer.Default)) {
                 return OverloadConflictResult.True;
             } else {
                 throw new ArgumentException("Function with same name and same overload exists already.");
