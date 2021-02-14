@@ -8,7 +8,7 @@ namespace SCUMSLang.AST
         public virtual TypeReference FieldType { get; internal set; }
         public bool IsStatic { get; internal set; }
 
-        public override ModuleDefinition? Module =>
+        public override ModuleDefinition Module =>
             DeclaringType?.Module ?? FieldType.Module;
 
         private FieldDefinition? resolvedDefinition;

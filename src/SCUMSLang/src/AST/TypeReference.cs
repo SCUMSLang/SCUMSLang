@@ -9,8 +9,8 @@ namespace SCUMSLang.AST
         public override TreeTokenType TokenType =>
             TreeTokenType.TypeReference;
 
-        public override ModuleDefinition? Module {
-            get => module;
+        public override ModuleDefinition Module {
+            get => module ?? base.Module;
         }
 
         public override string LongName =>

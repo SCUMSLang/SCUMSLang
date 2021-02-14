@@ -182,8 +182,8 @@ namespace SCUMSLang.AST
                 }
             }
 
-            if (member is INamesReservableReference namesReservableNode && namesReservableNode.HasReservedNames) {
-                foreach (var namedNode in namesReservableNode.GetReservedNames()) {
+            if (member is INestedTypesProvider namesReservableNode && namesReservableNode.HasNestedTypes) {
+                foreach (var namedNode in namesReservableNode.GetNestedTypes()) {
                     _ = TryAddMember(namedNode);
                 }
             }

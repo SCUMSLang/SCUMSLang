@@ -4,7 +4,7 @@ using System.Linq;
 
 namespace SCUMSLang.AST
 {
-    public sealed class TypeDefinition : TypeReference, INameReservableReference, IOverloadableReference, IMemberDefinition
+    public sealed class TypeDefinition : TypeReference, INameReservableReference, IOverloadableReference, IMemberDefinition, INestedTypesProvider
     {
         public static TypeDefinition CreateEnumDefinition(
             ModuleDefinition module,
@@ -28,11 +28,11 @@ namespace SCUMSLang.AST
         public static TypeDefinition CreateAliasDefinition(
             ModuleDefinition module,
             string name,
-            TypeReference sourceType)
+            TypeReference baseType)
         {
             var alias = new TypeDefinition(module, name) {
                 IsAlias = true,
-                BaseType = sourceType,
+                BaseType = baseType,
             };
 
             return alias;
@@ -120,6 +120,21 @@ namespace SCUMSLang.AST
             }
 
             throw new NotImplementedException("More than two type definition with the name have been found that got name reserved without checking.");
+        }
+
+        #endregion
+
+        #region IAliasesHavingReference
+
+        bool INestedTypesProvider.HasNestedTypes =>
+            FieldsAreConstants;
+
+        IEnumerable<TypeReference> INestedTypesProvider.GetNestedTypes()
+        {
+            foreach (var field in Fields) {
+                var alias = CreateAliasDefinition(field.Module, field.Name, baseType: field.DeclaringType);
+                yield return alias;
+            }
         }
 
         #endregion

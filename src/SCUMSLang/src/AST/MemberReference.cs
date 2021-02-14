@@ -1,4 +1,5 @@
-﻿using Teronis.Text;
+﻿using System;
+using Teronis.Text;
 
 namespace SCUMSLang.AST
 {
@@ -12,8 +13,9 @@ namespace SCUMSLang.AST
             internal set => declaringType = value;
         }
 
-        public virtual ModuleDefinition? Module {
-            get => DeclaringType?.Module ?? null;
+        public virtual ModuleDefinition Module {
+            get => DeclaringType?.Module
+                ?? throw new InvalidOperationException();
         }
 
         public virtual string Name { get; }

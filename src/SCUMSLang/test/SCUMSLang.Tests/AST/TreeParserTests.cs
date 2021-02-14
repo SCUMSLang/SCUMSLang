@@ -243,6 +243,10 @@ function goofy() when daisy(false) {}";
 
             var boolAliasRootType = boolAlias.BaseType.ResolveNonAlias();
             Assert.True(ReferenceEquals(booleanEnum, boolAliasRootType));
+
+            module.Block.TryGetMemberFirst("goofy", out EventHandlerDefinition goofyEventHandler);
+             var resolvedGoofyEventHandler = goofyEventHandler.Resolve();
+            Assert.Equal(booleanEnum, resolvedGoofyEventHandler.Conditions[0].Arguments[0].ValueType, TypeReferenceEqualityComparer.OverloadComparer.Default);
         }
 
         [Fact]

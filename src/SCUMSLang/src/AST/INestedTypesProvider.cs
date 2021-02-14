@@ -2,14 +2,14 @@
 
 namespace SCUMSLang.AST
 {
-    public interface INamesReservableReference
+    public interface INestedTypesProvider
     {
-        bool HasReservedNames { get; }
+        bool HasNestedTypes { get; }
 
         /// <summary>
         /// Own name is not included.
         /// </summary>
         /// <returns></returns>
-        public IEnumerable<Reference> GetReservedNames();
+        IEnumerable<TypeReference> GetNestedTypes();
     }
 }
