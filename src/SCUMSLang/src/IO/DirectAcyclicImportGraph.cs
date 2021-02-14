@@ -1,4 +1,5 @@
-﻿using System.Collections.Generic;
+﻿using System;
+using System.Collections.Generic;
 using System.Linq;
 using System.Threading.Tasks;
 using SCUMSLang.AST;
@@ -9,29 +10,29 @@ namespace SCUMSLang.IO
     public class DirectAcyclicImportGraph
     {
         public static async Task<DirectAcyclicImportGraph> CreateAsync(
-            IEnumerable<string> initialImportPaths, 
-            ReferencePool rootMemberReferences) {
+            IEnumerable<string> initialImportPaths,
+            Action<ModuleParameters>? configureModuleParameters = null) {
             var importGraph = new DirectAcyclicImportGraph(
-                initialImportPaths, 
-                rootMemberReferences);
+                initialImportPaths,
+                configureModuleParameters);
 
             await importGraph.LoadImportsRecursivelyAsync();
             return importGraph;
         }
 
         public IReadOnlyList<ImportEntry> SortedImports => sortedImports;
-        public ReferencePool RootMemberReferences { get; }
 
         private List<ImportEntry> sortedImports;
         private HashSet<string> initialImportPaths;
+        private readonly Action<ModuleParameters>? configureModuleParameters;
 
         public DirectAcyclicImportGraph(
-            IEnumerable<string> initialImportPaths, 
-            ReferencePool rootMemberReferences)
+            IEnumerable<string> initialImportPaths,
+            Action<ModuleParameters>? configureModuleParameters = null)
         {
             sortedImports = new List<ImportEntry>();
             this.initialImportPaths = new HashSet<string>(initialImportPaths);
-            RootMemberReferences = rootMemberReferences;
+            this.configureModuleParameters = configureModuleParameters;
         }
 
         protected async Task LoadImportsRecursivelyAsync()
@@ -44,8 +45,8 @@ namespace SCUMSLang.IO
 
                 foreach (var unloadedImportPath in unloadedImportPaths) {
                     var import = await ImportEntry.CreateAsync(
-                        unloadedImportPath, 
-                        RootMemberReferences);
+                        unloadedImportPath,
+                        configureModuleParameters);
 
                     import.LoadDirectImports();
                     contextualImports.Add(import);

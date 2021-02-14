@@ -2,7 +2,7 @@
 {
     public class ModuleParameters
     {
-        public ReferencePool? MemberReferences { get; set; }
+        public IReferenceResolver? ReferenceResolver { get; set; }
         public string? FilePath { get; set; }
     }
 }

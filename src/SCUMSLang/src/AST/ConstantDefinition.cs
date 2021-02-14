@@ -1,5 +1,4 @@
 ﻿using System;
-using System.Diagnostics;
 
 namespace SCUMSLang.AST
 {
@@ -15,24 +14,16 @@ namespace SCUMSLang.AST
             Value = value;
         }
 
-        public override bool Equals(object? obj)
-        {
-            if (!(obj is ConstantDefinition node)) {
-                return false;
-            }
-
-            var equals = ValueType.Equals(node.ValueType)
-                && Equals(Value, node.Value);
-
-            Trace.WriteLineIf(!equals, $"{nameof(ConstantDefinition)} not equals.");
-            return equals;
-        }
-
         protected void ResolveDependencies() =>
             ValueType.Resolve();
 
         void IResolvableDependencies.ResolveDependencies() =>
             ResolveDependencies();
+
+        public override bool Equals(object? obj) =>
+            base.Equals(obj) && obj is ConstantDefinition constant
+            && Equals(constant.Value, Value)
+            && Equals(constant.ValueType, ValueType);
 
         public override int GetHashCode() =>
             HashCode.Combine(TokenType, ValueType, Value);

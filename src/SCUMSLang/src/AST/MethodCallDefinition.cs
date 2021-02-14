@@ -1,4 +1,5 @@
 ﻿using System.Collections.Generic;
+using System.Linq;
 
 namespace SCUMSLang.AST
 {
@@ -37,5 +38,11 @@ namespace SCUMSLang.AST
 
         void IResolvableDependencies.ResolveDependencies() =>
             ResolveDependencies();
+
+        public override bool Equals(object? obj) =>
+            obj is MethodCallDefinition methodCall
+            && Equals(methodCall.InferredMethod, InferredMethod)
+            && Enumerable.SequenceEqual(methodCall.GenericArguments, GenericArguments)
+            && Enumerable.SequenceEqual(methodCall.Arguments, Arguments);
     }
 }

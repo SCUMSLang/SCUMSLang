@@ -12,46 +12,26 @@ namespace SCUMSLANG.AST
         public TypeDefinition UInt32Type { get; }
         public TypeDefinition IntType { get; }
         public TypeDefinition StringType { get; }
-        //public TypeAliasReference StringTypeAlias { get; }
         public TypeDefinition PlayerType { get; }
         public TypeDefinition UnitType { get; }
-        //public EnumerationTypeReference BooleanType { get; }
-        //public TypeAliasReference BoolTypeAlias { get; }
         public TreeParser DefaultParser { get; }
         public ModuleDefinition ExpectedModule { get; }
 
         public TreeParserTests()
         {
             Trace.Listeners.Add(new DefaultTraceListener());
-            var memberReferencePool = new ReferencePool();
 
-            var moduleParameters = new ModuleParameters() {
-                MemberReferences = memberReferencePool,
-            };
-
-            ExpectedModule = new ModuleDefinition(moduleParameters)
+            ExpectedModule = new ModuleDefinition()
                 .AddSystemTypes();
 
             ParserChannelParserOptionsCallback = options => {
                 options.TokenReaderBehaviour
-                    .SetNonParserChannelTokenSkipCondition();
+                    .SetSkipConditionForNonParserChannelTokens();
             };
 
             UInt32Type = new TypeDefinition(ExpectedModule, "UInt32");
             StringType = new TypeDefinition(ExpectedModule, "String");
-            //IntTypeAlias = new TypeAliasReference("int", UInt32Type);
             IntType = new TypeDefinition(ExpectedModule, "int") { DeclaringType = new TypeReference("UInt32", ExpectedModule) };
-            //StringTypeAlias = new TypeAliasReference("string", StringType);
-            PlayerType = new TypeDefinition(ExpectedModule, "Player") { IsEnum = true };
-
-            PlayerType.Fields = new EnumerationFieldCollection(UInt32Type, PlayerType) {
-                { "Player1" } ,
-                { "Player2" }
-            };
-
-            UnitType = new TypeDefinition(ExpectedModule, "Unit") { IsEnum = true };
-            //BooleanType = new EnumerationTypeReference("Boolean", hasReservedNames: true, new[] { "false", "true" });
-            //BoolTypeAlias = new TypeAliasReference("bool", BooleanType);
 
             DefaultParser = new TreeParser(options => {
                 options.Module.AddSystemTypes();
@@ -264,5 +244,55 @@ function goofy() when daisy(false) {}";
             var boolAliasRootType = boolAlias.BaseType.ResolveNonAlias();
             Assert.True(ReferenceEquals(booleanEnum, boolAliasRootType));
         }
+
+        [Fact]
+        public void Should_throw_because_unresolvable_function_parameter()
+        {
+            var module = DefaultParser.Parse(@"function daisy(inter32 test_int);").Module;
+
+            Assert.Throws<ArgumentException>(() => {
+                if (!module.Block.TryGetMemberFirst<MethodDefinition>("daisy", out var method)) {
+                    throw new InvalidOperationException();
+                }
+
+                method.Resolve();
+            });
+        }
+
+        [Fact]
+        public void Should_throw_because_unresolvable_function_generic_parameter()
+        {
+            var module = DefaultParser.Parse(@"function daisy<Player PlayerId>();").Module;
+
+            Assert.Throws<ArgumentException>(() => {
+                if (!module.Block.TryGetMemberFirst<MethodDefinition>("daisy", out var method)) {
+                    throw new InvalidOperationException();
+                }
+
+                method.Resolve();
+            });
+        }
+
+        [Fact]
+        public void Should_throw_because_unresolvable_event_handler_condition_parameter()
+        {
+            var content = @"
+function cond_one(inter32 int_val);
+function daisy() when cond_one<>(2) {}";
+
+            var module = DefaultParser.Parse(content).Module;
+
+            Assert.Throws<ArgumentException>(() => {
+                if (!module.Block.TryGetMemberFirst<EventHandlerDefinition>("daisy", out var eventHandler)) {
+                    throw new InvalidOperationException();
+                }
+
+                eventHandler.Resolve();
+            });
+        }
+
+        [Fact]
+        public void Should_parse_event_handler_without_existing_types() =>
+            DefaultParser.Parse(@"function daisy<Player PlayerId>(inter32 test_int) when cond_one<Player.Player2>(""test"") {}");
     }
 }

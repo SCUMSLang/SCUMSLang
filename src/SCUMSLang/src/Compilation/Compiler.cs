@@ -31,14 +31,13 @@ namespace SCUMSLang.Compilation
             var systemBlock = new ModuleDefinition()
                 .AddSystemTypes();
 
-            var rootMemberReferences = new ReferencePool();
-            var importGraph = await DirectAcyclicImportGraph.CreateAsync(importPaths, rootMemberReferences);
+            var importGraph = await DirectAcyclicImportGraph.CreateAsync(importPaths);
 
             foreach (var import in importGraph.SortedImports) {
                 var parser = new TreeParser(options => {
                     options.Module = import.Module;
                     options.TokenReaderStartPosition = import.TokenReaderUpperPosition + 1;
-                    options.TokenReaderBehaviour.SetNonParserChannelTokenSkipCondition();
+                    options.TokenReaderBehaviour.SetSkipConditionForNonParserChannelTokens();
                 });
 
                 parser.Parse(import.TokensAsReadOnlySpan());

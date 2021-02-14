@@ -17,7 +17,7 @@ namespace SCUMSLang.AST
         }
 
         public virtual string Name { get; }
-        public abstract string FullName { get; }
+        public abstract string LongName { get; }
 
         private TypeReference declaringType = null!;
 
@@ -33,7 +33,7 @@ namespace SCUMSLang.AST
                 return Name;
             }
 
-            var declaringTypeFullName = declaringType.FullName;
+            var declaringTypeFullName = declaringType.LongName;
             var seperationHelper = new StringSeparationHelper(".");
             seperationHelper.SetStringSeparator(ref declaringTypeFullName);
             return declaringTypeFullName += Name;
@@ -42,12 +42,19 @@ namespace SCUMSLang.AST
         protected abstract IMemberDefinition ResolveDefinition();
 
         protected virtual void ResolveDependencies() =>
-            DeclaringType?.Resolve(); 
-        
+            DeclaringType?.Resolve();
+
         void IResolvableDependencies.ResolveDependencies() =>
              ResolveDependencies();
 
         public IMemberDefinition Resolve() =>
             ResolveDefinition();
+
+        public override bool Equals(object? obj)
+        {
+            return base.Equals(obj) && obj is MemberReference member
+                && Equals(member.LongName, LongName)
+                && MemberReferenceEqualityComparer.ShallowComparer.Default.Equals(member.DeclaringType, DeclaringType);
+        }
     }
 }

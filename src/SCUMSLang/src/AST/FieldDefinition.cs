@@ -13,9 +13,16 @@
         protected override IMemberDefinition ResolveDefinition() =>
             Resolve();
 
-        public new virtual FieldDefinition Resolve() {
+        public new virtual FieldDefinition Resolve()
+        {
             ResolveDependencies();
             return this;
+        }
+
+        public override bool Equals(object? obj)
+        {
+            return base.Equals(obj) && obj is FieldDefinition field
+                && Equals(field.Value, Value);
         }
     }
 }

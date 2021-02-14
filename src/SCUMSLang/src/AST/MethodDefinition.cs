@@ -26,8 +26,11 @@ namespace SCUMSLang.AST
         protected override IMemberDefinition ResolveDefinition() => 
             Resolve();
 
-        public new MethodDefinition Resolve() =>
-            this;
+        public new MethodDefinition Resolve()
+        {
+            ResolveDependencies();
+            return this;
+        }
 
         OverloadConflictResult IOverloadableReference.SolveConflict(BlockDefinition block)
         {

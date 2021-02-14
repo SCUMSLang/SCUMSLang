@@ -37,5 +37,10 @@
             ResolveDependencies();
             return this;
         }
+
+        public override bool Equals(object? obj) =>
+            base.Equals(obj) && obj is ParameterDefinition parameter
+            && Equals(parameter.HasConstant, HasConstant)
+            && Equals(parameter.Constant, Constant);
     }
 }

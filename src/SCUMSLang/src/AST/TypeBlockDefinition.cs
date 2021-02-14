@@ -4,7 +4,7 @@ using Teronis;
 
 namespace SCUMSLang.AST
 {
-    public abstract class TypeBlockDefinition : BlockDefinition
+    public abstract class TypeBlockDefinition : BlockDefinition, IReferenceResolver
     {
         public override TreeTokenType TokenType => TreeTokenType.ModuleBlockDefinition;
 
@@ -28,5 +28,22 @@ namespace SCUMSLang.AST
             var type = types.Single();
             return type;
         }
+
+        protected abstract TypeDefinition Resolve(TypeReference type);
+        protected abstract FieldDefinition Resolve(FieldReference field);
+        protected abstract MethodDefinition Resolve(MethodReference method);
+        protected abstract EventHandlerDefinition Resolve(EventHandlerReference eventHandler);
+
+        TypeDefinition IReferenceResolver.Resolve(TypeReference type) => 
+            Resolve(type);
+
+        FieldDefinition IReferenceResolver.Resolve(FieldReference field) => 
+            Resolve(field);
+
+        MethodDefinition IReferenceResolver.Resolve(MethodReference method) => 
+            Resolve(method);
+
+        EventHandlerDefinition IReferenceResolver.Resolve(EventHandlerReference eventHandler) => 
+            Resolve(eventHandler);
     }
 }

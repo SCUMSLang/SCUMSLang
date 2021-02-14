@@ -8,14 +8,14 @@ namespace SCUMSLang.AST
         public virtual TypeReference FieldType { get; internal set; }
         public bool IsStatic { get; internal set; }
 
-        public override ModuleDefinition? Module => 
+        public override ModuleDefinition? Module =>
             DeclaringType?.Module ?? FieldType.Module;
 
         private FieldDefinition? resolvedDefinition;
 
-        public override string FullName => FieldType is null
+        public override string LongName => FieldType is null
             ? MemberFullName()
-            : $"{FieldType.FullName} {MemberFullName()}";
+            : $"{FieldType.LongName} {MemberFullName()}";
 
         public FieldReference(string name, TypeReference fieldType)
             : base(name) =>
@@ -28,7 +28,8 @@ namespace SCUMSLang.AST
         protected override IMemberDefinition ResolveDefinition() =>
             Resolve();
 
-        protected override void ResolveDependencies() {
+        protected override void ResolveDependencies()
+        {
             FieldType?.Resolve();
             base.ResolveDependencies();
         }
@@ -40,6 +41,13 @@ namespace SCUMSLang.AST
             return resolvedDefinition = resolvedDefinition
                 ?? Module?.Resolve(this)
                 ?? throw new NotSupportedException();
+        }
+
+        public override bool Equals(object? obj)
+        {
+            return base.Equals(obj) && obj is FieldReference reference
+                && reference.IsStatic == IsStatic
+                && Equals(reference.FieldType, FieldType);
         }
     }
 }

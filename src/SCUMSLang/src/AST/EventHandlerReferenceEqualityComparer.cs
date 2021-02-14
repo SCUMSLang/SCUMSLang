@@ -25,12 +25,23 @@ namespace SCUMSLang.AST
         {
             public new static OverloadComparer Default = new OverloadComparer();
 
-            public virtual MethodReferenceEqualityComparer.OverloadComparer MethodOverloadComparer { get; }
+            public MethodReferenceEqualityComparer.OverloadComparer MethodOverloadComparer {
+                get {
+                    if (methodComparer is null) {
+                        methodComparer = MethodReferenceEqualityComparer.OverloadComparer.Default;
+                    }
 
-            public MethodCallDefinitionEqualityComparer MethodCallComparer {
+                    return methodComparer;
+                }
+
+                set => methodComparer = value;
+            }
+
+
+            public MethodCallDefinitionEqualityComparer.OverloadComparer MethodCallOverloadComparer {
                 get {
                     if (methodCallComparer is null) {
-                        methodCallComparer = MethodCallDefinitionEqualityComparer.Default;
+                        methodCallComparer = MethodCallDefinitionEqualityComparer.OverloadComparer.Default;
                     }
 
                     return methodCallComparer;
@@ -39,23 +50,15 @@ namespace SCUMSLang.AST
                 set => methodCallComparer = value;
             }
 
-            private MethodCallDefinitionEqualityComparer? methodCallComparer;
-
-            public OverloadComparer(
-                MethodReferenceEqualityComparer.OverloadComparer? methodOverloadComparer = null,
-                ParameterReferenceEqualityComparer.OverloadComparer? parameterOverloadComparer = null)
-            {
-                MethodOverloadComparer = methodOverloadComparer ?? new MethodReferenceEqualityComparer.OverloadComparer { 
-                    ParameterOverloadComaprer = ParameterReferenceEqualityComparer.OverloadComparer.Default
-                };
-            }
+            private MethodReferenceEqualityComparer.OverloadComparer? methodComparer;
+            private MethodCallDefinitionEqualityComparer.OverloadComparer? methodCallComparer;
 
             public override bool Equals([AllowNull] EventHandlerReference x, [AllowNull] EventHandlerReference y) =>
                 MethodOverloadComparer.Equals(x, y)
-                && Enumerable.SequenceEqual(x.Conditions, y.Conditions, MethodCallComparer);
+                && Enumerable.SequenceEqual(x.Conditions, y.Conditions, MethodCallOverloadComparer);
 
             public override int GetHashCode([DisallowNull] EventHandlerReference obj) =>
-                HashCode.Combine(obj.TokenType, obj.Name, obj.GenericParameters, obj.Parameters);
+                obj.GetHashCode();
         }
     }
 }

@@ -19,14 +19,23 @@ namespace SCUMSLang.AST
         {
             public new static OverloadComparer Default = new OverloadComparer();
 
-            public TypeReferenceEqualityComparer TypeReferenceComparer { get; }
+            public TypeReferenceEqualityComparer.OverloadComparer TypeOverloadComparer {
+                get {
+                    if (typeOverloadComparer is null) {
+                        typeOverloadComparer = TypeReferenceEqualityComparer.OverloadComparer.Default;
+                    }
 
-            public OverloadComparer(TypeReferenceEqualityComparer? typeReferenceComparer = null) =>
-                TypeReferenceComparer = typeReferenceComparer ?? TypeReferenceEqualityComparer.Default;
+                    return typeOverloadComparer;
+                }
+
+                set => typeOverloadComparer = value;
+            }
+
+            private TypeReferenceEqualityComparer.OverloadComparer? typeOverloadComparer;
 
             public override bool Equals([AllowNull] ParameterReference x, [AllowNull] ParameterReference y) =>
                 ReferenceEquals(x, y) || !(x is null) && !(y is null)
-                && TypeReferenceComparer.Equals(x.ParameterType, y.ParameterType);
+                && TypeOverloadComparer.Equals(x.ParameterType, y.ParameterType);
 
             public override int GetHashCode([DisallowNull] ParameterReference obj) =>
                 HashCode.Combine(obj.TokenType, obj.Name, obj.ParameterType);

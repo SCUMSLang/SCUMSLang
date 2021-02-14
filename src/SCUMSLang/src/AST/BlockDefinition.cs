@@ -145,7 +145,7 @@ namespace SCUMSLang.AST
                 candidates,
                 (node) => {
                     return node is T typedNode
-                    && comparer.Equals(typedNode, template);
+                        && comparer.Equals(typedNode, template);
                 },
                 out member);
         }
@@ -178,7 +178,7 @@ namespace SCUMSLang.AST
                 BlockMembers.AddLast(memberDefinition.Name, member);
 
                 if (member is TypeReference type) {
-                    ModuleTypes.Add(type.FullName, type);
+                    ModuleTypes.Add(type.LongName, type);
                 }
             }
 

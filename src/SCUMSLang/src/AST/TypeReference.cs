@@ -13,8 +13,8 @@ namespace SCUMSLang.AST
             get => module;
         }
 
-        public override string FullName =>
-            TypeFullName();
+        public override string LongName =>
+            TypeLongName();
 
         private ModuleDefinition? module;
         private TypeDefinition? resolvedDefinition;
@@ -60,7 +60,12 @@ namespace SCUMSLang.AST
         public virtual TypeDefinition ResolveNonAlias() =>
             ResolveNonAlias(Resolve());
 
-        internal string TypeFullName() =>
+        internal string TypeLongName() =>
             Name;
+
+        public override bool Equals(object? obj)
+        {
+            return base.Equals(obj) && obj is TypeReference;
+        }
     }
 }

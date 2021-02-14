@@ -5,22 +5,25 @@ namespace SCUMSLang.AST
 {
     internal static class TreeThrowHelper
     {
-        public static ArgumentException CreateMemberNotFoundException(string typeName, string memberName) =>
-            new ArgumentException($"{typeName.UpperFirst()} by name '{memberName}' has not been found.");
+        public static ArgumentException CreateMemberNotFoundException(string typeName, string memberName, Func<string, ArgumentException>? errorFactory = null)
+        {
+            errorFactory ??= message => new ArgumentException(message);
+            return errorFactory($"{typeName.UpperFirst()} by name '{memberName}' has not been found.");
+        }
 
-        public static ArgumentException CreateTypeNotFoundException(string name) =>
-            CreateMemberNotFoundException("type", name);
+        public static ArgumentException CreateTypeNotFoundException(string name, Func<string, ArgumentException>? errorFactory = null) =>
+            CreateMemberNotFoundException("type", name, errorFactory);
 
-        public static ArgumentException CreateFieldNotFoundException(string name) =>
-            CreateMemberNotFoundException("field", name);
+        public static ArgumentException CreateFieldNotFoundException(string name, Func<string, ArgumentException>? errorFactory = null) =>
+            CreateMemberNotFoundException("field", name, errorFactory);
 
-        public static ArgumentException CreateMethodNotFoundException(string name) =>
-            CreateMemberNotFoundException("method", name);
+        public static ArgumentException CreateMethodNotFoundException(string name, Func<string, ArgumentException>? errorFactory = null) =>
+            CreateMemberNotFoundException("method", name, errorFactory);
 
-        public static ArgumentException CreateEventHandlerdNotFoundException(string name) =>
-            CreateMemberNotFoundException("event handler", name);
+        public static ArgumentException CreateEventHandlerdNotFoundException(string name, Func<string, ArgumentException>? errorFactory = null) =>
+            CreateMemberNotFoundException("event handler", name, errorFactory);
 
-        public static ArgumentException CreateEnumerationFieldNotFoundException(string typeName) =>
-            new ArgumentException($"A member could not be retrieved from enumeration {typeName}.");
+        public static ResolutionDefinitionNotFoundException ResolutionDefinitionNotFoundExceptionDelegate(string message) =>
+            new ResolutionDefinitionNotFoundException(message);
     }
 }

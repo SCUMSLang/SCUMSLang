@@ -1,12 +1,13 @@
 ﻿using System;
 using System.Collections.Generic;
+using System.Linq;
 
 namespace SCUMSLang.AST
 {
     public class MethodReference : MemberReference
     {
         public override TreeTokenType TokenType => TreeTokenType.MethodReference;
-        public override string FullName => MemberFullName();
+        public override string LongName => MemberFullName();
         public IReadOnlyList<ParameterDefinition> GenericParameters { get; }
         public IReadOnlyList<ParameterDefinition> Parameters { get; }
         public override TypeReference DeclaringType { get; internal set; }
@@ -44,5 +45,10 @@ namespace SCUMSLang.AST
                 ?? Module?.Resolve(this)
                 ?? throw new NotSupportedException();
         }
+
+        public override bool Equals(object? obj) => 
+            base.Equals(obj) && obj is MethodReference method
+            && Enumerable.SequenceEqual(method.GenericParameters, GenericParameters)
+            && Enumerable.SequenceEqual(method.Parameters, Parameters);
     }
 }

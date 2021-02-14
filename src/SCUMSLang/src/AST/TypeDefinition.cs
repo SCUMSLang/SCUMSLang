@@ -1,11 +1,10 @@
 ﻿using System;
 using System.Collections.Generic;
-using System.Diagnostics;
 using System.Linq;
 
 namespace SCUMSLang.AST
 {
-    public class TypeDefinition : TypeReference, INameReservableReference, IOverloadableReference, IMemberDefinition
+    public sealed class TypeDefinition : TypeReference, INameReservableReference, IOverloadableReference, IMemberDefinition
     {
         public static TypeDefinition CreateEnumDefinition(
             ModuleDefinition module,
@@ -77,21 +76,19 @@ namespace SCUMSLang.AST
 
         public override bool Equals(object? obj)
         {
-            if (!(obj is TypeDefinition node)) {
-                return false;
-            }
-
-            var equals = TokenType == node.TokenType
-                && Name == node.Name;
-
-            Trace.WriteLineIf(!equals, $"{nameof(TypeDefinition)} not equals.");
-            return equals;
+            return base.Equals(obj) && obj is TypeDefinition type
+                && type.FieldsAreConstants == FieldsAreConstants
+                && type.IsEnum == IsEnum
+                && type.IsAlias == type.IsAlias
+                && Equals(type.BaseType, BaseType)
+                && MemberReferenceEqualityComparer.ShallowComparer.Default.Equals(type.DeclaringType, DeclaringType)
+                && Enumerable.SequenceEqual(type.Fields, Fields);
         }
 
         public override int GetHashCode() =>
             HashCode.Combine(base.GetHashCode(), TokenType, Name);
 
-        public new virtual TypeDefinition Resolve()
+        public new TypeDefinition Resolve()
         {
             ResolveDependencies();
             return this;
@@ -105,7 +102,7 @@ namespace SCUMSLang.AST
 
         #region IConditionalNameReservableNode
 
-        protected virtual OverloadConflictResult SolveOverloadConflict(BlockDefinition blockNode)
+        OverloadConflictResult IOverloadableReference.SolveConflict(BlockDefinition blockNode)
         {
             var candidates = blockNode.GetMembersCasted<TypeDefinition>(Name);
 
@@ -124,9 +121,6 @@ namespace SCUMSLang.AST
 
             throw new NotImplementedException("More than two type definition with the name have been found that got name reserved without checking.");
         }
-
-        OverloadConflictResult IOverloadableReference.SolveConflict(BlockDefinition blockNode) =>
-            SolveOverloadConflict(blockNode);
 
         #endregion
     }

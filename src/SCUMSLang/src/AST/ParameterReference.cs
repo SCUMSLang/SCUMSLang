@@ -19,9 +19,6 @@
             ParameterType = parameterType ?? throw new System.ArgumentNullException(nameof(parameterType));
         }
 
-        public override string ToString() =>
-            Name;
-
         protected virtual void ResolveDependencies() =>
             ParameterType.Resolve();
 
@@ -29,5 +26,13 @@
             ResolveDependencies();
 
         public abstract ParameterDefinition Resolve();
+
+        public override bool Equals(object? obj) =>
+            base.Equals(obj) && obj is ParameterReference parameter
+            && Equals(parameter.Name, Name)
+            && Equals(parameter.ParameterType, ParameterType);
+
+        public override string ToString() =>
+            Name;
     }
 }

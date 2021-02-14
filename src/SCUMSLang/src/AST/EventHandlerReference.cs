@@ -1,6 +1,5 @@
 ﻿using System;
 using System.Collections.Generic;
-using System.Diagnostics;
 using System.Linq;
 
 namespace SCUMSLang.AST
@@ -41,20 +40,11 @@ namespace SCUMSLang.AST
         protected override IMemberDefinition ResolveDefinition() =>
             Resolve();
 
-        public override bool Equals(object? obj)
-        {
-            if (!(obj is EventHandlerReference node)) {
-                return false;
-            }
+        public override bool Equals(object? obj) =>
+            base.Equals(obj) && obj is EventHandlerReference eventHandler
+            && Enumerable.SequenceEqual(eventHandler.Conditions, Conditions);
 
-            var equals = base.Equals(obj)
-                && Enumerable.SequenceEqual(Conditions, node.Conditions);
-
-            Trace.WriteLineIf(!equals, $"{nameof(EventHandlerReference)} not equals.");
-            return equals;
-        }
-
-        public override int GetHashCode() => 
+        public override int GetHashCode() =>
             HashCode.Combine(base.GetHashCode(), Conditions);
     }
 }

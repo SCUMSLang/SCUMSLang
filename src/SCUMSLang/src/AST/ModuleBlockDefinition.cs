@@ -1,42 +1,49 @@
 ﻿using System;
-using System.IO;
 using System.Linq;
 using Teronis;
 using Teronis.Collections.Specialized;
 
 namespace SCUMSLang.AST
 {
-    public sealed partial class ModuleDefinition : TypeReference
+    public sealed partial class ModuleDefinition : TypeReference, IReferenceResolver
     {
         public TypeBlockDefinition Block => block;
         public override ModuleDefinition? Module => this;
-        public string FilePath { get; private set; } = null!;
-
-        public string? DirectoryName =>
-            Path.GetDirectoryName(FilePath);
+        public string FilePath { get; }
 
         private ModuleBlockDefinition block;
+        private IReferenceResolver referenceResolver;
 
-        public ModuleDefinition(ModuleParameters _)
-            : base(name: string.Empty) =>
+        public ModuleDefinition(ModuleParameters? parameters)
+            : base(name: string.Empty)
+        {
             block = new ModuleBlockDefinition(this);
-        //FilePath = parameters.FilePath ?? string.Empty
+            FilePath = parameters?.FilePath ?? string.Empty;
+
+            if (parameters?.ReferenceResolver is null) {
+                referenceResolver = block;
+            } else {
+                var referenceResolverPool = new ReferenceResolverPool();
+                referenceResolverPool.AddModuleResolver(block);
+                referenceResolverPool.AddModuleResolver(parameters.ReferenceResolver);
+                referenceResolver = referenceResolverPool;
+            }
+        }
 
         public ModuleDefinition()
-            : base(name: string.Empty) =>
-            block = new ModuleBlockDefinition(this);
+            : this(parameters: null) { }
 
         public TypeDefinition Resolve(TypeReference type) =>
-            block.Resolve(type);
+            referenceResolver.Resolve(type);
 
         public FieldDefinition Resolve(FieldReference field) =>
-            block.Resolve(field);
+            referenceResolver.Resolve(field);
 
         public MethodDefinition Resolve(MethodReference method) =>
-            block.Resolve(method);
+            referenceResolver.Resolve(method);
 
         public EventHandlerDefinition Resolve(EventHandlerReference method) =>
-            block.Resolve(method);
+            referenceResolver.Resolve(method);
 
         public void Import(MemberReference member) =>
             block.Import(member);
@@ -64,7 +71,7 @@ namespace SCUMSLang.AST
                 Module = module;
             }
 
-            private T? findReference<T>(IReadOnlyLinkedBucketList<string, Reference> references, MemberReference type)
+            private T? findSingleReference<T>(IReadOnlyLinkedBucketList<string, Reference> references, MemberReference type)
                 where T : class
             {
                 var (success, bucket) = references.Buckets.TryGetValue(type.Name);
@@ -80,62 +87,70 @@ namespace SCUMSLang.AST
                 });
             }
 
-            public TypeDefinition Resolve(TypeReference type)
+            protected override TypeDefinition Resolve(TypeReference type)
             {
-                var typeDefinition = findReference<TypeDefinition>(ModuleTypes, type)
-                    ?? throw TreeThrowHelper.CreateTypeNotFoundException(type.FullName);
+                var typeDefinition = findSingleReference<TypeDefinition>(ModuleTypes, type)
+                    ?? throw TreeThrowHelper.CreateTypeNotFoundException(type.LongName);
 
                 return typeDefinition.Resolve();
             }
 
-            public FieldDefinition Resolve(FieldReference field)
+            protected override FieldDefinition Resolve(FieldReference field)
             {
                 FieldDefinition? fieldDefinition;
 
                 if (field.DeclaringType is null) {
-                    fieldDefinition = findReference<FieldDefinition>(BlockMembers, field);
+                    fieldDefinition = findSingleReference<FieldDefinition>(BlockMembers, field);
                 } else {
                     var declaringType = Resolve(field.DeclaringType);
                     fieldDefinition = declaringType.Fields.SingleOrDefault(x => x.Name == field.Name);
                 }
 
                 if (fieldDefinition is null) {
-                    throw TreeThrowHelper.CreateFieldNotFoundException(field.Name);
+                    throw TreeThrowHelper.CreateFieldNotFoundException(field.Name, TreeThrowHelper.ResolutionDefinitionNotFoundExceptionDelegate);
                 }
 
                 return fieldDefinition.Resolve();
             }
 
-            public MethodDefinition Resolve(MethodReference method)
+            protected override MethodDefinition Resolve(MethodReference method)
             {
-                if (!BlockMembers.TryGetBucket(method.Name, out var bucket)) {
-                    throw TreeThrowHelper.CreateMethodNotFoundException(method.Name);
+                MethodDefinition? methodDefinition = null;
+
+                if (BlockMembers.TryGetBucket(method.Name, out var bucket)) {
+                    var typeDefinitions = bucket
+                        .OfType<MethodDefinition>()
+                        .Where(x => x.DeclaringType == method.DeclaringType);
+
+                    methodDefinition = typeDefinitions.SingleOrDefault(x => {
+                        return MethodReferenceEqualityComparer.OverloadComparer.Default.Equals(x, method);
+                    });
                 }
 
-                var typeDefinitions = bucket
-                    .OfType<MethodDefinition>()
-                    .Where(x => x.DeclaringType == method.DeclaringType);
-
-                var methodDefinition = typeDefinitions.SingleOrDefault(x => {
-                    return MethodReferenceEqualityComparer.OverloadComparer.Default.Equals(x, method);
-                }) ?? throw TreeThrowHelper.CreateMethodNotFoundException(method.Name);
+                if (methodDefinition is null) {
+                    throw TreeThrowHelper.CreateMethodNotFoundException(method.Name, TreeThrowHelper.ResolutionDefinitionNotFoundExceptionDelegate);
+                }
 
                 return methodDefinition.Resolve();
             }
 
-            public EventHandlerDefinition Resolve(EventHandlerReference eventHandler)
+            protected override EventHandlerDefinition Resolve(EventHandlerReference eventHandler)
             {
-                if (!BlockMembers.TryGetBucket(eventHandler.Name, out var bucket)) {
-                    throw new ArgumentException($"Condition by name '{eventHandler.Name}' does not exist.");
+                EventHandlerDefinition? eventHandlerDefinition = null;
+
+                if (BlockMembers.TryGetBucket(eventHandler.Name, out var bucket)) {
+                    var typeDefinitions = bucket
+                        .OfType<EventHandlerDefinition>()
+                        .Where(x => x.DeclaringType == eventHandler.DeclaringType);
+
+                    eventHandlerDefinition = typeDefinitions.SingleOrDefault(x => {
+                        return EventHandlerReferenceEqualityComparer.OverloadComparer.Default.Equals(x, eventHandler);
+                    });
                 }
 
-                var typeDefinitions = bucket
-                    .OfType<EventHandlerDefinition>()
-                    .Where(x => x.DeclaringType == eventHandler.DeclaringType);
-
-                var eventHandlerDefinition = typeDefinitions.SingleOrDefault(x => {
-                    return EventHandlerReferenceEqualityComparer.OverloadComparer.Default.Equals(x, eventHandler);
-                }) ?? throw TreeThrowHelper.CreateEventHandlerdNotFoundException(eventHandler.Name);
+                if (eventHandlerDefinition is null) {
+                    throw TreeThrowHelper.CreateEventHandlerdNotFoundException(eventHandler.Name, TreeThrowHelper.ResolutionDefinitionNotFoundExceptionDelegate);
+                }
 
                 return eventHandlerDefinition.Resolve();
             }

@@ -14,11 +14,11 @@ namespace SCUMSLang.IO
     {
         public static async Task<ImportEntry> CreateAsync(
             string importPath,
-            ReferencePool nameReservableNodePool)
+            Action<ModuleParameters>? configureModuleParameters = null)
         {
             var importEntry = new ImportEntry(
                 importPath,
-                nameReservableNodePool);
+                configureModuleParameters);
 
             await importEntry.LoadTokensAsync();
             return importEntry;
@@ -28,7 +28,6 @@ namespace SCUMSLang.IO
         /// The full import path.
         /// </summary>
         public string ImportPath { get; }
-        public string ImportDirectory { get; }
         public IReadOnlyList<Token> Tokens => tokens;
         public ModuleDefinition Module { get; private set; }
         public int TokenReaderUpperPosition { get; private set; }
@@ -40,10 +39,10 @@ namespace SCUMSLang.IO
 
         private List<string> directImportPaths;
 
-        protected ImportEntry(string filePath, ReferencePool nameReservableNodePool)
+        protected ImportEntry(string filePath, Action<ModuleParameters>? configureModuleParameters = null)
         {
             directImportPaths = new List<string>();
-            filePath = filePath ?? throw new System.ArgumentNullException(nameof(filePath));
+            filePath = filePath ?? throw new ArgumentNullException(nameof(filePath));
 
             if (!File.Exists(filePath)) {
                 throw new IOException($"File '{filePath}' does not exist.");
@@ -51,11 +50,9 @@ namespace SCUMSLang.IO
 
             ImportPath = filePath;
 
-            var moduleParameters = new ModuleParameters() {
-                MemberReferences = nameReservableNodePool,
-                FilePath = filePath
-            };
-
+            var moduleParameters = new ModuleParameters();
+            configureModuleParameters?.Invoke(moduleParameters);
+            moduleParameters.FilePath = filePath;
             Module = new ModuleDefinition(moduleParameters);
         }
 
@@ -81,7 +78,7 @@ namespace SCUMSLang.IO
                 options.Module = Module;
                 options.RecognizableNodes = RecognizableReferences.Import;
                 options.EmptyRecognizationResultsIntoWhileBreak = true;
-                options.TokenReaderBehaviour.SetNonParserChannelTokenSkipCondition();
+                options.TokenReaderBehaviour.SetSkipConditionForNonParserChannelTokens();
             });
 
             var result = parser.Parse(tokens);
