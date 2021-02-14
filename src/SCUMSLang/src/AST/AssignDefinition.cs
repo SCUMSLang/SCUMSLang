@@ -5,14 +5,14 @@ namespace SCUMSLang.AST
 {
     public sealed class AssignDefinition : Reference
     {
-        public override TreeTokenType ReferenceType => TreeTokenType.Assignment;
+        public override TreeTokenType TokenType => TreeTokenType.AssignmentDefinition;
 
-        public ConstantReference Constant { get; }
-        public DeclarationReference Declaration { get; }
+        public string FieldName { get; }
+        public ConstantDefinition Constant { get; }
 
-        public AssignDefinition(DeclarationReference declaration, ConstantReference constant)
+        public AssignDefinition(string fieldName, ConstantDefinition constant)
         {
-            Declaration = declaration ?? throw new ArgumentNullException(nameof(declaration));
+            FieldName = fieldName ?? throw new ArgumentNullException(nameof(fieldName));
             Constant = constant ?? throw new ArgumentNullException(nameof(constant));
         }
 
@@ -22,7 +22,7 @@ namespace SCUMSLang.AST
                 return false;
             }
 
-            var equals = Declaration.Equals(assignment.Declaration)
+            var equals = FieldName == assignment.FieldName
                 && Constant.Equals(assignment.Constant);
 
             Trace.WriteLineIf(!equals, $"{nameof(AssignDefinition)} not equals.");
@@ -30,6 +30,6 @@ namespace SCUMSLang.AST
         }
 
         public override int GetHashCode() =>
-            HashCode.Combine(ReferenceType, Declaration, Constant);
+            HashCode.Combine(TokenType, FieldName, Constant);
     }
 }

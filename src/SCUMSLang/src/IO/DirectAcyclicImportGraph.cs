@@ -10,28 +10,28 @@ namespace SCUMSLang.IO
     {
         public static async Task<DirectAcyclicImportGraph> CreateAsync(
             IEnumerable<string> initialImportPaths, 
-            NameReservableNodePool nameReservableNodePool) {
+            ReferencePool rootMemberReferences) {
             var importGraph = new DirectAcyclicImportGraph(
                 initialImportPaths, 
-                nameReservableNodePool);
+                rootMemberReferences);
 
             await importGraph.LoadImportsRecursivelyAsync();
             return importGraph;
         }
 
         public IReadOnlyList<ImportEntry> SortedImports => sortedImports;
-        public NameReservableNodePool NameReservableNodePool { get; }
+        public ReferencePool RootMemberReferences { get; }
 
         private List<ImportEntry> sortedImports;
         private HashSet<string> initialImportPaths;
 
         public DirectAcyclicImportGraph(
             IEnumerable<string> initialImportPaths, 
-            NameReservableNodePool nameReservableNodePool)
+            ReferencePool rootMemberReferences)
         {
             sortedImports = new List<ImportEntry>();
             this.initialImportPaths = new HashSet<string>(initialImportPaths);
-            NameReservableNodePool = nameReservableNodePool;
+            RootMemberReferences = rootMemberReferences;
         }
 
         protected async Task LoadImportsRecursivelyAsync()
@@ -45,7 +45,7 @@ namespace SCUMSLang.IO
                 foreach (var unloadedImportPath in unloadedImportPaths) {
                     var import = await ImportEntry.CreateAsync(
                         unloadedImportPath, 
-                        NameReservableNodePool);
+                        RootMemberReferences);
 
                     import.LoadDirectImports();
                     contextualImports.Add(import);

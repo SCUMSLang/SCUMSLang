@@ -1,6 +1,6 @@
 ﻿namespace SCUMSLang.AST
 {
-    public enum ConditionalNameReservationResult
+    public enum OverloadConflictResult
     {
         True,
         False,

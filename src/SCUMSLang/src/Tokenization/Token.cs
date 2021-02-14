@@ -58,7 +58,7 @@ namespace SCUMSLang.Tokenization
             return false;
         }
 
-        public bool TryRecognize(TokenType tokenType, out Token token)
+        public bool TryRecognize(TokenType tokenType, [MaybeNullWhen(false)] out Token token)
         {
             if (TokenType == tokenType) {
                 token = this;

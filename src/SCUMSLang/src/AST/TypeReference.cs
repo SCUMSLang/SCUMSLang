@@ -4,35 +4,63 @@ namespace SCUMSLang.AST
 {
     public class TypeReference : MemberReference
     {
-        public override TreeTokenType ReferenceType => TreeTokenType.TypeReference;
+        public static TypeReference StringReference = new TypeReference(SystemTypeLibrary.Sequences[SystemType.String]);
 
-        public string Name { get; }
-        public virtual SystemType SystemType { get; }
+        public override TreeTokenType TokenType =>
+            TreeTokenType.TypeReference;
 
-        public override ModuleDefinition? Module => 
-            module;
+        public override ModuleDefinition? Module {
+            get => module;
+        }
+
+        public override string FullName =>
+            TypeFullName();
 
         private ModuleDefinition? module;
+        private TypeDefinition? resolvedDefinition;
 
-        protected TypeReference(string name) =>
-            Name = name;
+        protected TypeReference(string name)
+            : base(name) { }
 
-        protected TypeReference(string name, SystemType systemType) {
-            Name = name;
-            SystemType = systemType;
-        }
-
-        public TypeReference(string name, SystemType systemType, ModuleDefinition module) {
-            Name = name ?? throw new ArgumentNullException(nameof(name));
-            SystemType = systemType;
+        public TypeReference(string name, ModuleDefinition module)
+            : base(name) =>
             this.module = module ?? throw new ArgumentNullException(nameof(module));
+
+        protected override IMemberDefinition ResolveDefinition() =>
+            Resolve();
+
+        public new TypeDefinition Resolve()
+        {
+            ResolveDependencies();
+
+            return resolvedDefinition = resolvedDefinition
+                ?? module?.Resolve(this)
+                ?? throw new NotSupportedException();
         }
 
-        protected override IMemberDefinition ResolveDefinition() => throw new NotImplementedException();
+        protected TypeDefinition ResolveNonAlias(TypeDefinition typeDefinition)
+        {
+            if (typeDefinition.IsAlias) {
+                while (typeDefinition.IsAlias) {
+                    if (typeDefinition.BaseType is null) {
+                        throw new InvalidOperationException("Type alias has no target type specified.");
+                    }
 
-        public new TypeDefinition? Resolve() {
-            var module = Module ?? throw new NotSupportedException();
-            return module.Resolve(this);
+                    typeDefinition = typeDefinition.BaseType.Resolve();
+                }
+
+
+            } else {
+                typeDefinition = typeDefinition.Resolve();
+            }
+
+            return typeDefinition;
         }
+
+        public virtual TypeDefinition ResolveNonAlias() =>
+            ResolveNonAlias(Resolve());
+
+        internal string TypeFullName() =>
+            Name;
     }
 }

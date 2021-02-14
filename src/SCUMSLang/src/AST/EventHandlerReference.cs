@@ -5,18 +5,41 @@ using System.Linq;
 
 namespace SCUMSLang.AST
 {
-    public class EventHandlerReference : FunctionReference
+    public class EventHandlerReference : MethodReference
     {
-        public override TreeTokenType ReferenceType => TreeTokenType.EventHandler;
-        public IReadOnlyList<FunctionCallReference> Conditions { get; }
+        public override TreeTokenType TokenType => TreeTokenType.EventHandlerDefinition;
+        public IReadOnlyList<MethodCallDefinition> Conditions { get; }
+
+        private EventHandlerDefinition? resolvedDefinition;
 
         public EventHandlerReference(
             string name,
-            IReadOnlyList<DeclarationReference>? genericParameters, 
-            IReadOnlyList<DeclarationReference>? parameters,
-            IReadOnlyList<FunctionCallReference>? conditions)
-            : base(name, genericParameters, parameters) =>
-            Conditions = conditions ?? new List<FunctionCallReference>();
+            IReadOnlyList<ParameterDefinition>? genericParameters, 
+            IReadOnlyList<ParameterDefinition>? parameters,
+            IReadOnlyList<MethodCallDefinition>? conditions,
+            TypeReference declaringType)
+            : base(name, genericParameters, parameters, declaringType) =>
+            Conditions = conditions ?? new List<MethodCallDefinition>();
+
+        protected override void ResolveDependencies() {
+            base.ResolveDependencies();
+
+            foreach (IResolvableDependencies condition in Conditions) {
+                condition.ResolveDependencies();
+            }
+        }
+
+        public new EventHandlerDefinition Resolve()
+        {
+            ResolveDependencies();
+
+            return resolvedDefinition = resolvedDefinition
+                ?? Module?.Resolve(this)
+                ?? throw new NotSupportedException();
+        }
+
+        protected override IMemberDefinition ResolveDefinition() =>
+            Resolve();
 
         public override bool Equals(object? obj)
         {

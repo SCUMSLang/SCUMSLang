@@ -1,21 +1,79 @@
 ﻿using System;
+using System.Collections.Generic;
 using System.Diagnostics;
+using System.Linq;
 
 namespace SCUMSLang.AST
 {
-    public class TypeDefinition : TypeReference, INameReservableReference, INameDuplicationHandleableReference
+    public class TypeDefinition : TypeReference, INameReservableReference, IOverloadableReference, IMemberDefinition
     {
-        public override TreeTokenType ReferenceType => TreeTokenType.TypeDefinition;
+        public static TypeDefinition CreateEnumDefinition(
+            ModuleDefinition module,
+            string name,
+            IEnumerable<string> names,
+            TypeReference? valueType = null,
+            bool usableAsConstants = false,
+            bool allowOverwriteOnce = false)
+        {
+            var enumType = new TypeDefinition(module, name) {
+                IsEnum = true,
+                FieldsAreConstants = usableAsConstants,
+                AllowOverwriteOnce = allowOverwriteOnce,
+            };
+
+            valueType ??= new TypeReference(SystemTypeLibrary.Sequences[SystemType.Integer], module);
+            enumType.Fields = new EnumerationFieldCollection(valueType, enumType, names);
+            return enumType;
+        }
+
+        public static TypeDefinition CreateAliasDefinition(
+            ModuleDefinition module,
+            string name,
+            TypeReference sourceType)
+        {
+            var alias = new TypeDefinition(module, name) {
+                IsAlias = true,
+                BaseType = sourceType,
+            };
+
+            return alias;
+        }
+
+        public override TreeTokenType TokenType => TreeTokenType.TypeDefinition;
+
+        public TypeReference? BaseType { get; internal set; }
+        public bool IsEnum { get; internal set; }
+        public bool IsAlias { get; internal set; }
+
+        public IReadOnlyList<FieldDefinition> Fields {
+            get {
+                if (fields is null) {
+                    fields = new List<FieldDefinition>();
+                }
+
+                return fields;
+            }
+
+            internal set => fields = value;
+        }
+
+        public bool FieldsAreConstants { get; internal set; }
 
         internal bool AllowOverwriteOnce { get; set; }
 
-        public virtual TypeDefinition SourceType => this;
+        private IReadOnlyList<FieldDefinition>? fields;
 
-        protected TypeDefinition(string name)
-            : base(name) { }
+        public TypeDefinition(ModuleDefinition module, string name)
+            : base(name, module) { }
 
-        public TypeDefinition(string name, SystemType systemType)
-            : base(name, systemType) { }
+        public string? GetEnumerationName(object value)
+        {
+            if (value is string valueString) {
+                return valueString;
+            }
+
+            return fields?.SingleOrDefault(x => Equals(x.Value, value)).Name;
+        }
 
         public override bool Equals(object? obj)
         {
@@ -23,43 +81,52 @@ namespace SCUMSLang.AST
                 return false;
             }
 
-            var equals = ReferenceType == node.ReferenceType
-                && Name == node.Name
-                && SystemType == node.SystemType;
+            var equals = TokenType == node.TokenType
+                && Name == node.Name;
 
             Trace.WriteLineIf(!equals, $"{nameof(TypeDefinition)} not equals.");
             return equals;
         }
 
-        public virtual bool IsSubsetOf(object? obj) =>
-            Equals(obj);
-
         public override int GetHashCode() =>
-            HashCode.Combine(base.GetHashCode(), ReferenceType, Name, SystemType);
+            HashCode.Combine(base.GetHashCode(), TokenType, Name);
+
+        public new virtual TypeDefinition Resolve()
+        {
+            ResolveDependencies();
+            return this;
+        }
+
+        protected override IMemberDefinition ResolveDefinition() =>
+            Resolve();
+
+        public override TypeDefinition ResolveNonAlias() =>
+            ResolveNonAlias(this);
 
         #region IConditionalNameReservableNode
 
-        protected virtual ConditionalNameReservationResult CanReserveName(BlockDefinition blockNode) {
-            var candidates = blockNode.GetCastedNodesByName<TypeDefinition>(Name);
+        protected virtual OverloadConflictResult SolveOverloadConflict(BlockDefinition blockNode)
+        {
+            var candidates = blockNode.GetMembersCasted<TypeDefinition>(Name);
 
             if (candidates is null) {
-                return ConditionalNameReservationResult.True;
+                return OverloadConflictResult.True;
             } else if (candidates.Count == 1) {
                 var candidate = candidates[0];
 
                 if (candidate.AllowOverwriteOnce && candidate.Equals(this)) {
                     AllowOverwriteOnce = false;
-                    return ConditionalNameReservationResult.Skip;
+                    return OverloadConflictResult.Skip;
                 } else {
-                    return ConditionalNameReservationResult.False;
+                    return OverloadConflictResult.False;
                 }
             }
 
             throw new NotImplementedException("More than two type definition with the name have been found that got name reserved without checking.");
         }
 
-        ConditionalNameReservationResult INameDuplicationHandleableReference.CanReserveName(BlockDefinition blockNode) =>
-            CanReserveName(blockNode);
+        OverloadConflictResult IOverloadableReference.SolveConflict(BlockDefinition blockNode) =>
+            SolveOverloadConflict(blockNode);
 
         #endregion
     }

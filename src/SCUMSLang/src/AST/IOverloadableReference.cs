@@ -1,6 +1,6 @@
 ﻿namespace SCUMSLang.AST
 {
-    internal interface INameDuplicationHandleableReference
+    internal interface IOverloadableReference
     {
         /// <summary>
         /// Checks whether the duplicate node can be added.
@@ -8,6 +8,6 @@
         /// <param name="block"></param>
         /// <param name="probe"></param>
         /// <returns></returns>
-        public ConditionalNameReservationResult CanReserveName(BlockDefinition block);
+        public OverloadConflictResult SolveConflict(BlockDefinition block);
     }
 }

@@ -6,15 +6,15 @@ using System.IO;
 
 namespace SCUMSLang.AST
 {
-    public static class ReferenceParserTools
+    public static class TreeParserTools
     {
-        public static bool TryRecognizeImport(BlockDefinition block, SpanReader<Token> reader, [NotNullWhen(true)] out int? newPosition, [MaybeNullWhen(false)] out Reference node)
+        public static bool TryRecognizeImport(ModuleDefinition module, SpanReader<Token> reader, [NotNullWhen(true)] out int? newPosition, [MaybeNullWhen(false)] out Reference node)
         {
             if (reader.ViewLastValue == TokenType.ImportKeyword
                 && reader.ConsumeNext(out Token stringToken)
                 && reader.ConsumeNext(TokenType.Semicolon)) {
                 var importBasePath = stringToken.GetValue<string>();
-                var importAbsolutPath = Path.GetFullPath(importBasePath, block.Module.FilePath);
+                var importAbsolutPath = Path.GetFullPath(importBasePath, module.FilePath);
                 newPosition = reader.UpperPosition;
                 node = new ImportDefinition(importAbsolutPath);
                 return true;
@@ -68,7 +68,56 @@ namespace SCUMSLang.AST
             return false;
         }
 
-        public static bool TryRecognizeTypeAlias(BlockDefinition block, SpanReader<Token> reader, [NotNullWhen(true)] out int? newPosition, [MaybeNullWhen(false)] out Reference node)
+        //public static bool TryRecognizeTypeAlias(BlockDefinition block, SpanReader<Token> reader, [NotNullWhen(true)] out int? newPosition, [MaybeNullWhen(false)] out Reference node)
+        //{
+        //    if (reader.ViewLastValue == TokenType.TypeDefKeyword) {
+        //        if (!reader.ConsumeNext(out ReaderPosition<Token> typeTokenPosition)) {
+        //            throw new ParseException(typeTokenPosition, "A type was expected.");
+        //        }
+
+        //        static ReaderPosition<Token> expectNameAndEndToken(ref SpanReader<Token> reader, out int? newPosition)
+        //        {
+        //            if (!reader.ConsumeNext(out ReaderPosition<Token> nameToken)
+        //                || string.IsNullOrEmpty(nameToken.Value?.ToString())) {
+        //                throw new ParseException(reader.ViewLastPosition, "A name was expected.");
+        //            }
+
+        //            if (!reader.ConsumeNext(TokenType.Semicolon)) {
+        //                throw new ParseException(reader.ViewLastPosition, "A semicolon was expected.");
+        //            }
+
+        //            newPosition = reader.UpperPosition;
+        //            return nameToken;
+        //        }
+
+        //        //if (typeTokenPosition.Value == TokenType.EnumKeyword) {
+        //        //    _ = TryRecognizeNameList(reader, TokenType.OpenBrace, TokenType.CloseBrace, out newPosition, out var nameList, required: true, needConsume: true);
+        //        //    reader.SetLengthTo(newPosition!.Value);
+
+        //        //    var nameToken = expectNameAndEndToken(ref reader, out newPosition!);
+        //        //    var name = nameToken.Value.GetValue<string>();
+        //        //    node = new EnumerationTypeReference(name, hasReservedNames: true, nameList!);
+
+        //        //    return true;
+        //        //}
+
+        //        {
+        //            var sourceTypeDefinition = block.GetTypeDefinition(new[] { typeTokenPosition.Value.GetValue<string>() }, TypeReferenceViewpoint.Type);
+
+        //            var nameToken = expectNameAndEndToken(ref reader, out newPosition!);
+        //            var name = nameToken.Value.GetValue<string>();
+        //            node = new TypeAliasReference(name, sourceTypeDefinition);
+
+        //            return true;
+        //        }
+        //    }
+
+        //    newPosition = null;
+        //    node = null;
+        //    return false;
+        //}
+
+        public static bool TryRecognizeTypeAliasReference(ModuleDefinition module, SpanReader<Token> reader, [NotNullWhen(true)] out int? newPosition, [MaybeNullWhen(false)] out Reference node)
         {
             if (reader.ViewLastValue == TokenType.TypeDefKeyword) {
                 if (!reader.ConsumeNext(out ReaderPosition<Token> typeTokenPosition)) {
@@ -94,20 +143,17 @@ namespace SCUMSLang.AST
                     _ = TryRecognizeNameList(reader, TokenType.OpenBrace, TokenType.CloseBrace, out newPosition, out var nameList, required: true, needConsume: true);
                     reader.SetLengthTo(newPosition!.Value);
 
-                    var nameToken = expectNameAndEndToken(ref reader, out newPosition!);
-                    var name = nameToken.Value.GetValue<string>();
-                    node = new EnumerationTypeReference(name, hasReservedNames: true, nameList!);
-
+                    var enumNameToken = expectNameAndEndToken(ref reader, out newPosition!);
+                    var enumName = enumNameToken.Value.GetValue<string>();
+                    node = TypeDefinition.CreateEnumDefinition(module, enumName, nameList!, usableAsConstants: true);
                     return true;
                 }
 
                 {
-                    var sourceTypeDefinition = block.GetTypeDefinition(new[] { typeTokenPosition.Value.GetValue<string>() }, TypeReferenceViewpoint.Type);
-
-                    var nameToken = expectNameAndEndToken(ref reader, out newPosition!);
-                    var name = nameToken.Value.GetValue<string>();
-                    node = new TypeAliasReference(name, sourceTypeDefinition);
-
+                    var sourceTypeName = typeTokenPosition.Value.GetValue<string>();
+                    var aliasNameToken = expectNameAndEndToken(ref reader, out newPosition!);
+                    var aliasName = aliasNameToken.Value.GetValue<string>();
+                    node = TypeDefinition.CreateAliasDefinition(module, aliasName, new TypeReference(sourceTypeName, module));
                     return true;
                 }
             }
@@ -117,56 +163,7 @@ namespace SCUMSLang.AST
             return false;
         }
 
-        public static bool TryRecognizeTypeAliasReference(BlockDefinition block, SpanReader<Token> reader, [NotNullWhen(true)] out int? newPosition, [MaybeNullWhen(false)] out Reference node)
-        {
-            if (reader.ViewLastValue == TokenType.TypeDefKeyword) {
-                if (!reader.ConsumeNext(out ReaderPosition<Token> typeTokenPosition)) {
-                    throw new ParseException(typeTokenPosition, "A type was expected.");
-                }
-
-                static ReaderPosition<Token> expectNameAndEndToken(ref SpanReader<Token> reader, out int? newPosition)
-                {
-                    if (!reader.ConsumeNext(out ReaderPosition<Token> nameToken)
-                        || string.IsNullOrEmpty(nameToken.Value?.ToString())) {
-                        throw new ParseException(reader.ViewLastPosition, "A name was expected.");
-                    }
-
-                    if (!reader.ConsumeNext(TokenType.Semicolon)) {
-                        throw new ParseException(reader.ViewLastPosition, "A semicolon was expected.");
-                    }
-
-                    newPosition = reader.UpperPosition;
-                    return nameToken;
-                }
-
-                if (typeTokenPosition.Value == TokenType.EnumKeyword) {
-                    _ = TryRecognizeNameList(reader, TokenType.OpenBrace, TokenType.CloseBrace, out newPosition, out var nameList, required: true, needConsume: true);
-                    reader.SetLengthTo(newPosition!.Value);
-
-                    var nameToken = expectNameAndEndToken(ref reader, out newPosition!);
-                    var name = nameToken.Value.GetValue<string>();
-                    node = new EnumerationTypeReference(name, hasReservedNames: true, nameList!);
-
-                    return true;
-                }
-
-                {
-                    var sourceTypeDefinition = block.GetTypeDefinition(new[] { typeTokenPosition.Value.GetValue<string>() }, TypeReferenceViewpoint.Type);
-
-                    var nameToken = expectNameAndEndToken(ref reader, out newPosition!);
-                    var name = nameToken.Value.GetValue<string>();
-                    node = new TypeAliasReference(name, sourceTypeDefinition);
-
-                    return true;
-                }
-            }
-
-            newPosition = null;
-            node = null;
-            return false;
-        }
-
-        public static bool TryRecognizeEnumeration(SpanReader<Token> reader, [NotNullWhen(true)] out int? newPosition, [MaybeNullWhen(false)] out Reference node)
+        public static bool TryRecognizeEnumeration(ModuleDefinition module, SpanReader<Token> reader, [NotNullWhen(true)] out int? newPosition, [MaybeNullWhen(false)] out Reference node)
         {
             if (reader.ViewLastValue == TokenType.EnumKeyword) {
                 if (!reader.ConsumeNext(out ReaderPosition<Token> enumNameTokenPosition)
@@ -176,8 +173,11 @@ namespace SCUMSLang.AST
 
                 _ = TryRecognizeNameList(reader, TokenType.OpenBrace, TokenType.CloseBrace, out newPosition, out var nameList, required: true, needConsume: true);
                 reader.SetLengthTo(newPosition!.Value);
+
+                var enumName = enumNameTokenPosition.Value.GetValue<string>();
+                var enumType = TypeDefinition.CreateEnumDefinition(module, enumName, nameList!);
                 newPosition = reader.UpperPosition;
-                node = new EnumerationTypeReference(enumNameTokenPosition.Value.GetValue<string>(), hasReservedNames: false, nameList!);
+                node = enumType;
                 return true;
             }
 
@@ -186,69 +186,65 @@ namespace SCUMSLang.AST
             return false;
         }
 
-        public static TypeDefinition GetTypeDefinition(BlockDefinition block, Token typeToken)
+        //public static TypeDefinition GetTypeDefinition(BlockDefinition block, Token typeToken)
+        //{
+        //    if (!(typeToken.Value is string typeName) || string.IsNullOrEmpty(typeName)) {
+        //        throw new ParseException(typeToken, "A type was expected.");
+        //    }
+
+        //    if (TokenTypeLibrary.SystemTypes.TryGetValue(typeToken.TokenType, out var definitionType)) {
+        //        return block.GetTypeDefinition(definitionType);
+        //    } else {
+        //        return block.GetTypeDefinition(new[] { typeName }, TypeReferenceViewpoint.Type);
+        //    }
+        //}
+
+        public static TypeReference GetTypeReference(ModuleDefinition module, Token nameTypeToken)
         {
-            if (!(typeToken.Value is string typeName) || string.IsNullOrEmpty(typeName)) {
-                throw new ParseException(typeToken, "A type was expected.");
+            if (!(nameTypeToken.Value is string typeName) || string.IsNullOrEmpty(typeName)) {
+                throw new ParseException(nameTypeToken, "A type was expected.");
             }
 
-            if (TokenTypeLibrary.SystemTypes.TryGetValue(typeToken.TokenType, out var definitionType)) {
-                return block.GetTypeDefinition(definitionType);
-            } else {
-                return block.GetTypeDefinition(new[] { typeName }, TypeReferenceViewpoint.Type);
-            }
+            return new TypeReference(typeName, module);
         }
 
-        public static TypeReference GetTypeReference(ModuleDefinition module, Token typeToken)
+        //public static TypeDefinition GetValueTypeDefinition(BlockDefinition block, Token valueTypeToken)
+        //{
+        //    if (valueTypeToken is MemberAccessToken memberAccessToken) {
+        //        return block.GetTypeDefinition(memberAccessToken.PathFragments, TypeReferenceViewpoint.Value);
+        //    }
+
+        //    if (TokenTypeLibrary.SystemTypes.TryGetValue(valueTypeToken.TokenType, out var definitionType)) {
+        //        return block.GetTypeDefinition(definitionType);
+        //    }
+
+        //    if (!(valueTypeToken.Value is string valueName) || string.IsNullOrEmpty(valueName)) {
+        //        throw new ParseException(valueTypeToken, "A type was expected.");
+        //    }
+
+        //    return block.GetTypeDefinition(new[] { valueName }, TypeReferenceViewpoint.Value);
+        //}
+
+        public static bool TryRecognizeField(ModuleDefinition module, SpanReader<Token> reader, out int? newPosition, [MaybeNull] out Reference node)
         {
-            if (!(typeToken.Value is string typeName) || string.IsNullOrEmpty(typeName)) {
-                throw new ParseException(typeToken, "A type was expected.");
-            }
-
-            if (TokenTypeLibrary.SystemTypes.TryGetValue(typeToken.TokenType, out var definitionType)) {
-                return new TypeReference(typeName, definitionType, module);
-            } else {
-                return new TypeReference(typeName, SystemType.Constant, module);
-            }
-        }
-
-        public static TypeDefinition GetValueTypeDefinition(BlockDefinition block, Token valueTypeToken)
-        {
-            if (valueTypeToken is MemberAccessToken memberAccessToken) {
-                return block.GetTypeDefinition(memberAccessToken.PathFragments, TypeReferenceViewpoint.Value);
-            }
-
-            if (TokenTypeLibrary.SystemTypes.TryGetValue(valueTypeToken.TokenType, out var definitionType)) {
-                return block.GetTypeDefinition(definitionType);
-            }
-
-            if (!(valueTypeToken.Value is string valueName) || string.IsNullOrEmpty(valueName)) {
-                throw new ParseException(valueTypeToken, "A type was expected.");
-            }
-
-            return block.GetTypeDefinition(new[] { valueName }, TypeReferenceViewpoint.Value);
-        }
-
-        public static bool TryRecognizeDeclaration(BlockDefinition block, SpanReader<Token> reader, out int? newPosition, [MaybeNull] out Reference node)
-        {
-            Scope scope;
+            bool isStatic;
 
             if (reader.ViewLastValue == TokenType.StaticKeyword) {
-                scope = Scope.Static;
+                isStatic = true;
 
                 if (!reader.ConsumeNext()) {
                     throw new ArgumentException("A value type was expected.");
                 }
             } else {
-                scope = Scope.Local;
+                isStatic = false;
             }
 
-            var variableTypeToken = reader.ViewLastValue;
+            var fieldTypeToken = reader.ViewLastValue;
 
             if (reader.PeekNext(out var variableNameToken) && variableNameToken.Value.TokenType == TokenType.Name
                 && reader.PeekNext(2, out var equalSignOrSemicolonToken)
                 && equalSignOrSemicolonToken.Value.TryRecognize(TokenType.EqualSign, TokenType.Semicolon)) {
-                var typeReference = GetTypeReference(block.Module, variableTypeToken);
+                var typeReference = GetTypeReference(module, fieldTypeToken);
 
                 if (equalSignOrSemicolonToken.Value.TokenType == TokenType.Semicolon) {
                     newPosition = equalSignOrSemicolonToken.UpperReaderPosition;
@@ -256,7 +252,10 @@ namespace SCUMSLang.AST
                     newPosition = reader.UpperPosition;
                 }
 
-                node = new DeclarationReference(scope, typeReference, variableNameToken.Value.GetValue<string>());
+                node = new FieldDefinition(variableNameToken.Value.GetValue<string>(), typeReference) {
+                    IsStatic = isStatic
+                };
+
                 return true;
             }
 
@@ -265,7 +264,7 @@ namespace SCUMSLang.AST
             return false;
         }
 
-        public static bool TryRecognizeAssignment(BlockDefinition block, SpanReader<Token> reader, TokenType valueType, out int? newPosition, [MaybeNull] out Reference node)
+        public static bool TryRecognizeAssignment(ModuleDefinition module, SpanReader<Token> reader, TokenType valueType, out int? newPosition, [MaybeNull] out Reference node)
         {
             if (reader.ViewLastValue.TryRecognize(TokenType.Name, out string name)
                 && reader.ConsumeNext(TokenType.EqualSign)
@@ -274,12 +273,16 @@ namespace SCUMSLang.AST
                     throw new MissingTokenException(valueToken, TokenType.Semicolon);
                 }
 
-                if (!block.TryGetFirstNode<DeclarationReference>(name, out var declaration)) {
-                    throw new ParseException(reader.ViewLastValue, $"There is no declaration by name '{name}' for assignment.");
-                }
+                //if (!block.TryGetFirstNode<DeclarationReference>(name, out var declaration)) {
+                //    throw new ParseException(reader.ViewLastValue, $"There is no declaration by name '{name}' for assignment.");
+                //}
+
+                //module.CurrentBlock.TryGet
+
+                var constant = GetConstant(module, valueToken);
 
                 newPosition = reader.UpperPosition;
-                node = new AssignDefinition(declaration, new ConstantReference(declaration.DeclaringType, valueToken.Value!));
+                node = new AssignDefinition(name, constant);
                 return true;
             }
 
@@ -294,34 +297,34 @@ namespace SCUMSLang.AST
         /// <param name="reader"></param>
         /// <returns></returns>
         public static bool TryRecognizeParameters(
-            BlockDefinition block,
+            ModuleDefinition module,
             SpanReader<Token> reader,
             TokenType openTokenType,
             TokenType closeTokenType,
-            out List<DeclarationReference> functionParameters,
+            out List<ParameterDefinition> functionParameters,
             [NotNullWhen(true)] out int? newPosition,
             bool required = false,
             bool needConsume = false)
         {
-            functionParameters = new List<DeclarationReference>();
+            functionParameters = new List<ParameterDefinition>();
 
             if (reader.ConsumeNext(needConsume)
                 && reader.ViewLastValue.TryRecognize(openTokenType)) {
                 while (reader.ConsumeNext(out Token variableTypeOrCloseToken)) {
-                    //var isVariableTypeToken = Recogn;
                     var hasEndCloseType = variableTypeOrCloseToken.TokenType == closeTokenType;
 
                     if (hasEndCloseType) {
                         break;
                     }
 
-                    var typeDefinition = GetTypeDefinition(block, variableTypeOrCloseToken);
+                    var typeReference = GetTypeReference(module, variableTypeOrCloseToken);
 
                     if (!reader.ConsumeNext(TokenType.Name, out var parameterNameToken)) {
                         throw new ParseException(reader.ViewLastValue, "Parameter name is missing.");
                     }
 
-                    functionParameters.Add(new DeclarationReference(Scope.Local, typeDefinition, parameterNameToken.GetValue<string>()));
+                    var parameter = new ParameterDefinition(parameterNameToken.GetValue<string>(), typeReference);
+                    functionParameters.Add(parameter);
 
                     if (reader.PeekNext(TokenType.Comma)) {
                         reader.ConsumeNext();
@@ -338,23 +341,41 @@ namespace SCUMSLang.AST
             return false;
         }
 
-        public static ConstantReference RecognizeConstant(BlockDefinition block, Token valueToken)
+        public static ConstantDefinition GetConstant(ModuleDefinition module, Token constantToken)
         {
-            var typeDefinition = GetValueTypeDefinition(block, valueToken);
-            return new ConstantReference(typeDefinition, valueToken.Value!);
+            if (TokenTypeLibrary.SystemTypes.TryGetValue(constantToken.TokenType, out var definitionType)) {
+                var typeReference = new TypeReference(SystemTypeLibrary.Sequences[definitionType], module);
+                return new ConstantDefinition(typeReference, constantToken.Value);
+            } else if (constantToken.TokenType == TokenType.MemberAccess && constantToken is MemberAccessToken memberAccessToken) {
+                var pathFragments = memberAccessToken.PathFragments;
+
+                if (pathFragments is null) {
+                    throw new ArgumentNullException(nameof(pathFragments));
+                } else if (pathFragments.Count != 2) {
+                    throw new ArgumentException("Enumeration field was expected (e.g. Unit.Player1)");
+                }
+
+                var enumFieldType = new TypeReference(pathFragments[0], module);
+                return new ConstantDefinition(enumFieldType, pathFragments[1]);
+            } else if (constantToken.TokenType == TokenType.Name) {
+                var typeReference = new TypeReference(constantToken.GetValue<string>(), module);
+                return new ConstantDefinition(typeReference, constantToken.Value);
+            } else {
+                throw new ParseException(constantToken, "Bad constant.");
+            }
         }
 
         public static bool TryRecognizeArgumentList(
-            BlockDefinition block,
+            ModuleDefinition module,
             SpanReader<Token> reader,
             TokenType openTokenType,
             TokenType endTokenType,
             [NotNullWhen(true)] out int? newPosition,
-            out List<ConstantReference> arguments,
+            out List<ConstantDefinition> arguments,
             bool required = false,
             bool needConsume = false)
         {
-            arguments = new List<ConstantReference>();
+            arguments = new List<ConstantDefinition>();
             bool hadPreviousComma = false;
 
             if (reader.ConsumeNext(needConsume)
@@ -369,7 +390,7 @@ namespace SCUMSLang.AST
                         return true;
                     }
 
-                    var constantNode = RecognizeConstant(block, reader.ViewLastValue);
+                    var constantNode = GetConstant(module, reader.ViewLastValue);
                     //reader.SetLengthTo(newPosition.Value);
                     arguments.Add(constantNode);
 
@@ -391,14 +412,14 @@ namespace SCUMSLang.AST
             return false;
         }
 
-        public static bool TryRecognizeAttribute(BlockDefinition block, SpanReader<Token> reader, [NotNullWhen(true)] out int? newPosition, [MaybeNullWhen(false)] out Reference node)
+        public static bool TryRecognizeAttribute(ModuleDefinition module, SpanReader<Token> reader, [NotNullWhen(true)] out int? newPosition, [MaybeNullWhen(false)] out Reference node)
         {
             if (reader.ViewLastValue == TokenType.OpenSquareBracket
                 && reader.ConsumeNext(TokenType.Name, out var nameTokenPosition)) {
-                List<ConstantReference>? arguments;
+                List<ConstantDefinition>? arguments;
 
                 if (reader.PeekNext(TokenType.OpenBracket)
-                    && TryRecognizeArgumentList(block, reader, TokenType.OpenBracket, TokenType.CloseBracket, out newPosition, out arguments, required: true, needConsume: true)) {
+                    && TryRecognizeArgumentList(module, reader, TokenType.OpenBracket, TokenType.CloseBracket, out newPosition, out arguments, required: true, needConsume: true)) {
                     reader.SetLengthTo(newPosition.Value);
                 } else {
                     arguments = null;
@@ -407,8 +428,8 @@ namespace SCUMSLang.AST
                 if (reader.ConsumeNext(TokenType.CloseSquareBracket)) {
                     newPosition = reader.UpperPosition;
                     var functionName = nameTokenPosition.GetValue<string>();
-                    block.TryGetFirstFunctionNode(functionName, null, arguments, out var function, required: true);
-                    node = new AttributeDefinition(new FunctionCallReference(function!, null, arguments));
+                    var methodCall = new MethodCallDefinition(functionName, null, arguments, module.Block.CurrentBlock.DeclaringType);
+                    node = new AttributeDefinition(methodCall);
                     return true;
                 } else {
                     throw new ParseException(reader.ViewLastValue, "The attribute needs to be closed by ']'.");
@@ -420,11 +441,11 @@ namespace SCUMSLang.AST
             return false;
         }
 
-        public static bool TryRecognizeFunctionCall(
-            BlockDefinition block,
+        public static bool TryRecognizeMethodCall(
+            ModuleDefinition module,
             SpanReader<Token> reader,
             [NotNullWhen(true)] out int? newPosition,
-            [MaybeNullWhen(false)] out FunctionCallReference node,
+            [MaybeNullWhen(false)] out MethodCallDefinition node,
             bool required = false,
             bool needConsume = false)
         {
@@ -432,11 +453,11 @@ namespace SCUMSLang.AST
                 && reader.ViewLastValue.TryRecognize(TokenType.Name, out var nameToken)
                 && reader.PeekNext(out ReaderPosition<Token> peekedToken)
                 && peekedToken.Value.TryRecognize(TokenType.OpenAngleBracket, TokenType.OpenBracket)) {
-                List<ConstantReference> genericArguments;
+                List<ConstantDefinition> genericArguments;
 
                 if (peekedToken.Value == TokenType.OpenAngleBracket
                     && TryRecognizeArgumentList(
-                        block,
+                        module,
                         reader,
                         TokenType.OpenAngleBracket,
                         TokenType.CloseAngleBracket,
@@ -445,11 +466,11 @@ namespace SCUMSLang.AST
                         needConsume: true)) {
                     reader.SetLengthTo(newPosition.Value);
                 } else {
-                    genericArguments = new List<ConstantReference>();
+                    genericArguments = new List<ConstantDefinition>();
                 }
 
                 if (TryRecognizeArgumentList(
-                        block,
+                        module,
                         reader,
                         TokenType.OpenBracket,
                         TokenType.CloseBracket,
@@ -458,9 +479,15 @@ namespace SCUMSLang.AST
                         required: true,
                         needConsume: true)) {
                     reader.SetLengthTo(newPosition.Value);
+
                     var functionName = nameToken.GetValue<string>();
-                    block.TryGetFirstFunctionNode(functionName, genericArguments, arguments, out var function, required: true);
-                    node = new FunctionCallReference(function!, genericArguments, arguments);
+
+                    node = new MethodCallDefinition(
+                        functionName,
+                        genericArguments,
+                        arguments,
+                        module.Block.CurrentBlock.DeclaringType);
+
                     return true;
                 }
             } else if (required) {
@@ -472,18 +499,18 @@ namespace SCUMSLang.AST
             return false;
         }
 
-        public static bool TryRecognizeFunctionOrEventHandler(BlockDefinition block, SpanReader<Token> reader, out int? newPosition, [MaybeNull] out Reference node)
+        public static bool TryRecognizeFunctionOrEventHandler(ModuleDefinition module, SpanReader<Token> reader, out int? newPosition, [MaybeNull] out Reference node)
         {
             if (reader.ViewLastValue.TryRecognize(TokenType.FunctionKeyword, out var functionToken)) {
                 if (!reader.ConsumeNext(TokenType.Name, out var functionNameToken)) {
                     throw new ParseException(functionToken, "Function must have a name.");
                 }
 
-                if (TryRecognizeParameters(block, reader, TokenType.OpenAngleBracket, TokenType.CloseAngleBracket, out var genericParameters, out newPosition, needConsume: true)) {
+                if (TryRecognizeParameters(module, reader, TokenType.OpenAngleBracket, TokenType.CloseAngleBracket, out var genericParameters, out newPosition, needConsume: true)) {
                     reader.SetLengthTo(newPosition.Value);
                 }
 
-                if (TryRecognizeParameters(block, reader, TokenType.OpenBracket, TokenType.CloseBracket, out var parameters, out newPosition, required: true, needConsume: true)) {
+                if (TryRecognizeParameters(module, reader, TokenType.OpenBracket, TokenType.CloseBracket, out var parameters, out newPosition, required: true, needConsume: true)) {
                     reader.SetLengthTo(newPosition.Value);
                 }
 
@@ -495,25 +522,34 @@ namespace SCUMSLang.AST
                     newPosition = reader.UpperPosition;
                     var isFunctionAbstract = afterSignatureNode.TokenType == TokenType.Semicolon;
 
-                    node = new FunctionReference(
+                    node = new MethodDefinition(
                         functionNameToken.GetValue<string>(),
                         genericParameters,
                         parameters,
-                        isAbstract: isFunctionAbstract);
+                        module.Block.CurrentBlock.DeclaringType) {
+                        IsAbstract = isFunctionAbstract
+                    };
 
                     return true;
                 } else {
-                    var conditions = new List<FunctionCallReference>();
+                    var conditions = new List<MethodCallDefinition>();
 
                     do {
-                        if (TryRecognizeFunctionCall(block, reader, out newPosition, out var condition, required: true, needConsume: true)) {
+                        if (TryRecognizeMethodCall(module, reader, out newPosition, out var condition, required: true, needConsume: true)) {
                             reader.SetLengthTo(newPosition.Value);
                             conditions.Add(condition);
                         }
 
                         if (reader.ConsumeNext(TokenType.OpenBrace)) {
                             newPosition = reader.UpperPosition;
-                            node = new EventHandlerReference(functionNameToken.GetValue<string>(), genericParameters, parameters, conditions);
+
+                            node = new EventHandlerDefinition(
+                                functionNameToken.GetValue<string>(),
+                                genericParameters,
+                                parameters,
+                                conditions,
+                                module.Block.CurrentBlock.DeclaringType);
+
                             return true;
                         }
 
@@ -532,39 +568,40 @@ namespace SCUMSLang.AST
         public static int? TryRecognize(BlockDefinition block, SpanReader<Token> reader, RecognizableReferences recognizableNodes, [MaybeNull] out Reference node)
         {
             int? newPosition;
+            var module = block.Module;
 
             if (recognizableNodes.HasFlag(RecognizableReferences.Import)
-                && TryRecognizeImport(block, reader, out newPosition, out node)) {
+                && TryRecognizeImport(module, reader, out newPosition, out node)) {
                 return newPosition;
             }
 
             if (recognizableNodes.HasFlag(RecognizableReferences.TypeAlias)
-                && TryRecognizeTypeAlias(block, reader, out newPosition, out node)) {
+                && TryRecognizeTypeAliasReference(module, reader, out newPosition, out node)) {
                 return newPosition;
             }
 
             if (recognizableNodes.HasFlag(RecognizableReferences.Enumeration)
-                && TryRecognizeEnumeration(reader, out newPosition, out node)) {
+                && TryRecognizeEnumeration(module, reader, out newPosition, out node)) {
                 return newPosition;
             }
 
             if (recognizableNodes.HasFlag(RecognizableReferences.Attribute)
-                && TryRecognizeAttribute(block, reader, out newPosition, out node)) {
+                && TryRecognizeAttribute(module, reader, out newPosition, out node)) {
                 return newPosition;
             }
 
             if (recognizableNodes.HasFlag(RecognizableReferences.FunctionOrEventHandler)
-                && TryRecognizeFunctionOrEventHandler(block, reader, out newPosition, out node)) {
+                && TryRecognizeFunctionOrEventHandler(module, reader, out newPosition, out node)) {
                 return newPosition;
             }
 
             if (recognizableNodes.HasFlag(RecognizableReferences.Declaration)
-                && TryRecognizeDeclaration(block, reader, out newPosition, out node)) {
+                && TryRecognizeField(module, reader, out newPosition, out node)) {
                 return newPosition;
             }
 
             if (recognizableNodes.HasFlag(RecognizableReferences.Assignment)
-                && TryRecognizeAssignment(block, reader, TokenType.Integer, out newPosition, out node)) {
+                && TryRecognizeAssignment(module, reader, TokenType.Integer, out newPosition, out node)) {
                 return newPosition;
             }
 

@@ -2,9 +2,9 @@
 
 namespace SCUMSLang.AST
 {
-    public static class ReferenceParserExtensions
+    public static class TreeParserExtensions
     {
-        public static ReferenceParserResult Parse(this ReferenceParser parser, string content)
+        public static TreeParserResult Parse(this TreeParser parser, string content)
         {
             var tokens = Tokenizer.Tokenize(content).ToArray();
             return parser.Parse(tokens);

@@ -3,13 +3,13 @@ using System.Diagnostics;
 
 namespace SCUMSLang.AST
 {
-    public class ConstantReference : Reference
+    public class ConstantDefinition : Reference, IResolvableDependencies
     {
-        public override TreeTokenType ReferenceType => TreeTokenType.Constant;
+        public override TreeTokenType TokenType => TreeTokenType.ConstantReference;
         public TypeReference ValueType { get; }
         public virtual object? Value { get; }
 
-        public ConstantReference(TypeReference valueType, object? value)
+        public ConstantDefinition(TypeReference valueType, object? value)
         {
             ValueType = valueType ?? throw new ArgumentNullException(nameof(valueType));
             Value = value;
@@ -17,18 +17,24 @@ namespace SCUMSLang.AST
 
         public override bool Equals(object? obj)
         {
-            if (!(obj is ConstantReference node)) {
+            if (!(obj is ConstantDefinition node)) {
                 return false;
             }
 
             var equals = ValueType.Equals(node.ValueType)
                 && Equals(Value, node.Value);
 
-            Trace.WriteLineIf(!equals, $"{nameof(ConstantReference)} not equals.");
+            Trace.WriteLineIf(!equals, $"{nameof(ConstantDefinition)} not equals.");
             return equals;
         }
 
+        protected void ResolveDependencies() =>
+            ValueType.Resolve();
+
+        void IResolvableDependencies.ResolveDependencies() =>
+            ResolveDependencies();
+
         public override int GetHashCode() =>
-            HashCode.Combine(ReferenceType, ValueType, Value);
+            HashCode.Combine(TokenType, ValueType, Value);
     }
 }

@@ -2,19 +2,24 @@
 {
     public static class ModuleDefinitionExtensions
     {
-        public static ModuleDefinition AddSystemTypes(this ModuleDefinition module) {
-            module.AddNode(new TypeDefinition(SystemTypeLibrary.Sequences[SystemType.Integer], SystemType.Integer) {
+        public static ModuleDefinition AddSystemTypes(this ModuleDefinition module)
+        {
+            module.Import(new TypeDefinition(module, SystemTypeLibrary.Sequences[SystemType.Integer]) {
                 AllowOverwriteOnce = true
             });
 
-            module.AddNode(new TypeDefinition(SystemTypeLibrary.Sequences[SystemType.String], SystemType.String) {
+            module.Import(new TypeDefinition(module, SystemTypeLibrary.Sequences[SystemType.String]) {
                 AllowOverwriteOnce = true
             });
 
-            module.AddNode(new EnumerationTypeReference(SystemTypeLibrary.Sequences[SystemType.Boolean], hasReservedNames: true, new[] { "false", "true" }, SystemType.Enumeration) {
-                AllowOverwriteOnce = true
-            });
+            var booleanType = TypeDefinition.CreateEnumDefinition(
+                module,
+                SystemTypeLibrary.Sequences[SystemType.Boolean],
+                new[] { "false", "true" },
+                usableAsConstants: true,
+                allowOverwriteOnce: true);
 
+            module.Import(booleanType);
             return module;
         }
     }

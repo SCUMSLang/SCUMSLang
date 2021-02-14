@@ -2,6 +2,6 @@
 {
     public interface IScopableReference
     {
-        Scope Scope { get; }
+        public Scope Scope {get;}
     }
 }

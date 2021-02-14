@@ -2,20 +2,23 @@
 {
     public enum TreeTokenType
     {
-        Block,
-        StaticScope,
-        LocalScope,
+        BlockDefinition,
         ImportDefinition,
         MemberReference,
+        FieldReference,
+        FieldDefinition,
         TypeReference,
         TypeDefinition,
         Attribute,
         DeclarationReference,
         DeclarationDefinition,
-        Assignment,
-        Constant,
-        Function,
-        FunctionCall,
-        EventHandler,
+        AssignmentDefinition,
+        ConstantReference,
+        MethodCallDefinition,
+        EventHandlerDefinition,
+        ParameterReference,
+        MethodReference,
+        MethodDefinition,
+        ModuleBlockDefinition,
     }
 }

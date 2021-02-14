@@ -2,8 +2,7 @@
 {
     public class ModuleParameters
     {
-        public IMemberResolver? MemberResolver { get; set; }
-        public NameReservableNodePool? NameReservableDefinitions { get; set; }
+        public ReferencePool? MemberReferences { get; set; }
         public string? FilePath { get; set; }
     }
 }

@@ -4,7 +4,7 @@ namespace SCUMSLang.AST
 {
     public class ImportDefinition : Reference
     {
-        public override TreeTokenType ReferenceType => TreeTokenType.ImportDefinition;
+        public override TreeTokenType TokenType => TreeTokenType.ImportDefinition;
 
         public string FilePath { get; }
 
@@ -15,6 +15,6 @@ namespace SCUMSLang.AST
             obj is ImportDefinition import && FilePath == import.FilePath;
 
         public override int GetHashCode() =>
-            HashCode.Combine(ReferenceType, FilePath);
+            HashCode.Combine(TokenType, FilePath);
     }
 }

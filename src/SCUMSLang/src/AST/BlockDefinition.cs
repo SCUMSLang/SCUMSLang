@@ -3,37 +3,49 @@ using System.Collections.Generic;
 using System.Diagnostics;
 using System.Diagnostics.CodeAnalysis;
 using System.Linq;
+using System.Text;
 using Teronis.Collections.Specialized;
+using Teronis.Text;
 
 namespace SCUMSLang.AST
 {
     public abstract partial class BlockDefinition : Reference
     {
-        public override TreeTokenType ReferenceType => TreeTokenType.Block;
+        public override TreeTokenType TokenType =>
+            TreeTokenType.BlockDefinition;
+
         public abstract Scope Scope { get; }
         public abstract ModuleDefinition Module { get; }
+        public abstract TypeReference DeclaringType { get; }
+
+        public abstract string Name { get; }
+
+        public virtual string LongName =>
+            BlockLongName();
 
         public BlockDefinition CurrentBlock { get; protected set; }
-        public IReadOnlyList<Reference> Definitions => definitions;
 
-        internal protected abstract NameReservableNodePool NameReservableNodes { get; }
-        protected BlockDefinition Parent;
+        /// <summary>
+        /// All references as they appeared.
+        /// </summary>
+        public IReadOnlyList<Reference> ReferenceRecords =>
+            referenceRecords;
 
-        private List<Reference> definitions;
-        private bool blockClosed;
+        public IReadOnlyLinkedBucketList<string, TypeReference> Types =>
+            ModuleTypes;
+
+        protected LinkedBucketList<string, Reference> BlockMembers;
+        protected abstract BlockDefinition ParentBlock { get; }
+        protected abstract LinkedBucketList<string, TypeReference> ModuleTypes { get; }
+
+        private List<Reference> referenceRecords;
+        private bool isBlockClosed;
 
         public BlockDefinition()
         {
-            definitions = new List<Reference>();
+            referenceRecords = new List<Reference>();
+            BlockMembers = new LinkedBucketList<string, Reference>();
             CurrentBlock = this;
-            Parent = this;
-        }
-
-        private BlockDefinition(BlockDefinition parent)
-        {
-            definitions = new List<Reference>();
-            CurrentBlock = this;
-            Parent = parent;
         }
 
         public void BeginBlock(BlockDefinition block) =>
@@ -45,16 +57,16 @@ namespace SCUMSLang.AST
 
             do {
                 yield return parentBlock;
-                parentBlock = parentBlock.Parent;
-            } while (!ReferenceEquals(Module, parentBlock));
+                parentBlock = parentBlock.ParentBlock;
+            } while (!ReferenceEquals(Module.Block, parentBlock));
         }
 
-        public bool TryGetNodesByName(string name, [MaybeNullWhen(false)] out List<Reference> foundNodes)
+        public bool TryGetMembers(string name, [MaybeNullWhen(false)] out List<Reference> foundNodes)
         {
             foundNodes = new List<Reference>();
 
             foreach (var block in YieldBlocks()) {
-                if (block.NameReservableNodes.TryGetBucket(name, out ILinkedBucketList<string, Reference>? nodes)) {
+                if (block.BlockMembers.TryGetBucket(name, out ILinkedBucketList<string, Reference>? nodes)) {
                     foreach (var node in nodes) {
                         foundNodes.Add(node);
                     }
@@ -71,10 +83,10 @@ namespace SCUMSLang.AST
         /// <param name="name"></param>
         /// <returns></returns>
         /// <exception cref="ArgumentException">Not all nodes by name <paramref name="name"/> are of type <typeparamref name="T"/>.</exception>
-        public List<T>? GetCastedNodesByName<T>(string name)
+        public List<T>? GetMembersCasted<T>(string name)
             where T : Reference
         {
-            if (TryGetNodesByName(name, out var nodes)) {
+            if (TryGetMembers(name, out var nodes)) {
                 try {
                     var candidates = nodes.Cast<T>().ToList();
                     return candidates;
@@ -86,25 +98,25 @@ namespace SCUMSLang.AST
             return null;
         }
 
-        public bool TryGetFirstNode<T>(IEnumerable<Reference> candidates, Func<Reference, bool> isFunctionDelegate, [MaybeNullWhen(false)] out T function)
+        public bool TryGetMemberFirst<T>(IEnumerable<Reference> candidates, Func<Reference, bool> isMemberDelegate, [MaybeNullWhen(false)] out T member)
             where T : Reference
         {
             foreach (var candiate in candidates) {
-                if (isFunctionDelegate(candiate)) {
-                    function = (T)candiate;
+                if (isMemberDelegate(candiate)) {
+                    member = (T)candiate;
                     return true;
                 }
             }
 
-            function = null;
+            member = null;
             return false;
         }
 
-        public bool TryGetFirstNode<T>(string name, Func<Reference, bool> isNodeDelegate, [MaybeNullWhen(false)] out T function)
+        public bool TryGetMemberFirst<T>(string name, Func<Reference, bool> isNodeDelegate, [MaybeNullWhen(false)] out T function)
             where T : Reference
         {
-            if (TryGetNodesByName(name, out var candidates)
-                && TryGetFirstNode(candidates, isNodeDelegate, out function)) {
+            if (TryGetMembers(name, out var candidates)
+                && TryGetMemberFirst(candidates, isNodeDelegate, out function)) {
                 return true;
             }
 
@@ -112,191 +124,179 @@ namespace SCUMSLang.AST
             return false;
         }
 
-        public bool TryGetFirstNode<T>(IEnumerable<T> candidates, [MaybeNullWhen(false)] out T function)
+        public bool TryGetMemberFirst<T>(IEnumerable<T> candidates, [MaybeNullWhen(false)] out T member)
             where T : Reference =>
-            TryGetFirstNode(candidates, (node) => node is T, out function);
+            TryGetMemberFirst(candidates, (node) => node is T, out member);
 
-        public bool TryGetFirstNode<T>(string name, [MaybeNullWhen(false)] out T function)
+        public bool TryGetMemberFirst<T>(string name, [MaybeNullWhen(false)] out T member)
             where T : Reference =>
-            TryGetFirstNode(name, (node) => node is T, out function);
+            TryGetMemberFirst(name, (node) => node is T, out member);
 
-        public bool TryGetFirstNode<T>(T template, [MaybeNullWhen(false)] out T function)
-            where T : Reference, INameReservableReference =>
-            TryGetFirstNode(template.Name, (node) => node.Equals(template), out function);
+        public bool TryGetMemberFirst<T>(T template, [MaybeNullWhen(false)] out T member)
+            where T : MemberReference =>
+            TryGetMemberFirst(template.Name, (node) => node.Equals(template), out member);
 
-        public bool TryGetFirstNode<T>(IEnumerable<T> candidates, T template, [MaybeNullWhen(false)] out T function, IEqualityComparer<T>? comparer = null)
-            where T : Reference, INameReservableReference
+        public bool TryGetMemberFirst<T>(IEnumerable<T> candidates, T template, [MaybeNullWhen(false)] out T member, IEqualityComparer<T>? comparer = null)
+            where T : MemberReference
         {
             comparer ??= EqualityComparer<T>.Default;
-            return TryGetFirstNode(candidates, (node) => node is T typedNode && comparer.Equals(typedNode, template), out function);
-        }
 
-        public bool TryGetFirstFunctionNode(
-            string name,
-            IReadOnlyList<ConstantReference>? genericArguments,
-            IReadOnlyList<ConstantReference>? arguments,
-            [MaybeNullWhen(false)] out FunctionReference function,
-            bool required)
-        {
-            genericArguments ??= new List<ConstantReference>();
-            arguments ??= new List<ConstantReference>();
-
-            bool isFunction(Reference node)
-            {
-                if (!(node is FunctionReference function)) {
-                    return false;
-                }
-
-                if (function.GenericParameters.Count != genericArguments.Count) {
-                    return false;
-                }
-
-                var genericParameterIndex = function.GenericParameters.Count;
-
-                while (--genericParameterIndex >= 0) {
-                    //if (!function.GenericParameters[genericParameterIndex].DeclaringType.IsSubsetOf(genericArguments[genericParameterIndex].Type)) {
-                    //    return false;
-                    //}
-                }
-
-                var parameterIndex = function.Parameters.Count;
-
-                if (function.Parameters.Count != arguments.Count) {
-                    return false;
-                }
-
-                while (--parameterIndex >= 0) {
-                    //if (!function.Parameters[parameterIndex].DeclaringType.IsSubsetOf(arguments[parameterIndex].Type)) {
-                    //    return false;
-                    //}
-                }
-
-                return true;
-            }
-
-            if (TryGetFirstNode(name, isFunction, out function)) {
-                return true;
-            } else if (required) {
-                throw new ArgumentException($"Function with name '{name}' and proper overload does not exist");
-            }
-
-            return false;
-        }
-
-        public TypeDefinition GetTypeDefinition(SystemType definitionType)
-        {
-            if (!NameReservableNodes.TryGetBucket(SystemTypeLibrary.Sequences[definitionType], out var bucket)) {
-                throw new NotSupportedException("This in-built type does not have a one-to one mapping.");
-            }
-
-            return (TypeDefinition)bucket.First!.Value;
+            return TryGetMemberFirst(
+                candidates,
+                (node) => {
+                    return node is T typedNode
+                    && comparer.Equals(typedNode, template);
+                },
+                out member);
         }
 
         /// <summary>
         /// 
         /// </summary>
-        /// <param name="pathFragments"></param>
-        /// <returns>Either <see cref="EnumerationMemberReference"/> or <see cref="EnumerationTypeReference"/>.</returns>
-        public TypeDefinition GetTypeDefinition(IReadOnlyList<string> pathFragments, TypeReferenceViewpoint viewpoint)
+        /// <param name="member"></param>
+        /// <returns>False indicates skip.</returns>
+        protected bool TryAddMember(Reference member)
         {
-            if (pathFragments.Count == 0) {
-                throw new ArgumentException("Insufficient path fragments.");
-            }
+            if (member is IMemberDefinition memberDefinition) {
+                bool hasDuplication = BlockMembers.TryGetBucket(memberDefinition.Name, out _);
 
-            if (viewpoint == TypeReferenceViewpoint.Type && pathFragments.Count > 1) {
-                throw new ArgumentException($"You are specifiying a type. You cannot use a member access.");
-            }
+                // If node has name, then it can handle name duplications.
+                if (hasDuplication && member is IOverloadableReference nameDuplicationHandleableNode) {
+                    var result = nameDuplicationHandleableNode.SolveConflict(this);
 
-            if (viewpoint == TypeReferenceViewpoint.Value && pathFragments.Count > 2) {
-                throw new ArgumentException($"A member access across two type definitions are not supported.");
-            }
-
-            var nodeName = pathFragments[0];
-            var candidates = GetCastedNodesByName<TypeDefinition>(nodeName);
-
-            if (candidates is null) {
-                throw new ArgumentException($"The type definition {nodeName} does not exist.");
-            } else if (candidates.Count > 1) {
-                throw new ArgumentException($"There are two or more type definition named by {nodeName}.");
-            }
-
-            var candidate = candidates[0].SourceType;
-
-            if (candidate is EnumerationTypeReference enumeration) {
-                if (pathFragments.Count == 1) {
-                    return enumeration;
+                    if (result == OverloadConflictResult.True) {
+                        hasDuplication = false;
+                    } else if (result == OverloadConflictResult.Skip) {
+                        return false;
+                    }
                 }
-                // Enum member is only allowed as value.
-                else if (viewpoint == TypeReferenceViewpoint.Value) {
-                    return enumeration.GetMemberByName(pathFragments[1]);
+
+                if (hasDuplication) {
+                    throw new ArgumentException($"The name '{memberDefinition.Name}' is already reserved.");
                 }
-            } else if (pathFragments.Count == 1) {
-                return candidate;
+
+                BlockMembers.AddLast(memberDefinition.Name, member);
+
+                if (member is TypeReference type) {
+                    ModuleTypes.Add(type.FullName, type);
+                }
             }
 
-            throw new ArgumentException($"The type definition '{nodeName}' does not support member access.");
+            if (member is INamesReservableReference namesReservableNode && namesReservableNode.HasReservedNames) {
+                foreach (var namedNode in namesReservableNode.GetReservedNames()) {
+                    _ = TryAddMember(namedNode);
+                }
+            }
+
+            return true;
         }
 
         public void AddNode(Reference node)
         {
-            bool handleNameReservation(Reference node)
-            {
-                if (node is INameReservableReference nameReservableNode) {
-                    bool hasDuplication = NameReservableNodes.TryGetBucket(nameReservableNode.Name, out _);
+            if (TryAddMember(node)) {
+                referenceRecords.Add(node);
 
-                    // If node has name, then it can handle name duplications.
-                    if (hasDuplication && node is INameDuplicationHandleableReference nameDuplicationHandleableNode) {
-                        var result = nameDuplicationHandleableNode.CanReserveName(this);
-
-                        if (result == ConditionalNameReservationResult.True) {
-                            hasDuplication = false;
-                        } else if (result == ConditionalNameReservationResult.Skip) {
-                            return false;
-                        }
-                    }
-
-                    if (hasDuplication) {
-                        throw new ArgumentException($"The name '{nameReservableNode.Name}' is already reserved.");
-                    }
-
-                    NameReservableNodes.AddLast(nameReservableNode.Name, node);
+                if (node is IBlockHolder blockHolder) {
+                    var block = new LocalBlockDefinition(this, blockHolder);
+                    blockHolder.Block = block;
+                    BeginBlock(block);
                 }
-
-                if (node is INamesReservableReference namesReservableNode && namesReservableNode.HasReservedNames) {
-                    foreach (var namedNode in namesReservableNode.GetReservedNames()) {
-                        handleNameReservation(namedNode);
-                    }
-                }
-
-                return true;
-            }
-
-            if (node is IScopableReference scopableNode && scopableNode.Scope != Scope) {
-                throw new ArgumentException("Declaration has invalid scope.");
-            }
-
-            if (handleNameReservation(node)) {
-                definitions.Add(node);
             }
         }
 
-        public void AddAssignment(AssignDefinition assignment) =>
-            definitions.Add(assignment);
-
         public void EndBlock()
         {
-            if (blockClosed) {
+            if (isBlockClosed) {
                 throw new InvalidOperationException("You cannot end the block twice.");
             }
 
-            blockClosed = true;
+            isBlockClosed = true;
 
             if (ReferenceEquals(this, Module)) {
                 throw new InvalidOperationException("You cannot end the block of the root block.");
             }
 
-            CurrentBlock = CurrentBlock.Parent;
+            CurrentBlock = CurrentBlock.ParentBlock;
         }
+
+        internal string BlockLongName(StringSeparationHelper? helper = null)
+        {
+            var seperationHelper = helper ?? new StringSeparationHelper(".");
+            var fullNameBuilder = new StringBuilder();
+            var block = this;
+
+            while (!ReferenceEquals(block, block.ParentBlock)) {
+                if (!string.IsNullOrEmpty(block.Name)) {
+                    fullNameBuilder.Insert(0, block.Name);
+                    seperationHelper.SetStringSeparator(fullNameBuilder, 0);
+                }
+
+                block = block.ParentBlock;
+            }
+
+            return fullNameBuilder.ToString();
+        }
+
+        internal string BlockMemberFullName(string name)
+        {
+            var seperationHelper = new StringSeparationHelper(".");
+            var blockLongName = BlockLongName(seperationHelper);
+            var blockMemberFullNameBuilder = new StringBuilder(blockLongName);
+            seperationHelper.SetStringSeparator(blockMemberFullNameBuilder);
+            blockMemberFullNameBuilder.Append(name);
+            return blockMemberFullNameBuilder.ToString();
+        }
+
+        public FieldDefinition GetField(string name)
+        {
+            if (!BlockMembers.TryGetBucket(name, out var bucket)) {
+                throw TreeThrowHelper.CreateFieldNotFoundException(name);
+            }
+
+            var types = bucket.Cast<FieldDefinition>();
+            var type = types.SingleOrDefault();
+            return type ?? throw TreeThrowHelper.CreateFieldNotFoundException(name);
+        }
+
+        public MethodDefinition GetMethod(MethodReference method)
+        {
+            if (!BlockMembers.TryGetBucket(method.Name, out var bucket)) {
+                throw TreeThrowHelper.CreateMethodNotFoundException(method.Name);
+            }
+
+            var types = bucket.OfType<MethodDefinition>();
+            var type = types.SingleOrDefault(x => MethodReferenceEqualityComparer.OverloadComparer.Default.Equals(x, method));
+            return type ?? throw TreeThrowHelper.CreateMethodNotFoundException(method.Name);
+        }
+
+        public MethodDefinition GetMethod(MethodCallDefinition methodCall) =>
+            GetMethod(methodCall.InferredMethod);
+
+        public MethodDefinition GetMethod(
+            string name,
+            IReadOnlyList<ParameterDefinition>? genericParameters = null,
+            IReadOnlyList<ParameterDefinition>? parameters = null) =>
+            GetMethod(new MethodReference(name, genericParameters, parameters, DeclaringType));
+
+        public EventHandlerDefinition GetEventHandler(EventHandlerReference eventHandler) {
+            if (!BlockMembers.TryGetBucket(eventHandler.Name, out var bucket)) {
+                throw TreeThrowHelper.CreateEventHandlerdNotFoundException(eventHandler.Name);
+            }
+
+            var types = bucket.OfType<EventHandlerDefinition>();
+
+            var type = types.SingleOrDefault(x => EventHandlerReferenceEqualityComparer.OverloadComparer.Default.Equals(x, eventHandler))
+                ?? throw TreeThrowHelper.CreateEventHandlerdNotFoundException(eventHandler.Name);
+
+            return type;
+        }
+
+        public EventHandlerDefinition GetEventHandler(
+            string name,
+            IReadOnlyList<ParameterDefinition>? genericParameters = null,
+            IReadOnlyList<ParameterDefinition>? parameters = null,
+            IReadOnlyList<MethodCallDefinition>? conditions = null) =>
+            GetEventHandler(new EventHandlerReference(name, genericParameters, parameters, conditions, DeclaringType));
 
         public override bool Equals(object? obj)
         {
@@ -304,14 +304,14 @@ namespace SCUMSLang.AST
                 return false;
             }
 
-            var equals = blockClosed == block.blockClosed
-                && definitions.SequenceEqual(block.definitions);
+            var equals = isBlockClosed == block.isBlockClosed
+                && referenceRecords.SequenceEqual(block.referenceRecords);
 
             Trace.WriteLineIf(!equals, $"{nameof(BlockDefinition)} not equals.");
             return equals;
         }
 
         public override int GetHashCode() =>
-            HashCode.Combine(ReferenceType, Definitions);
+            HashCode.Combine(TokenType, ReferenceRecords);
     }
 }

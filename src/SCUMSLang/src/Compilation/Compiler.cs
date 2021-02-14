@@ -27,16 +27,15 @@ namespace SCUMSLang.Compilation
             }
 
             //importPaths.Add(options.UserSource);
-            var nameReservableNodePool = new NameReservableNodePool();
-            var moduleParameters = new ModuleParameters() { NameReservableDefinitions = nameReservableNodePool };
 
-            var systemBlock = ModuleDefinition.Create(moduleParameters)
+            var systemBlock = new ModuleDefinition()
                 .AddSystemTypes();
 
-            var importGraph = await DirectAcyclicImportGraph.CreateAsync(importPaths, nameReservableNodePool);
+            var rootMemberReferences = new ReferencePool();
+            var importGraph = await DirectAcyclicImportGraph.CreateAsync(importPaths, rootMemberReferences);
 
             foreach (var import in importGraph.SortedImports) {
-                var parser = new ReferenceParser(options => {
+                var parser = new TreeParser(options => {
                     options.Module = import.Module;
                     options.TokenReaderStartPosition = import.TokenReaderUpperPosition + 1;
                     options.TokenReaderBehaviour.SetNonParserChannelTokenSkipCondition();

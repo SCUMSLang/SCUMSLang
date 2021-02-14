@@ -14,7 +14,7 @@ namespace SCUMSLang.IO
     {
         public static async Task<ImportEntry> CreateAsync(
             string importPath,
-            NameReservableNodePool nameReservableNodePool)
+            ReferencePool nameReservableNodePool)
         {
             var importEntry = new ImportEntry(
                 importPath,
@@ -40,7 +40,7 @@ namespace SCUMSLang.IO
 
         private List<string> directImportPaths;
 
-        protected ImportEntry(string filePath, NameReservableNodePool nameReservableNodePool)
+        protected ImportEntry(string filePath, ReferencePool nameReservableNodePool)
         {
             directImportPaths = new List<string>();
             filePath = filePath ?? throw new System.ArgumentNullException(nameof(filePath));
@@ -52,11 +52,11 @@ namespace SCUMSLang.IO
             ImportPath = filePath;
 
             var moduleParameters = new ModuleParameters() {
-                NameReservableDefinitions = nameReservableNodePool,
+                MemberReferences = nameReservableNodePool,
                 FilePath = filePath
             };
 
-            Module = ModuleDefinition.Create(moduleParameters);
+            Module = new ModuleDefinition(moduleParameters);
         }
 
         protected async Task LoadTokensAsync(CancellationToken cancellationToken = default)
@@ -77,7 +77,7 @@ namespace SCUMSLang.IO
 
         public void LoadDirectImports()
         {
-            var parser = new ReferenceParser(options => {
+            var parser = new TreeParser(options => {
                 options.Module = Module;
                 options.RecognizableNodes = RecognizableReferences.Import;
                 options.EmptyRecognizationResultsIntoWhileBreak = true;
@@ -87,7 +87,7 @@ namespace SCUMSLang.IO
             var result = parser.Parse(tokens);
             TokenReaderUpperPosition = result.TokenReaderUpperPosition;
 
-            directImportPaths = Module.Definitions
+            directImportPaths = Module.Block.ReferenceRecords
                 .OfType<ImportDefinition>()
                 .Select(import => import.FilePath)
                 .ToList();

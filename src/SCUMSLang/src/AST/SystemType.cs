@@ -8,7 +8,7 @@ namespace SCUMSLang.AST
         Integer,
         [Sequence("String")]
         String,
-        Constant,
+        Name,
         // Only used for name lookup.
         [Sequence("Boolean")]
         Boolean,

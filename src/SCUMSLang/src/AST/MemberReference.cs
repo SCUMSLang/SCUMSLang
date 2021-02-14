@@ -1,20 +1,53 @@
-﻿namespace SCUMSLang.AST
+﻿using Teronis.Text;
+
+namespace SCUMSLang.AST
 {
-    public abstract class MemberReference : Reference
+    public abstract class MemberReference : Reference, IResolvableDependencies
     {
-        public override TreeTokenType ReferenceType => TreeTokenType.MemberReference;
+        public override TreeTokenType TokenType =>
+            TreeTokenType.MemberReference;
 
-        public virtual TypeReference? DeclaringType => declaringType;
-
-        public virtual ModuleDefinition? Module {
-            get => declaringType?.Module ?? null;
+        public virtual TypeReference DeclaringType {
+            get => declaringType;
+            internal set => declaringType = value;
         }
 
-        private TypeReference? declaringType;
+        public virtual ModuleDefinition? Module {
+            get => DeclaringType?.Module ?? null;
+        }
 
-        protected abstract IMemberDefinition? ResolveDefinition();
+        public virtual string Name { get; }
+        public abstract string FullName { get; }
 
-        public IMemberDefinition? Resolve() =>
+        private TypeReference declaringType = null!;
+
+        internal MemberReference() =>
+            Name = string.Empty;
+
+        internal MemberReference(string name) =>
+            Name = name ?? throw new System.ArgumentNullException(nameof(name));
+
+        internal string MemberFullName()
+        {
+            if (declaringType is null) {
+                return Name;
+            }
+
+            var declaringTypeFullName = declaringType.FullName;
+            var seperationHelper = new StringSeparationHelper(".");
+            seperationHelper.SetStringSeparator(ref declaringTypeFullName);
+            return declaringTypeFullName += Name;
+        }
+
+        protected abstract IMemberDefinition ResolveDefinition();
+
+        protected virtual void ResolveDependencies() =>
+            DeclaringType?.Resolve(); 
+        
+        void IResolvableDependencies.ResolveDependencies() =>
+             ResolveDependencies();
+
+        public IMemberDefinition Resolve() =>
             ResolveDefinition();
     }
 }

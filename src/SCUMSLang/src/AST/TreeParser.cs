@@ -1,21 +1,21 @@
 ﻿using SCUMSLang.Tokenization;
 using System;
-using static SCUMSLang.AST.ReferenceParserTools;
+using static SCUMSLang.AST.TreeParserTools;
 
 namespace SCUMSLang.AST
 {
-    public class ReferenceParser
+    public class TreeParser
     {
-        public static ReferenceParser Default = new ReferenceParser();
+        public static TreeParser Default = new TreeParser();
 
-        public ReferenceParserOptions Options { get; }
+        public TreeParserOptions Options { get; }
 
-        public ReferenceParser() =>
-            Options = new ReferenceParserOptions();
+        public TreeParser() =>
+            Options = new TreeParserOptions();
 
-        public ReferenceParser(Action<ReferenceParserOptions> optionsCallback)
+        public TreeParser(Action<TreeParserOptions> optionsCallback)
         {
-            var options = new ReferenceParserOptions();
+            var options = new TreeParserOptions();
             optionsCallback(options);
             Options = options;
         }
@@ -25,11 +25,12 @@ namespace SCUMSLang.AST
         /// </summary>
         /// <param name="span"></param>
         /// <returns></returns>
-        public ReferenceParserResult Parse(ReadOnlySpan<Token> span)
+        public TreeParserResult Parse(ReadOnlySpan<Token> span)
         {
             var tokenReader = new SpanReader<Token>(span, Options.TokenReaderBehaviour);
             var lastRecognizedUpperPosition = -1;
-            var block = Options.Module;
+            var module = Options.Module;
+            var block = module.Block;
 
             if (!tokenReader.SetPositionTo(Options.TokenReaderStartPosition)) {
                 goto exit;
@@ -59,18 +60,10 @@ namespace SCUMSLang.AST
                             continue;
                         } else if (Options.WhileBreakDelegate?.Invoke(node) ?? false) {
                             break;
-                        } else if (node is TypeDefinition typeDefinition) {
-                            block.AddNode(typeDefinition);
-                        } else if (node is DeclarationReference declarationNode) {
-                            block.CurrentBlock.AddNode(declarationNode);
-                        } else if (node is AssignDefinition assignNode) {
-                            block.CurrentBlock.AddAssignment(assignNode);
-                        } else if (node is FunctionReference functionNode) {
-                            if (functionNode.IsAbstract) {
-                                block.AddNode(functionNode);
-                            } else {
-                                block.BeginBlock(functionNode);
-                            }
+                        } else if (node is FieldReference filed) {
+                            block.CurrentBlock.AddNode(filed);
+                        } else if (node is AssignDefinition assignment) {
+                            block.CurrentBlock.AddNode(assignment);
                         } else {
                             block.AddNode(node);
                         }
@@ -84,7 +77,7 @@ namespace SCUMSLang.AST
             }
 
             exit:
-            return new ReferenceParserResult(block, lastRecognizedUpperPosition);
+            return new TreeParserResult(module, lastRecognizedUpperPosition);
         }
     }
 }

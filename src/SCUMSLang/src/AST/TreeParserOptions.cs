@@ -4,12 +4,12 @@ using SCUMSLang.Tokenization;
 
 namespace SCUMSLang.AST
 {
-    public class ReferenceParserOptions
+    public class TreeParserOptions
     {
         public ModuleDefinition Module {
             get {
                 if (module is null) {
-                    module = ModuleDefinition.Create();
+                    module = new ModuleDefinition();
                 }
 
                 return module;
@@ -40,7 +40,7 @@ namespace SCUMSLang.AST
         private SpanReaderBehaviour<Token>? tokenReaderBehaviour;
         private ModuleDefinition? module;
 
-        public ReferenceParserOptions() =>
+        public TreeParserOptions() =>
             RecognizableNodes = (RecognizableReferences)Enum
                 .GetValues(typeof(RecognizableReferences))
                     .Cast<int>()
