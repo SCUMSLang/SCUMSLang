@@ -2,14 +2,14 @@
 using System.Collections.Generic;
 using System.Linq;
 using System.Threading.Tasks;
-using SCUMSLang.AST;
+using SCUMSLang.SyntaxTree;
 using SCUMSLang.Collections.Generic;
 
 namespace SCUMSLang.IO
 {
     public class DirectAcyclicImportGraph
     {
-        public static async Task<DirectAcyclicImportGraph> CreateAsync(
+        public static async Task<DirectAcyclicImportGraph> LoadImportGraphAsync(
             IEnumerable<string> initialImportPaths,
             Action<ModuleParameters>? configureModuleParameters = null) {
             var importGraph = new DirectAcyclicImportGraph(
@@ -20,17 +20,17 @@ namespace SCUMSLang.IO
             return importGraph;
         }
 
-        public IReadOnlyList<ImportEntry> SortedImports => sortedImports;
+        public IReadOnlyList<ImportEntry> TopologizedImports => topologizedImports;
 
-        private List<ImportEntry> sortedImports;
+        private List<ImportEntry> topologizedImports;
         private HashSet<string> initialImportPaths;
         private readonly Action<ModuleParameters>? configureModuleParameters;
 
-        public DirectAcyclicImportGraph(
+        private DirectAcyclicImportGraph(
             IEnumerable<string> initialImportPaths,
             Action<ModuleParameters>? configureModuleParameters = null)
         {
-            sortedImports = new List<ImportEntry>();
+            topologizedImports = new List<ImportEntry>();
             this.initialImportPaths = new HashSet<string>(initialImportPaths);
             this.configureModuleParameters = configureModuleParameters;
         }
@@ -44,11 +44,10 @@ namespace SCUMSLang.IO
                 var contextualImports = new List<ImportEntry>();
 
                 foreach (var unloadedImportPath in unloadedImportPaths) {
-                    var import = await ImportEntry.CreateAsync(
+                    var import = await ImportEntry.LoadDirectImportsAsync(
                         unloadedImportPath,
                         configureModuleParameters);
 
-                    import.LoadDirectImports();
                     contextualImports.Add(import);
                     loadedImports.Add(unloadedImportPath, import);
                 }
@@ -71,8 +70,8 @@ namespace SCUMSLang.IO
                     .Select(y => (x, loadedImports[y])))
                 .ToList();
 
-            sortedImports.Clear();
-            sortedImports = TopologicalSorting.KahnAlgorithm.SortTopologically(loadedImports.Values, importEdges, ImportEntryOnlyPathEqualityComparer.Default);
+            topologizedImports.Clear();
+            topologizedImports = TopologicalSorting.KahnAlgorithm.SortTopologically(loadedImports.Values, importEdges, ImportEntryOnlyPathEqualityComparer.Default);
         }
     }
 }

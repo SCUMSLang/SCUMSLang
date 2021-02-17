@@ -9,7 +9,7 @@ namespace SCUMSLang.Tokenization
 {
     public static class Tokenizer
     {
-        public static List<Token> Tokenize(ReadOnlySpan<char> content)
+        public static ReadOnlyMemory<Token> Tokenize(ReadOnlySpan<char> content)
         {
             var charReader = new SpanReader<char>(content);
             var tokens = new List<Token>();
@@ -30,13 +30,13 @@ namespace SCUMSLang.Tokenization
                 }
             }
 
-            return tokens;
+            return new ReadOnlyMemory<Token>(tokens.ToArray());
         }
 
-        public static List<Token> Tokenize(string content) =>
+        public static ReadOnlyMemory<Token> Tokenize(string content) =>
             Tokenize(content.AsSpan());
 
-        public static async Task<List<Token>> TokenizeAsync(FileStream fileStream)
+        public static async Task<ReadOnlyMemory<Token>> TokenizeAsync(FileStream fileStream)
         {
             var fileBytes = new byte[fileStream.Length];
 
@@ -56,7 +56,14 @@ namespace SCUMSLang.Tokenization
                 }
             }
 
-            return Tokenize(Encoding.ASCII.GetString(fileBytes));
+            var utf8Preamble = Encoding.UTF8.GetPreamble();
+            var fileBytesMemory = new ReadOnlyMemory<byte>(fileBytes);
+
+            if (fileBytesMemory.Length >= utf8Preamble.Length && fileBytesMemory.Span.StartsWith(utf8Preamble)) {
+                fileBytesMemory = fileBytesMemory.Slice(fileBytesMemory.Length);   
+            }
+
+            return Tokenize(Encoding.ASCII.GetString(fileBytesMemory.Span));
         }
     }
 }

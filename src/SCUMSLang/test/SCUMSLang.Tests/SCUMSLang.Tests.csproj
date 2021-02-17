@@ -1,10 +1,14 @@
 <Project Sdk="Microsoft.NET.Sdk">
 
   <PropertyGroup>
-    <TargetFramework>netcoreapp3.1</TargetFramework>
-    <RootNamespace>SCUMSLANG</RootNamespace>
+    <TargetFramework>net5.0</TargetFramework>
+    <RootNamespace>SCUMSLang</RootNamespace>
   </PropertyGroup>
 
+  <ItemGroup>
+    <None Include="UMSFiles/*" CopyToOutputDirectory="PreserveNewest" />
+  </ItemGroup>
+  
   <ItemGroup>
     <PackageReference Include="FluentAssertions" Version="6.0.0-alpha0002" />
     <PackageReference Include="Microsoft.NET.Test.Sdk" Version="16.9.0-preview-20210127-04" />

@@ -2,13 +2,18 @@
 
   <PropertyGroup>
     <OutputType>Exe</OutputType>
-    <TargetFramework>netcoreapp3.1</TargetFramework>
+    <TargetFramework>net5.0</TargetFramework>
     <RootNamespace>SCUMSLang</RootNamespace>
     <Nullable>enable</Nullable>
   </PropertyGroup>
 
   <ItemGroup>
-    <None Include="$(MSBuildProjectDirectory)\..\..\SCUMSLang.Headers\src\**\*.umsh" CopyToOutputDirectory="PreserveNewest" LinkBase="Headers\" />
+    <None Include="
+          $(MSBuildProjectDirectory)\..\..\SCUMSLang.UMSLFiles\src\**\*.umsh;
+          $(MSBuildProjectDirectory)\..\..\SCUMSLang.UMSLFiles\src\**\*.umsl">
+      <CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>
+      <LinkBase>UMSLFiles\</LinkBase>
+    </None>
   </ItemGroup>
 
   <ItemGroup>
@@ -17,6 +22,10 @@
 
   <ItemGroup>
     <ProjectReference Include="..\..\..\..\..\Teronis.DotNet\src\NetStandard\Collections\Collections\src\Teronis.NetStandard.Collections.csproj" />
+  </ItemGroup>
+
+  <ItemGroup>
+    <Folder Include="TriggerBuilder\" />
   </ItemGroup>
   
 </Project>

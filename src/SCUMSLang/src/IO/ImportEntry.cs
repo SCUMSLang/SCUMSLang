@@ -4,7 +4,7 @@ using System.IO;
 using System.Linq;
 using System.Threading;
 using System.Threading.Tasks;
-using SCUMSLang.AST;
+using SCUMSLang.SyntaxTree;
 using SCUMSLang.Tokenization;
 using Teronis.IO.FileLocking;
 
@@ -12,7 +12,7 @@ namespace SCUMSLang.IO
 {
     public class ImportEntry
     {
-        public static async Task<ImportEntry> CreateAsync(
+        public static async Task<ImportEntry> LoadDirectImportsAsync(
             string importPath,
             Action<ModuleParameters>? configureModuleParameters = null)
         {
@@ -21,6 +21,7 @@ namespace SCUMSLang.IO
                 configureModuleParameters);
 
             await importEntry.LoadTokensAsync();
+            importEntry.parseDirectImports();
             return importEntry;
         }
 
@@ -28,11 +29,11 @@ namespace SCUMSLang.IO
         /// The full import path.
         /// </summary>
         public string ImportPath { get; }
-        public IReadOnlyList<Token> Tokens => tokens;
+        public ReadOnlyMemory<Token> Tokens => tokens;
         public ModuleDefinition Module { get; private set; }
         public int TokenReaderUpperPosition { get; private set; }
 
-        private Token[] tokens = null!;
+        private ReadOnlyMemory<Token> tokens = null!;
 
         public IReadOnlyList<string> DirectImportPaths =>
             directImportPaths;
@@ -66,22 +67,19 @@ namespace SCUMSLang.IO
                 cancellationToken: cancellationToken)!;
 
             var tokens = await Tokenizer.TokenizeAsync(fileStream);
-            this.tokens = tokens.ToArray();
+            this.tokens = tokens;
         }
 
-        public ReadOnlySpan<Token> TokensAsReadOnlySpan() =>
-            tokens.AsSpan();
-
-        public void LoadDirectImports()
+        private void parseDirectImports()
         {
-            var parser = new TreeParser(options => {
+            var parser = new SyntaxTreeParser(options => {
                 options.Module = Module;
                 options.RecognizableNodes = RecognizableReferences.Import;
                 options.EmptyRecognizationResultsIntoWhileBreak = true;
                 options.TokenReaderBehaviour.SetSkipConditionForNonParserChannelTokens();
             });
 
-            var result = parser.Parse(tokens);
+            var result = parser.Parse(tokens.Span);
             TokenReaderUpperPosition = result.TokenReaderUpperPosition;
 
             directImportPaths = Module.Block.ReferenceRecords
@@ -92,5 +90,15 @@ namespace SCUMSLang.IO
 
         public override string ToString() =>
             $"{Path.Combine(new DirectoryInfo(Path.GetDirectoryName(ImportPath) ?? "").Name, Path.GetFileName(ImportPath)) }";
+
+        public void ParseToEnd() {
+            var parser = new SyntaxTreeParser(options => {
+                options.Module = Module;
+                options.TokenReaderStartPosition = TokenReaderUpperPosition + 1;
+                options.TokenReaderBehaviour.SetSkipConditionForNonParserChannelTokens();
+            });
+
+            parser.Parse(Tokens.Span);
+        }
     }
 }

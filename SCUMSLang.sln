@@ -14,7 +14,7 @@ Project("{2150E333-8FDC-42A3-9474-1A3956D46DE8}") = "Solution Items", "Solution 
 		.editorconfig = .editorconfig
 	EndProjectSection
 EndProject
-Project("{13B669BE-BB05-4DDF-9536-439F39A36129}") = "SCUMSLang.Headers", "src\SCUMSLang.Headers\src\SCUMSLang.Headers.msbuildproj", "{71E7C1BF-2DC9-4BF6-B3B5-EC3D52980524}"
+Project("{13B669BE-BB05-4DDF-9536-439F39A36129}") = "SCUMSLang.UMSLFiles", "src\SCUMSLang.UMSLFiles\src\SCUMSLang.UMSLFiles.msbuildproj", "{71E7C1BF-2DC9-4BF6-B3B5-EC3D52980524}"
 EndProject
 Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "Teronis.NetStandard.Collections", "..\..\Teronis.DotNet\src\NetStandard\Collections\Collections\src\Teronis.NetStandard.Collections.csproj", "{2EAEB0A2-3179-485D-B804-5F6982388D7E}"
 EndProject

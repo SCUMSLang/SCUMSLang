@@ -1,5 +1,0 @@
-enum Order {
-    Move,
-    Attack,
-    Patrol
-}

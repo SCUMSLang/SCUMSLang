@@ -1,7 +1,7 @@
 ﻿using System;
+using System.Diagnostics;
 using System.Threading.Tasks;
 using CommandLine;
-using CommandLine.Text;
 using SCUMSLang.CommandLine;
 using SCUMSLang.Compilation;
 
@@ -11,33 +11,45 @@ namespace SCUMSLang
     {
         static async Task<int> Main(string[] args)
         {
-            var commandLineParser = new Parser(settings => {
-                settings.EnableDashDash = true;
+            var stopwatch = new Stopwatch();
+            stopwatch.Start();
+
+            var commandLineParser = new Parser(options => {
+                options.HelpWriter = Console.Out;
             });
 
             Options options = null!;
 
-            var exitCode = commandLineParser.ParseArguments<Options>(args)
-                .MapResult(
-                    parsedOptions => {
-                        options = parsedOptions;
-                        return 0;
-                    },
-                    errors => {
-                        var sentenceBuilder = SentenceBuilder.Create();
+            var result = commandLineParser.ParseArguments<Options>(args);
 
-                        foreach (var error in errors) {
-                            Console.WriteLine(sentenceBuilder.FormatError(error));
-                        }
-
-                        return 1;
-                    });
-
-            if (exitCode > 0) {
-                return exitCode;
+            if (result.Value is null) {
+                return 1;
+            } else {
+                options = result.Value;
             }
 
-            await Compiler.Default.CompileAsync(options.SystemSources, options.UserSource);
+            try {
+                await Compiler.Default.CompileAsync(parameters => {
+                    if (options.SystemSources.Count != 0) {
+                        parameters.SystemSources.AddRange(options.SystemSources);
+                    }
+
+                    parameters.UserSources.AddRange(options.UserSources);
+
+                    if (options.NoImplicitUInt32Pool) {
+                        parameters.NoImplicitUInt32Pool = true;
+                    } else if (!(options.ImplicitUInt32PoolSource is null)) {
+                        parameters.ImplicitUInt32PoolSource = options.ImplicitUInt32PoolSource;
+                    }
+                });
+
+                Console.WriteLine($"Finished in {stopwatch.Elapsed.TotalMinutes}m {stopwatch.Elapsed.Seconds}s");
+            } catch (Exception error) {
+                Console.WriteLine(error.Message);
+            } finally {
+                stopwatch.Stop();
+            }
+
             return 0;
         }
     }

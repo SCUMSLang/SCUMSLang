@@ -2,7 +2,7 @@
   "profiles": {
     "SCUMSLang": {
       "commandName": "Project",
-      "commandLineArgs": "--i test"
+      "commandLineArgs": "-i ./UMSLFiles/Index.umsh"
     }
   }
 }

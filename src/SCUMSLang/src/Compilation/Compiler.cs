@@ -1,11 +1,9 @@
 ﻿using System;
 using System.Collections.Generic;
-using System.Diagnostics;
-using System.IO;
 using System.Threading.Tasks;
-using SCUMSLang.AST;
+using SCUMSLang.SyntaxTree;
 using SCUMSLang.IO;
-using SCUMSLang.Tokenization;
+using System.IO;
 
 namespace SCUMSLang.Compilation
 {
@@ -13,38 +11,59 @@ namespace SCUMSLang.Compilation
     {
         public static Compiler Default = new Compiler();
 
-        public async Task CompileAsync(IEnumerable<string> systemSources, string userSource)
-        {
-            var stopwatch = new Stopwatch();
-            stopwatch.Start();
-            var importPaths = new List<string>(systemSources);
+        public CompilerSettings Settings { get; }
 
-            if (importPaths.Count == 0) {
-                var assemblyPath = typeof(Program).Assembly.Location;
-                var assemblyDirectory = Path.GetDirectoryName(assemblyPath)!;
-                var headerIndexPath = Path.Combine(assemblyDirectory, "Headers/Index.umsh");
-                importPaths.Add(headerIndexPath);
+        public Compiler() =>
+            Settings = new CompilerSettings();
+
+        public Compiler(Action<CompilerSettings> settingsCallback)
+        {
+            var options = new CompilerSettings();
+            settingsCallback?.Invoke(options);
+            Settings = options;
+        }
+
+        public async Task<CompilerResult> CompileAsync(Action<CompilerParameters>? parametersCallback)
+        {
+            var parameters = new CompilerParameters();
+            parametersCallback?.Invoke(parameters);
+
+            var importPaths = new List<string>();
+
+            static void addImportPath(List<string> importPaths, string importPath)
+            {
+                if (!PathTools.IsFullPath(importPath)) {
+                    importPath = Path.GetFullPath(importPath);
+                }
+
+                importPaths.Add(importPath);
             }
 
-            //importPaths.Add(options.UserSource);
+            foreach (var systemSource in parameters.SystemSources) {
+                addImportPath(importPaths, systemSource);
+            }
+
+            foreach (var userSource in parameters.UserSources) {
+                addImportPath(importPaths, userSource);
+            }
+
+            if (!(parameters.ImplicitUInt32PoolSource is null)) {
+                addImportPath(importPaths, parameters.ImplicitUInt32PoolSource);
+            }
 
             var systemBlock = new ModuleDefinition()
                 .AddSystemTypes();
 
-            var importGraph = await DirectAcyclicImportGraph.CreateAsync(importPaths);
+            var importGraph = await DirectAcyclicImportGraph.LoadImportGraphAsync(importPaths);
 
-            foreach (var import in importGraph.SortedImports) {
-                var parser = new TreeParser(options => {
-                    options.Module = import.Module;
-                    options.TokenReaderStartPosition = import.TokenReaderUpperPosition + 1;
-                    options.TokenReaderBehaviour.SetSkipConditionForNonParserChannelTokens();
-                });
-
-                parser.Parse(import.TokensAsReadOnlySpan());
+            foreach (var import in importGraph.TopologizedImports) {
+                import.ParseToEnd();
             }
 
-            stopwatch.Stop();
-            Console.WriteLine($"Finished in {stopwatch.Elapsed.TotalMinutes}m {stopwatch.Elapsed.Seconds}s");
+            return new CompilerResult(importGraph);
         }
+
+        public Task<CompilerResult> CompileAsync() =>
+            CompileAsync(default(Action<CompilerParameters>));
     }
 }

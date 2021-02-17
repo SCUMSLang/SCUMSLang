@@ -11,9 +11,7 @@ namespace SCUMSLang.Tokenization
             var content = @"""<hello>""";
             var tokens = Tokenizer.Tokenize(content);
 
-            Assert.Equal(new Token[] {
-                TokenType.String
-            }, tokens, TokenOnlyTypeComparer.Default);
+            AssertTools.Equal(new Token[] { TokenType.String }, tokens.Span, TokenOnlyTypeComparer.Default);
         }
 
         [Fact]
@@ -22,14 +20,14 @@ namespace SCUMSLang.Tokenization
             var content = @"static UInt32 goofy = 7;";
             var tokens = Tokenizer.Tokenize(content);
 
-            Assert.Equal(new Token[] {
+            AssertTools.Equal(new Token[] {
                 TokenType.StaticKeyword,
-                TokenType.IntKeyword,
+                TokenType.Name,
                 TokenType.Name,
                 TokenType.EqualSign,
-                TokenType.Integer,
+                TokenType.Number,
                 TokenType.Semicolon
-            }, tokens, TokenOnlyTypeComparer.Default);
+            }, tokens.Span, TokenOnlyTypeComparer.Default);
         }
 
         [Fact]
@@ -41,14 +39,14 @@ namespace SCUMSLang.Tokenization
 
             var tokens = Tokenizer.Tokenize(content);
 
-            Assert.Equal(new Token[] {
+            AssertTools.Equal(new Token[] {
                 TokenType.FunctionKeyword,
                 TokenType.Name,
                 TokenType.OpenBracket,
                 TokenType.CloseBracket,
                 TokenType.OpenBrace,
                 TokenType.CloseBrace
-            }, tokens, TokenOnlyTypeComparer.Default);
+            }, tokens.Span, TokenOnlyTypeComparer.Default);
         }
 
         [Fact]
@@ -60,7 +58,7 @@ namespace SCUMSLang.Tokenization
 
             var tokens = Tokenizer.Tokenize(content);
 
-            Assert.Equal(new Token[] {
+            AssertTools.Equal(new Token[] {
                 TokenType.FunctionKeyword,
                 TokenType.Name,
                 TokenType.OpenAngleBracket,
@@ -74,7 +72,7 @@ namespace SCUMSLang.Tokenization
                 TokenType.CloseBracket,
                 TokenType.OpenBrace,
                 TokenType.CloseBrace
-            }, tokens, TokenOnlyTypeComparer.Default);
+            }, tokens.Span, TokenOnlyTypeComparer.Default);
         }
 
         [Fact]
@@ -86,7 +84,7 @@ namespace SCUMSLang.Tokenization
 
             var tokens = Tokenizer.Tokenize(content);
 
-            Assert.Equal(new Token[] {
+            AssertTools.Equal(new Token[] {
                 TokenType.FunctionKeyword,
                 TokenType.OpenBracket,
                 TokenType.CloseBracket,
@@ -96,7 +94,7 @@ namespace SCUMSLang.Tokenization
                 TokenType.CloseBracket,
                 TokenType.OpenBrace,
                 TokenType.CloseBrace
-            }, tokens, TokenOnlyTypeComparer.Default);
+            }, tokens.Span, TokenOnlyTypeComparer.Default);
         }
 
         [Fact]
@@ -108,14 +106,14 @@ namespace SCUMSLang.Tokenization
 
             var tokens = Tokenizer.Tokenize(content);
 
-            Assert.Equal(new Token[] {
+            AssertTools.Equal(new Token[] {
                 TokenType.FunctionKeyword,
                 TokenType.OpenBracket,
                 TokenType.CloseBracket,
                 TokenType.WhenKeyword,
                 TokenType.Name, // first condition
                 TokenType.OpenBracket,
-                TokenType.Integer,
+                TokenType.Number,
                 TokenType.Comma,
                 TokenType.Name,
                 TokenType.Comma,
@@ -123,7 +121,7 @@ namespace SCUMSLang.Tokenization
                 TokenType.CloseBracket,
                 TokenType.OpenBrace,
                 TokenType.CloseBrace
-            }, tokens, TokenOnlyTypeComparer.Default);
+            }, tokens.Span, TokenOnlyTypeComparer.Default);
         }
 
         [Fact]
@@ -135,7 +133,7 @@ namespace SCUMSLang.Tokenization
 
             var tokens = Tokenizer.Tokenize(content);
 
-            Assert.Equal(new Token[] {
+            AssertTools.Equal(new Token[] {
                 TokenType.TemplateKeyword,
                 TokenType.OpenBracket,
                 TokenType.Name,
@@ -144,7 +142,7 @@ namespace SCUMSLang.Tokenization
                 TokenType.CloseBracket,
                 TokenType.ForKeyword,
                 TokenType.OpenBracket,
-                TokenType.Integer,
+                TokenType.Number,
                 TokenType.CloseBracket,
                 TokenType.AndKeyword,
                 TokenType.OpenBracket,
@@ -152,7 +150,7 @@ namespace SCUMSLang.Tokenization
                 TokenType.CloseBracket,
                 TokenType.OpenBrace,
                 TokenType.CloseBrace
-            }, tokens, TokenOnlyTypeComparer.Default);
+            }, tokens.Span, TokenOnlyTypeComparer.Default);
         }
 
         [Fact]
@@ -164,12 +162,12 @@ namespace SCUMSLang.Tokenization
 
             var tokens = Tokenizer.Tokenize(content);
 
-            Assert.Equal(tokens, new Token[] {
+            AssertTools.Equal(new Token[] {
 
                 TokenType.SequenceKeyword,
                 TokenType.OpenBrace,
                 TokenType.CloseBrace
-            }, TokenOnlyTypeComparer.Default);
+            }, tokens.Span, TokenOnlyTypeComparer.Default);
         }
 
         [Fact]
@@ -179,11 +177,11 @@ namespace SCUMSLang.Tokenization
 
             var tokens = Tokenizer.Tokenize(content);
 
-            Assert.Equal(tokens, new Token[] {
+            AssertTools.Equal(new Token[] {
                 TokenType.OpenSquareBracket,
                 TokenType.Name,
                 TokenType.CloseSquareBracket
-            }, TokenOnlyTypeComparer.Default);
+            }, tokens.Span, TokenOnlyTypeComparer.Default);
         }
 
         [Fact]
@@ -193,13 +191,13 @@ namespace SCUMSLang.Tokenization
 
             var tokens = Tokenizer.Tokenize(content);
 
-            Assert.Equal(tokens, new Token[] {
+            AssertTools.Equal(new Token[] {
                 TokenType.OpenSquareBracket,
                 TokenType.Name,
                 TokenType.OpenBracket,
                 TokenType.CloseBracket,
                 TokenType.CloseSquareBracket
-            }, TokenOnlyTypeComparer.Default);
+            }, tokens.Span, TokenOnlyTypeComparer.Default);
         }
 
         [Fact]
@@ -209,14 +207,14 @@ namespace SCUMSLang.Tokenization
 
             var tokens = Tokenizer.Tokenize(content);
 
-            Assert.Equal(tokens, new Token[] {
+            AssertTools.Equal(new Token[] {
                 TokenType.OpenSquareBracket,
                 TokenType.Name,
                 TokenType.OpenBracket,
-                TokenType.Integer,
+                TokenType.Number,
                 TokenType.CloseBracket,
                 TokenType.CloseSquareBracket
-            }, TokenOnlyTypeComparer.Default);
+            }, tokens.Span, TokenOnlyTypeComparer.Default);
         }
 
         [Fact]
@@ -238,7 +236,7 @@ namespace SCUMSLang.Tokenization
 
             var tokens = Tokenizer.Tokenize(content);
 
-            Assert.Equal(tokens, new Token[] {
+            AssertTools.Equal(new Token[] {
                 TokenType.Name,
                 TokenType.Comment,
                 TokenType.XmlComment,
@@ -248,15 +246,15 @@ namespace SCUMSLang.Tokenization
                 TokenType.XmlComment,
                 TokenType.Comment,
                 TokenType.Name
-            }, TokenOnlyTypeComparer.Default);
+            }, tokens.Span, TokenOnlyTypeComparer.Default);
 
-            Assert.Equal("hello", tokens[1].GetValue<string>());
-            Assert.Equal(":)", tokens[2].GetValue<string>());
-            Assert.Equal("hello", tokens[3].GetValue<string>());
-            Assert.Equal(":)", tokens[4].GetValue<string>());
-            Assert.Equal("hello", tokens[5].GetValue<string>());
-            Assert.Equal(":)", tokens[6].GetValue<string>());
-            Assert.Equal("", tokens[7].GetValue<string>());
+            Assert.Equal("hello", tokens.Span[1].GetValue<string>());
+            Assert.Equal(":)", tokens.Span[2].GetValue<string>());
+            Assert.Equal("hello", tokens.Span[3].GetValue<string>());
+            Assert.Equal(":)", tokens.Span[4].GetValue<string>());
+            Assert.Equal("hello", tokens.Span[5].GetValue<string>());
+            Assert.Equal(":)", tokens.Span[6].GetValue<string>());
+            Assert.Equal("", tokens.Span[7].GetValue<string>());
         }
 
         [Fact]
@@ -270,8 +268,8 @@ namespace SCUMSLang.Tokenization
 
             foreach (var (value, token) in yieldImmediatellyEndingComments()) {
                 var tokens = Tokenizer.Tokenize(value);
-                Assert.Equal(tokens, new Token[] { token }, TokenOnlyTypeComparer.Default);
-                Assert.Equal("", tokens[0].GetValue<string>());
+                AssertTools.Equal(new Token[] { token }, tokens.Span, TokenOnlyTypeComparer.Default);
+                Assert.Equal("", tokens.Span[0].GetValue<string>());
             }
         }
     }

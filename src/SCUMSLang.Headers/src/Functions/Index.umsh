@@ -1,6 +1,0 @@
-import "GameFunctions.umsh";
-import "MiscellaneousFunctions.umsh";
-import "ResourceFunctions.umsh";
-import "ScoreFunctions.umsh";
-import "UnitFunctions.umsh";
-import "UserInterfaceFunctions.umsh";

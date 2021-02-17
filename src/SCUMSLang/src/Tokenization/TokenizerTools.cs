@@ -86,7 +86,7 @@ namespace SCUMSLang.Tokenization
                     return true;
                 }
             } else if (required) {
-                throw new ParseException(reader.UpperPosition, 0, "A name was expected.");
+                throw new SyntaxTreeException(reader.UpperPosition, 0, "A name was expected.");
             }
 
             newPosition = null;
@@ -196,7 +196,7 @@ namespace SCUMSLang.Tokenization
                 }
 
                 newPosition = reader.UpperPosition;
-                token = CreateToken(TokenType.Integer, integer, reader);
+                token = CreateToken(TokenType.Number, integer, reader);
                 return true;
             }
 

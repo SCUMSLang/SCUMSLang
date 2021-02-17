@@ -1,6 +1,4 @@
-﻿using SCUMSLang.AST;
-
-namespace SCUMSLang.Tokenization
+﻿namespace SCUMSLang.Tokenization
 {
     public enum TokenType
     {
@@ -14,35 +12,13 @@ namespace SCUMSLang.Tokenization
         /// </summary>
         Name,
         /// <summary>
-        /// int
-        /// </summary>
-        [TokenKeyword("UInt32")]
-        [SystemType(SystemType.Integer)]
-        IntKeyword,
-        /// <summary>
         /// A 32-bit integer value.
         /// </summary>
-        [SystemType(SystemType.Integer)]
-        Integer,
-        [TokenKeyword("String")]
-        [SystemType(SystemType.String)]
-        StringKeyword,
+        Number,
         /// <summary>
         /// string
         /// </summary>
-        [SystemType(SystemType.String)]
         String,
-        ///// <summary>
-        ///// bool
-        ///// </summary>
-        //[DefinitionType(DefinitionType.Boolean, IsEnumeration = true)]
-        //[TokenKeyword("Boolean")]
-        //BoolKeyword,
-        ///// <summary>
-        ///// true or false
-        ///// </summary>
-        //[TokenKeyword("true", "false")]
-        //Boolean,
         /// <summary>
         /// =
         /// </summary>
@@ -203,6 +179,26 @@ namespace SCUMSLang.Tokenization
         /// </summary>
         MemberAccess,
         [TokenKeyword("typedef")]
-        TypeDefKeyword
+        TypeDefKeyword,
+        /// <summary>
+        /// using
+        /// </summary>
+        [TokenKeyword("using")]
+        UsingKeyword,
+        /// <summary>
+        /// foreach
+        /// </summary>
+        [TokenKeyword("foreach")]
+        ForeachKeyword,
+        /// <summary>
+        /// in
+        /// </summary>
+        [TokenKeyword("in")]
+        InKeyword,
+        /// <summary>
+        /// params
+        /// </summary>
+        [TokenKeyword("params")]
+        ParamsKeyword
     }
 }
