@@ -1,0 +1,17 @@
+typedef UInt8 byte;
+typedef UInt32 int;
+typedef String string;
+
+typedef enum { false, true } Boolean;
+typedef Boolean bool;
+
+/// <summary>Used by compiler! The function is intended to be used as attribute to mark an abstract function as condition.</summary>
+function TriggerCondition();
+/// <summary>Used by compiler! The function is intended to be used as attribute to mark an abstract function as attribute.</summary>
+function Attribute();
+
+/// <summary>
+/// Declares a death counter of (an) unit(s) from the specified player being reserved for compiler.
+/// Internally a death counter represents an UInt32 value which the compiler specific triggers need.
+/// </summary>
+function add_uint32(Player PlayerId, params Unit[] units);

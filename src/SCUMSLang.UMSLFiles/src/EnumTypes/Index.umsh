@@ -1,0 +1,12 @@
+import "AIScript.umsh";
+import "AllianceStatus.umsh";
+import "Comparison.umsh";
+import "EndCondition.umsh";
+import "Location.umsh";
+import "Order.umsh";
+import "Player.umsh";
+import "ResourceType.umsh";
+import "ScoreType.umsh";
+import "State.umsh";
+import "Unit.umsh";
+import "UnitProperty.umsh";

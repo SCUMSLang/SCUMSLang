@@ -1,0 +1,58 @@
+import "../EnumTypes/Index.umsh";
+
+/// <summary>Sets the score of a player.</summary>
+function set_score(Player player, ScoreType scoreType, int expression);
+
+/// <summary>Add to the score of a player.</summary>
+function add_score(Player player, ScoreType scoreType, int expression);
+
+/// <summary>Subtracts from the score of a player.</summary>
+function subtract_score(Player player, ScoreType scoreType, int expression);
+
+/// <summary>Sets the death count for a unit. (Caution!)</summary>
+function set_deaths(Player player, Unit unit, int expression);
+
+/// <summary>Adds to the death count for a unit. (Caution!)</summary>
+function add_deaths(Player player, Unit unit, int expression);
+
+/// <summary>Subtracts from the death count for a unit. (Caution!)</summary>
+function remove_deaths(Player player, Unit unit, int expression);
+
+/// <summary>Shows the leaderboard. See here for more info.</summary>
+function show_leaderboard_greed(string text);
+
+/// <summary>Shows the leaderboard. See here for more info.</summary>
+function show_leaderboard_control(string text, Unit unit);
+
+/// <summary>Shows the leaderboard. See here for more info.</summary>
+function show_leaderboard_control_at_location(string text, Unit unit, Location location);
+
+/// <summary>Shows the leaderboard. See here for more info.</summary>
+function show_leaderboard_kills(string text, Unit unit);
+
+/// <summary>Shows the leaderboard. See here for more info.</summary>
+function show_leaderboard_points(string text, ScoreType scoreType);
+
+/// <summary>Shows the leaderboard. See here for more info.</summary>
+function show_leaderboard_resources(string text, ResourceType resourceType);
+
+/// <summary>Shows the leaderboard with a goal. See here for more info.</summary>
+function show_leaderboard_goal_greed(string text, int quantity);
+
+/// <summary>Shows the leaderboard. See here for more info.</summary>
+function show_leaderboard_goal_control(string text, int quantity, Unit unit);
+
+/// <summary>Shows the leaderboard. See here for more info.</summary>
+function show_leaderboard_goal_control_at_location(string text, int quantity, Unit unit, Location location);
+
+/// <summary>Shows the leaderboard. See here for more info.</summary>
+function show_leaderboard_goal_kills(string text, int quantity, Unit unit);
+
+/// <summary>Shows the leaderboard. See here for more info.</summary>
+function show_leaderboard_goal_points(string text, int quantity, ScoreType scoreType);
+
+/// <summary>Shows the leaderboard. See here for more info.</summary>
+function show_leaderboard_goal_resources(string text, int quantity, ResourceType resourceType);
+
+/// <summary>Shows/hides computer players from the leaderboard.</summary>
+function leaderboard_show_cpu(State state);
