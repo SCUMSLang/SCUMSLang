@@ -1,3 +1,5 @@
+[![Custom badge](https://img.shields.io/endpoint?url=https://gist.githubusercontent.com/teroneko/10ec1c15a10132f969e9acaa57da345e/raw/ec9cc7dd0121fbb970035fe3df2413bf4c9a6c35/discord-badge.json)](https://discord.gg/zbWVypUzgQ)
+
 # SCUMSLang <!-- omit in toc -->
 
 SCUMSLang (pronounced S-C-U-M-S-Lang) is the programming language and the compiler for describing and creating triggers for Starcraft Broodwar/Remastered.
