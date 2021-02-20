@@ -59,7 +59,7 @@ namespace SCUMSLang.SyntaxTree
                     }
 
                     if (!reader.ConsumeNext(closeToken)) {
-                        throw new SyntaxTreeException(reader.ViewLastPosition, $"The list needs to be closed by '{TokenTypeLibrary.SequenceDictionary[closeToken]}'.");
+                        throw new SyntaxTreeParsingException(reader.ViewLastPosition, $"The list needs to be closed by '{TokenTypeLibrary.SequenceDictionary[closeToken]}'.");
                     }
 
                     newPosition = reader.UpperPosition;
@@ -68,7 +68,7 @@ namespace SCUMSLang.SyntaxTree
             }
 
             if (required) {
-                throw new SyntaxTreeException(reader.ViewLastPosition, "The enumeration needs to be openend by a brace ('{').");
+                throw new SyntaxTreeParsingException(reader.ViewLastPosition, "The enumeration needs to be openend by a brace ('{').");
             }
 
             newPosition = null;
@@ -80,18 +80,18 @@ namespace SCUMSLang.SyntaxTree
         {
             if (reader.ViewLastValue == TokenType.TypeDefKeyword) {
                 if (!reader.ConsumeNext(out ReaderPosition<Token> typeTokenPosition)) {
-                    throw new SyntaxTreeException(typeTokenPosition, "A type was expected.");
+                    throw new SyntaxTreeParsingException(typeTokenPosition, "A type was expected.");
                 }
 
                 static ReaderPosition<Token> expectNameAndEndToken(ref SpanReader<Token> reader, out int? newPosition)
                 {
                     if (!reader.ConsumeNext(out ReaderPosition<Token> nameToken)
                         || string.IsNullOrEmpty(nameToken.Value?.ToString())) {
-                        throw new SyntaxTreeException(reader.ViewLastPosition, "A name was expected.");
+                        throw new SyntaxTreeParsingException(reader.ViewLastPosition, "A name was expected.");
                     }
 
                     if (!reader.ConsumeNext(TokenType.Semicolon)) {
-                        throw new SyntaxTreeException(reader.ViewLastPosition, "A semicolon was expected.");
+                        throw new SyntaxTreeParsingException(reader.ViewLastPosition, "A semicolon was expected.");
                     }
 
                     newPosition = reader.UpperPosition;
@@ -127,7 +127,7 @@ namespace SCUMSLang.SyntaxTree
             if (reader.ViewLastValue == TokenType.EnumKeyword) {
                 if (!reader.ConsumeNext(out ReaderPosition<Token> enumNameTokenPosition)
                     || enumNameTokenPosition.Value != TokenType.Name) {
-                    throw new SyntaxTreeException(reader.ViewLastPosition, "A name after the keyword 'enum' was expected.");
+                    throw new SyntaxTreeParsingException(reader.ViewLastPosition, "A name after the keyword 'enum' was expected.");
                 }
 
                 _ = TryRecognizeNameList(reader, TokenType.OpenBrace, TokenType.CloseBrace, out newPosition, out var nameList, required: true, needConsume: true);
@@ -148,7 +148,7 @@ namespace SCUMSLang.SyntaxTree
         public static TypeReference GetTypeReference(ModuleDefinition module, Token nameTypeToken)
         {
             if (!(nameTypeToken.Value is string typeName) || string.IsNullOrEmpty(typeName)) {
-                throw new SyntaxTreeException(nameTypeToken, "A type was expected.");
+                throw new SyntaxTreeParsingException(nameTypeToken, "A type was expected.");
             }
 
             return new TypeReference(module, typeName);
@@ -243,7 +243,7 @@ namespace SCUMSLang.SyntaxTree
                     var typeReference = GetTypeReference(module, variableTypeOrCloseToken);
 
                     if (!reader.ConsumeNext(TokenType.Name, out var parameterNameToken)) {
-                        throw new SyntaxTreeException(reader.ViewLastValue, "Parameter name is missing.");
+                        throw new SyntaxTreeParsingException(reader.ViewLastValue, "Parameter name is missing.");
                     }
 
                     var parameter = new ParameterDefinition(parameterNameToken.GetValue<string>(), typeReference);
@@ -257,7 +257,7 @@ namespace SCUMSLang.SyntaxTree
                 newPosition = reader.UpperPosition;
                 return true;
             } else if (required) {
-                throw new SyntaxTreeException(reader.ViewLastValue, "Parameter list was expected.");
+                throw new SyntaxTreeParsingException(reader.ViewLastValue, "Parameter list was expected.");
             }
 
             newPosition = null;
@@ -294,7 +294,7 @@ namespace SCUMSLang.SyntaxTree
                 return new ConstantDefinition(enumFieldType, pathFragments[1]);
             }
 
-            throw new SyntaxTreeException(constantToken, "Bad constant.");
+            throw new SyntaxTreeParsingException(constantToken, "Bad constant.");
         }
 
         public static bool TryRecognizeArgumentList(
@@ -314,7 +314,7 @@ namespace SCUMSLang.SyntaxTree
                 && reader.ViewLastValue == openTokenType) {
                 do {
                     if (!reader.ConsumeNext(out ReaderPosition<Token> tokenPosition)) {
-                        throw new SyntaxTreeException(reader.ViewLastValue, "The argument list needs to be enclosed.");
+                        throw new SyntaxTreeParsingException(reader.ViewLastValue, "The argument list needs to be enclosed.");
                     }
 
                     if (!hadPreviousComma && tokenPosition.Value == endTokenType) {
@@ -330,14 +330,14 @@ namespace SCUMSLang.SyntaxTree
                         hadPreviousComma = true;
 
                         if (!reader.ConsumeNext()) {
-                            throw new SyntaxTreeException(reader.ViewLastValue, "Another value was expected.");
+                            throw new SyntaxTreeParsingException(reader.ViewLastValue, "Another value was expected.");
                         }
                     } else {
                         hadPreviousComma = false;
                     }
                 } while (true);
             } else if (required) {
-                throw new SyntaxTreeException(reader.ViewLastValue, "A argument list was expected.");
+                throw new SyntaxTreeParsingException(reader.ViewLastValue, "A argument list was expected.");
             }
 
             newPosition = null;
@@ -364,7 +364,7 @@ namespace SCUMSLang.SyntaxTree
                     node = new AttributeDefinition(methodCall);
                     return true;
                 } else {
-                    throw new SyntaxTreeException(reader.ViewLastValue, "The attribute needs to be closed by ']'.");
+                    throw new SyntaxTreeParsingException(reader.ViewLastValue, "The attribute needs to be closed by ']'.");
                 }
             }
 
@@ -423,7 +423,7 @@ namespace SCUMSLang.SyntaxTree
                     return true;
                 }
             } else if (required) {
-                throw new SyntaxTreeException(reader.ViewLastValue, "Function call was expected.");
+                throw new SyntaxTreeParsingException(reader.ViewLastValue, "Function call was expected.");
             }
 
             newPosition = 0;
@@ -435,7 +435,7 @@ namespace SCUMSLang.SyntaxTree
         {
             if (reader.ViewLastValue.TryRecognize(TokenType.FunctionKeyword, out var functionToken)) {
                 if (!reader.ConsumeNext(TokenType.Name, out var functionNameToken)) {
-                    throw new SyntaxTreeException(functionToken, "Function must have a name.");
+                    throw new SyntaxTreeParsingException(functionToken, "Function must have a name.");
                 }
 
                 if (TryRecognizeParameters(module, reader, TokenType.OpenAngleBracket, TokenType.CloseAngleBracket, out var genericParameters, out newPosition, needConsume: true)) {
@@ -447,7 +447,7 @@ namespace SCUMSLang.SyntaxTree
                 }
 
                 if (!reader.ConsumeNext(out Token afterSignatureNode) || !afterSignatureNode.TryRecognize(TokenType.OpenBrace, TokenType.WhenKeyword, TokenType.Semicolon)) {
-                    throw new SyntaxTreeException(reader.ViewLastValue, "Function must have a block (e.g. '{}'), followed by 'when' keyword or end with a semicolon after the signature.");
+                    throw new SyntaxTreeParsingException(reader.ViewLastValue, "Function must have a block (e.g. '{}'), followed by 'when' keyword or end with a semicolon after the signature.");
                 }
 
                 if (afterSignatureNode.TryRecognize(TokenType.OpenBrace, TokenType.Semicolon)) {
@@ -486,7 +486,7 @@ namespace SCUMSLang.SyntaxTree
                         }
 
                         if (!reader.ConsumeNext(TokenType.AndKeyword)) {
-                            throw new SyntaxTreeException(reader.ViewLastValue, "As long as the function block is not opening (e.g. '{') another condition is expected.");
+                            throw new SyntaxTreeParsingException(reader.ViewLastValue, "As long as the function block is not opening (e.g. '{') another condition is expected.");
                         }
                     } while (true);
                 }

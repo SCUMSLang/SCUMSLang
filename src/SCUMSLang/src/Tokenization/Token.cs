@@ -7,22 +7,25 @@ namespace SCUMSLang.Tokenization
     {
         public TokenType TokenType { get; }
         public object? Value { get; }
-        public int Position { get; }
-        public int Length { get; }
+        public int FilePosition { get; internal set; }
+        public int FilePositionLength { get; }
+        public int FileLine { get; internal set; }
+        public int FileLinePosition { get; internal set; }
+        public string? FilePath { get; internal set; }
         /// <summary>
-        /// The channel at which the token is belonging. If not other 
+        /// The channel at which the token is belonging. If not other
         /// specified it is by default <see cref="Channel.Parser"/>.
         /// </summary>
         public Channel Channel { get; }
-        public int UpperPosition => Position + Length - 1;
+        public int UpperPosition => FilePosition + FilePositionLength - 1;
 
         public Token(TokenType tokenType, int position, int length, object? value, Channel channel)
         {
             TokenType = tokenType;
             Value = value;
             Channel = channel;
-            Position = position;
-            Length = length;
+            FilePosition = position;
+            FilePositionLength = length;
         }
 
         public Token(TokenType tokenType, int position, int length, object? value)
@@ -87,7 +90,7 @@ namespace SCUMSLang.Tokenization
             obj is Token other && (ReferenceEquals(this, other) || (!(other is null) && TokenType == other.TokenType));
 
         public override int GetHashCode() =>
-            HashCode.Combine(TokenType, Value, Position, Length);
+            HashCode.Combine(TokenType, Value, FilePosition, FilePositionLength);
 
         public override string ToString() =>
             Enum.GetName(typeof(TokenType), TokenType) ?? "";

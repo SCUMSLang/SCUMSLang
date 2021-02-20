@@ -71,7 +71,11 @@ namespace SCUMSLang.IO
                 .ToList();
 
             topologizedImports.Clear();
-            topologizedImports = TopologicalSorting.KahnAlgorithm.SortTopologically(loadedImports.Values, importEdges, ImportEntryOnlyPathEqualityComparer.Default);
+
+            topologizedImports = TopologicalSorting.KahnAlgorithm.SortTopologically(
+                loadedImports.Values, 
+                importEdges, 
+                ImportEntryOnlyPathEqualityComparer.Default);
         }
     }
 }

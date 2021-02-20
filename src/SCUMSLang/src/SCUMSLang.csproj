@@ -8,9 +8,7 @@
   </PropertyGroup>
 
   <ItemGroup>
-    <None Include="
-          $(MSBuildProjectDirectory)\..\..\SCUMSLang.UMSLFiles\src\**\*.umsh;
-          $(MSBuildProjectDirectory)\..\..\SCUMSLang.UMSLFiles\src\**\*.umsl">
+    <None Include="&#xD;&#xA;          $(MSBuildProjectDirectory)\..\..\SCUMSLang.UMSLFiles\src\**\*.umsh;&#xD;&#xA;          $(MSBuildProjectDirectory)\..\..\SCUMSLang.UMSLFiles\src\**\*.umsl">
       <CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>
       <LinkBase>UMSLFiles\</LinkBase>
     </None>

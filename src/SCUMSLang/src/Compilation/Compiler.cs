@@ -54,13 +54,21 @@ namespace SCUMSLang.Compilation
             var systemBlock = new ModuleDefinition()
                 .AddSystemTypes();
 
-            var importGraph = await DirectAcyclicImportGraph.LoadImportGraphAsync(importPaths);
+            DirectAcyclicImportGraph? importGraph = null;
+            List<CompilerError>? compilerErrors = new List<CompilerError>();
 
-            foreach (var import in importGraph.TopologizedImports) {
-                import.ParseToEnd();
+            try {
+                importGraph = await DirectAcyclicImportGraph.LoadImportGraphAsync(importPaths);
+
+                foreach (var import in importGraph.TopologizedImports) {
+                    import.ParseToEnd();
+                }
+            } catch (SyntaxTreeParsingException error) {
+                var compilerError = await FilePassageError.CreateFromFilePassageAsync(error);
+                compilerErrors.Add(compilerError);
             }
 
-            return new CompilerResult(importGraph);
+            return new CompilerResult(importGraph, compilerErrors);
         }
 
         public Task<CompilerResult> CompileAsync() =>

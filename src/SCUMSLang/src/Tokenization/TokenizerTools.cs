@@ -1,6 +1,7 @@
 ﻿using System;
 using System.Collections.Generic;
 using System.Diagnostics.CodeAnalysis;
+using System.Text;
 using static SCUMSLang.Tokenization.TokenTools;
 
 namespace SCUMSLang.Tokenization
@@ -9,6 +10,8 @@ namespace SCUMSLang.Tokenization
     {
         public static bool TryRecognizeWhiteSpaces(SpanReader<char> reader, out int? newPosition)
         {
+            var whiteSpaceBuffer = new StringBuilder();
+
             if (char.IsWhiteSpace(reader.ViewLastValue)) {
                 while (reader.PeekNext(out var peekedPosition) && char.IsWhiteSpace(peekedPosition.Value)) {
                     if (reader.ConsumeNext()) {
@@ -30,7 +33,7 @@ namespace SCUMSLang.Tokenization
                 TokenType tokenType;
 
                 if (!reader.ConsumeNext(out ReaderPosition<char> consumedCharacter) && consumedCharacter.Value == '/') {
-                    throw new TokenizationException(reader.ViewLastPosition, "A comment was expected.");
+                    throw new TokenParsingException(reader.ViewLastPosition, "A comment was expected.");
                 }
 
                 if (reader.PeekNext(out consumedCharacter) && consumedCharacter.Value == '/'
@@ -86,7 +89,7 @@ namespace SCUMSLang.Tokenization
                     return true;
                 }
             } else if (required) {
-                throw new SyntaxTreeException(reader.UpperPosition, 0, "A name was expected.");
+                throw new TokenParsingException(reader.ViewLastValue, "A name was expected.");
             }
 
             newPosition = null;
@@ -102,7 +105,7 @@ namespace SCUMSLang.Tokenization
                 if (!TryRecognizeName(reader, out newPosition, out var pathFragment)) {
 
                     if (pathFragments.Count >= 1) {
-                        throw new TokenizationException(reader.UpperPosition, "After a dot another path fragment was expected.");
+                        throw new TokenParsingException(reader.UpperPosition, "After a dot another path fragment was expected.");
                     }
 
                     break;
@@ -135,7 +138,7 @@ namespace SCUMSLang.Tokenization
 
             foreach (var (TokenType, Keyword) in TokenTypeLibrary.TokenAscendedKeywords) {
                 if (name == Keyword) {
-                    token = new Token(TokenType, nameToken.Position, nameToken.Length, nameToken.Value);
+                    token = new Token(TokenType, nameToken.FilePosition, nameToken.FilePositionLength, nameToken.Value);
                     break;
                 }
             }
@@ -173,7 +176,7 @@ namespace SCUMSLang.Tokenization
                             if (lastCharacter >= 'A' && lastCharacter <= 'F') {
                                 continue;
                             } else {
-                                throw new TokenizationException(reader.UpperPosition, "Token of type Integer can only have valid hexadecimal literals: [A-Fa-f1-9].");
+                                throw new TokenParsingException(reader.UpperPosition, "Token of type Integer can only have valid hexadecimal literals: [A-Fa-f1-9].");
                             }
                         } else {
                             break;
@@ -262,7 +265,7 @@ namespace SCUMSLang.Tokenization
             if (characters[0] == '"') {
                 do {
                     if (!reader.ConsumeNext(out characters)) {
-                        throw new TokenizationException(reader.UpperPosition, "Token of type String was expected to be closed with another \".");
+                        throw new TokenParsingException(reader.UpperPosition, "Token of type String was expected to be closed with another \".");
                     }
                 } while (characters.Last() != '"');
 

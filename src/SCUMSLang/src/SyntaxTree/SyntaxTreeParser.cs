@@ -49,7 +49,7 @@ namespace SCUMSLang.SyntaxTree
                         if (Options.EmptyRecognizationResultsIntoWhileBreak) {
                             break;
                         } else {
-                            throw new SyntaxTreeException(tokenReader.ViewLastValue, "A valid programming structure could not be found.");
+                            throw new SyntaxTreeParsingException(tokenReader.ViewLastValue, "A valid programming structure could not be found.");
                         }
                     } else {
                         lastRecognizedUpperPosition = newPosition.Value;

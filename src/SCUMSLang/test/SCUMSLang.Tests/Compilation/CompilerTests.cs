@@ -9,7 +9,8 @@ namespace SCUMSLANG.Compilation
     {
         [Fact]
         public async Task Should_compile() =>
-            await Compiler.Default.CompileAsync();
+            (await Compiler.Default.CompileAsync())
+                .ThrowOnError();
 
         [Fact]
         public async Task Should_compile_set_death()
@@ -17,6 +18,8 @@ namespace SCUMSLANG.Compilation
             var result = await Compiler.Default.CompileAsync(parameters => {
                 parameters.UserSources.Add(GetUMSLFilePath("SetDeaths.umsl"));
             });
+
+            result.ThrowOnError();
         }
     }
 }

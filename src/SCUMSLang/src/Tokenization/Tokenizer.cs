@@ -3,31 +3,85 @@ using System.Collections.Generic;
 using System.IO;
 using System.Text;
 using System.Threading.Tasks;
+using SCUMSLang.Text;
 using static SCUMSLang.Tokenization.TokenizerTools;
 
 namespace SCUMSLang.Tokenization
 {
     public static class Tokenizer
     {
-        public static ReadOnlyMemory<Token> Tokenize(ReadOnlySpan<char> content)
+        public static ReadOnlyMemory<Token> Tokenize(ReadOnlySpan<char> content, int positionOffset = 0, string? filePath = null)
         {
             var charReader = new SpanReader<char>(content);
             var tokens = new List<Token>();
+            int previousPosition = 0;
+            var previousLastLine = 1;
+            var previousLastLinePosition = 0;
+            char detectedEndOfLine = '\0';
 
             while (charReader.ConsumeNext()) {
-                var newPosition = RecognizeToken(charReader, out var token);
+                int? newPosition;
+                Token? token;
+
+                try {
+                    newPosition = RecognizeToken(charReader, out token);
+                } catch (TokenParsingException error) {
+                    error.FileLine = previousLastLine;
+                    throw;
+                }
 
                 if (newPosition == null) {
-                    throw new TokenizationException(charReader.UpperPosition, "Character(s) couldn't be recognized as token.");
+                    var position = charReader.UpperPosition;
+                    var filePosition = position + positionOffset;
+                    var fileLinePosition = position - previousLastLinePosition;
+
+                    throw new TokenParsingException(filePosition, "Character(s) couldn't be recognized as token.") {
+                        FileLine = previousLastLine,
+                        FileLinePosition = fileLinePosition
+                    };
+                }
+
+                var currentIndex = newPosition.Value;
+                var lastLine = previousLastLine;
+
+                while (currentIndex > previousPosition) {
+                    void setNextLine()
+                    {
+                        lastLine++;
+                        previousLastLinePosition = currentIndex;
+                    }
+
+                    if (detectedEndOfLine != '\0') {
+                        if (detectedEndOfLine == content[currentIndex]) {
+                            setNextLine();
+                        }
+                    } else {
+                        var character = content[currentIndex];
+
+                        if (character == '\r' || character == '\n') {
+                            detectedEndOfLine = character;
+                            setNextLine();
+                        }
+                    }
+
+                    currentIndex--;
                 }
 
                 if (!(token is null)) {
+                    var tokenPosition = token.FilePosition;
+                    token.FileLine = previousLastLine;
+                    token.FilePosition = tokenPosition + positionOffset;
+                    token.FileLinePosition = tokenPosition - previousLastLinePosition;
+                    token.FilePath = filePath;
                     tokens.Add(token);
                 }
 
                 if (!charReader.SetPositionTo(newPosition.Value + 1)) {
                     break;
                 }
+
+                previousPosition = newPosition.Value;
+                previousLastLine = lastLine;
             }
 
             return new ReadOnlyMemory<Token>(tokens.ToArray());
@@ -56,14 +110,17 @@ namespace SCUMSLang.Tokenization
                 }
             }
 
-            var utf8Preamble = Encoding.UTF8.GetPreamble();
             var fileBytesMemory = new ReadOnlyMemory<byte>(fileBytes);
+            int filePositionOffset;
 
-            if (fileBytesMemory.Length >= utf8Preamble.Length && fileBytesMemory.Span.StartsWith(utf8Preamble)) {
-                fileBytesMemory = fileBytesMemory.Slice(fileBytesMemory.Length);   
+            if (EncodingTools.IsUTF8PreamblePresent(fileBytesMemory.Span, out filePositionOffset)) {
+                fileBytesMemory = fileBytesMemory.Slice(filePositionOffset);
             }
 
-            return Tokenize(Encoding.ASCII.GetString(fileBytesMemory.Span));
+            return Tokenize(
+                Encoding.ASCII.GetString(fileBytesMemory.Span), 
+                positionOffset: filePositionOffset, 
+                filePath: fileStream.Name);
         }
     }
 }

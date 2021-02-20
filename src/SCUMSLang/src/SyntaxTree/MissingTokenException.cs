@@ -4,7 +4,7 @@ using System.Runtime.Serialization;
 
 namespace SCUMSLang
 {
-    public class MissingTokenException : SyntaxTreeException
+    public class MissingTokenException : SyntaxTreeParsingException
     {
         public TokenType MissingTokenType { get; }
 

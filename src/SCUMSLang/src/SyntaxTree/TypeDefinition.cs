@@ -39,20 +39,12 @@ namespace SCUMSLang.SyntaxTree
             return alias;
         }
 
-        public static TypeDefinition CreateArrayDefinition(
-            ModuleDefinition module,
-            TypeReference nestedType)
-        { 
-         var array = new TypeDefinition(module,   
-        }
-
         public override SyntaxTreeNodeType NodeType => SyntaxTreeNodeType.TypeDefinition;
 
         public TypeReference? BaseType { get; internal set; }
         public IReadOnlyList<TypeReference>? NestedTypes { get; private set; }
         public bool IsEnum { get; internal set; }
         public bool IsAlias { get; internal set; }
-        public bool IsArray { get; internal set; }
 
         public IReadOnlyList<FieldDefinition> Fields {
             get {
