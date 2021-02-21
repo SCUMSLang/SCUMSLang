@@ -9,11 +9,12 @@ namespace SCUMSLang.Compilation
     {
         public static async Task<CompilerError> CreateFromFilePassageAsync(SyntaxTreeParsingException error)
         {
-            var compilerError = CompilerErrorSourceType.SyntaxTree;
+            var compilerErrorType = CompilerErrorSourceType.SyntaxTree;
             var errorMessage = error.Message;
+            CompilerError compilerError;
 
             if (error.FilePath is null) {
-                return new CompilerError(compilerError, errorMessage);
+                compilerError = new CompilerError(compilerErrorType, errorMessage);
             } else {
                 var filePath = error.FilePath;
                 var filePosition = error.FilePosition;
@@ -29,8 +30,8 @@ namespace SCUMSLang.Compilation
                     filePassage = null;
                 }
 
-                return new FilePassageError(
-                    compilerError,
+                compilerError = new FilePassageError(
+                    compilerErrorType,
                     errorMessage,
                     filePassage,
                     filePath,
@@ -39,6 +40,10 @@ namespace SCUMSLang.Compilation
                     line: fileLine,
                     linePosition: error.FileLinePosition);
             }
+
+            var wrappedException = new CompilerException(compilerError.ToString(), error);
+            compilerError.WrappedException = wrappedException;
+            return compilerError;
         }
 
         public override CompilerErrorType Type =>

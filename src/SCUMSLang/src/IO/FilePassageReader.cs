@@ -132,12 +132,8 @@ namespace SCUMSLang.IO
                     }
 
                     if (lineListIndexOfPositionLength == -1) {
-                        lineListIndexOfPositionLength = lineList.Count - 1;
-                        linePositionOfPositionLength = lineList[lineList.Count - 1].Length;
-
-                        if (linePositionOfPositionLength == 0) {
-                            linePositionOfPositionLength = 1;
-                        }
+                        lineListIndexOfPositionLength = lineList.FindLastIndex(x => x.Length != 0);
+                        linePositionOfPositionLength = lineList[lineList.Count - 1].Length - 1;
                     }
 
                     var stringBuilder = new StringBuilder();
@@ -147,7 +143,15 @@ namespace SCUMSLang.IO
 
                         if (currentLineIndex == lineListIndexOfPosition) {
                             stringBuilder.Append(new string(' ', linePositionOfPosition));
-                            stringBuilder.Append(new string('^', lineList[currentLineIndex].Length - linePositionOfPosition));
+
+                            var underlinedLength = length;
+                            var maxUnderlinableLength = lineList[currentLineIndex].Length - linePositionOfPosition;
+
+                            if (underlinedLength > maxUnderlinableLength) {
+                                underlinedLength = maxUnderlinableLength;
+                            }
+
+                            stringBuilder.Append(new string('^', underlinedLength));
                         } else if (currentLineIndex == lineListIndexOfPositionLength) {
                             stringBuilder.Append(new string('^', linePositionOfPositionLength));
                             stringBuilder.Append(new string(' ', lineList[currentLineIndex].Length - linePositionOfPositionLength));

@@ -10,7 +10,7 @@ namespace SCUMSLang.Tokenization
 {
     public static class Tokenizer
     {
-        public static ReadOnlyMemory<Token> Tokenize(ReadOnlySpan<char> content, int positionOffset = 0, string? filePath = null)
+        public static ReadOnlyMemory<Token> Tokenize(ReadOnlySpan<char> content, byte positionOffset = 0, string? filePath = null)
         {
             var charReader = new SpanReader<char>(content);
             var tokens = new List<Token>();
@@ -32,10 +32,10 @@ namespace SCUMSLang.Tokenization
 
                 if (newPosition == null) {
                     var position = charReader.UpperPosition;
-                    var filePosition = position + positionOffset;
                     var fileLinePosition = position - previousLastLinePosition;
 
-                    throw new TokenParsingException(filePosition, "Character(s) couldn't be recognized as token.") {
+                    throw new TokenParsingException(position, "Character(s) couldn't be recognized as token.") {
+                        FilePositionOffset = positionOffset,
                         FileLine = previousLastLine,
                         FileLinePosition = fileLinePosition
                     };
@@ -70,7 +70,8 @@ namespace SCUMSLang.Tokenization
                 if (!(token is null)) {
                     var tokenPosition = token.FilePosition;
                     token.FileLine = previousLastLine;
-                    token.FilePosition = tokenPosition + positionOffset;
+                    token.FilePosition = tokenPosition;
+                    token.FilePositionOffset = positionOffset;
                     token.FileLinePosition = tokenPosition - previousLastLinePosition;
                     token.FilePath = filePath;
                     tokens.Add(token);
@@ -119,7 +120,7 @@ namespace SCUMSLang.Tokenization
 
             return Tokenize(
                 Encoding.ASCII.GetString(fileBytesMemory.Span), 
-                positionOffset: filePositionOffset, 
+                positionOffset: (byte)filePositionOffset, 
                 filePath: fileStream.Name);
         }
     }

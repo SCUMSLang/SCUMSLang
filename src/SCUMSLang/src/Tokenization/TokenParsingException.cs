@@ -7,6 +7,7 @@ namespace SCUMSLang.Tokenization
     internal class TokenParsingException : Exception
     {
         public int FilePosition { get; }
+        public byte FilePositionOffset { get; internal set; }
         public int FileLine { get; internal set; }
         public int FileLinePosition { get; internal set; }
 

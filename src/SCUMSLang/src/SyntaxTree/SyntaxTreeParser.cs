@@ -43,7 +43,7 @@ namespace SCUMSLang.SyntaxTree
                     block.CurrentBlock.EndBlock();
                     newPosition = tokenReader.UpperPosition;
                 } else {
-                    newPosition = TryRecognize(block.CurrentBlock, tokenReader, Options.RecognizableNodes, out var node);
+                    newPosition = Recognize(block.CurrentBlock, tokenReader, Options.RecognizableNodes, out var node);
 
                     if (newPosition == null) {
                         if (Options.EmptyRecognizationResultsIntoWhileBreak) {

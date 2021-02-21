@@ -8,6 +8,7 @@ namespace SCUMSLang
     public class SyntaxTreeParsingException : Exception
     {
         public int FilePosition { get; private set; }
+        public byte FilePositionOffset { get; private set; }
         public int FilePositionLength { get; private set; }
         public int FileLine { get; private set; }
         public int FileLinePosition { get; internal set; }
@@ -16,7 +17,7 @@ namespace SCUMSLang
         protected SyntaxTreeParsingException(SerializationInfo info, StreamingContext context)
             : base(info, context) { }
 
-        public SyntaxTreeParsingException(Token nearToken) =>
+        protected SyntaxTreeParsingException(Token nearToken) =>
             onConstruction(nearToken);
 
         public SyntaxTreeParsingException(Token nearToken, string? message)
@@ -30,6 +31,7 @@ namespace SCUMSLang
         private void onConstruction(Token nearToken)
         {
             FilePosition = nearToken.FilePosition;
+            FilePositionOffset = nearToken.FilePositionOffset;
             FilePositionLength = nearToken.FilePositionLength;
             FileLine = nearToken.FileLine;
             FileLinePosition = nearToken.FileLinePosition;

@@ -7,11 +7,12 @@ namespace SCUMSLang.Compilation
         public virtual CompilerErrorType Type { get; } = CompilerErrorType.Error;
         public CompilerErrorSourceType SourceType { get; }
         public string ErrorMessage { get; }
+        public Exception WrappedException { get; internal set; } = null!;
 
         public CompilerError(CompilerErrorSourceType errorType, string errorMessage)
         {
             SourceType = errorType;
-            ErrorMessage = errorMessage ?? throw new System.ArgumentNullException(nameof(errorMessage));
+            ErrorMessage = errorMessage ?? throw new ArgumentNullException(nameof(errorMessage));
         }
 
         public override string ToString() =>

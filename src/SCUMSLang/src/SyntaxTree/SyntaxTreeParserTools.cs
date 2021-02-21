@@ -145,13 +145,38 @@ namespace SCUMSLang.SyntaxTree
             return false;
         }
 
-        public static TypeReference GetTypeReference(ModuleDefinition module, Token nameTypeToken)
+        public static TypeReference GetTypeReference(ModuleDefinition module, SpanReader<Token> reader)
         {
-            if (!(nameTypeToken.Value is string typeName) || string.IsNullOrEmpty(typeName)) {
-                throw new SyntaxTreeParsingException(nameTypeToken, "A type was expected.");
+            var typeToken = reader.ViewLastValue;
+
+            if (!(typeToken.Value is string typeName) || string.IsNullOrEmpty(typeName)) {
+                throw new SyntaxTreeParsingException(typeToken, "A type was expected.");
             }
 
             return new TypeReference(module, typeName);
+        }
+
+        public static TypeReference GetArgumentTypeReference(ModuleDefinition module, SpanReader<Token> reader, out int newPosition)
+        {
+            var typeToken = reader.ViewLastValue;
+
+            if (typeToken.TokenType == TokenType.ParamsKeyword) {
+                if (!reader.ConsumeNext()) {
+                    throw new SyntaxTreeParsingException(reader.ViewLastValue, "A type was expected after the keyword params.");
+                }
+
+                var elementType = GetTypeReference(module, reader);
+
+                if (!reader.ConsumeNext(TokenType.OpenSquareBracket) || !reader.ConsumeNext(TokenType.CloseSquareBracket)) {
+                    throw new SyntaxTreeParsingException(reader.ViewLastValue, "The params parameter must be an one dimensional array. (e.g. params Unit[])");
+                }
+
+                newPosition = reader.UpperPosition;
+                return new ArrayType(elementType);
+            }
+
+            newPosition = reader.UpperPosition;
+            return GetTypeReference(module, reader);
         }
 
         public static bool TryRecognizeField(ModuleDefinition module, SpanReader<Token> reader, out int? newPosition, [MaybeNull] out Reference node)
@@ -168,12 +193,13 @@ namespace SCUMSLang.SyntaxTree
                 isStatic = false;
             }
 
-            var fieldTypeToken = reader.ViewLastValue;
+            //var fieldTypeToken = reader.ViewLastValue;
 
             if (reader.PeekNext(out var variableNameToken) && variableNameToken.Value.TokenType == TokenType.Name
                 && reader.PeekNext(2, out var equalSignOrSemicolonToken)
                 && equalSignOrSemicolonToken.Value.TryRecognize(TokenType.EqualSign, TokenType.Semicolon)) {
-                var typeReference = GetTypeReference(module, fieldTypeToken);
+                //var typeReference = GetTypeReference(module, fieldTypeToken);
+                var typeReference = GetTypeReference(module, reader);
 
                 if (equalSignOrSemicolonToken.Value.TokenType == TokenType.Semicolon) {
                     newPosition = equalSignOrSemicolonToken.UpperReaderPosition;
@@ -219,7 +245,7 @@ namespace SCUMSLang.SyntaxTree
         /// </summary>
         /// <param name="reader"></param>
         /// <returns></returns>
-        public static bool TryRecognizeParameters(
+        public static bool TryRecognizeParameterList(
             ModuleDefinition module,
             SpanReader<Token> reader,
             TokenType openTokenType,
@@ -240,7 +266,8 @@ namespace SCUMSLang.SyntaxTree
                         break;
                     }
 
-                    var typeReference = GetTypeReference(module, variableTypeOrCloseToken);
+                    var typeReference = GetArgumentTypeReference(module, reader, out var newPositionOfArgumentType);
+                    reader.SetLengthTo(newPositionOfArgumentType);
 
                     if (!reader.ConsumeNext(TokenType.Name, out var parameterNameToken)) {
                         throw new SyntaxTreeParsingException(reader.ViewLastValue, "Parameter name is missing.");
@@ -438,11 +465,11 @@ namespace SCUMSLang.SyntaxTree
                     throw new SyntaxTreeParsingException(functionToken, "Function must have a name.");
                 }
 
-                if (TryRecognizeParameters(module, reader, TokenType.OpenAngleBracket, TokenType.CloseAngleBracket, out var genericParameters, out newPosition, needConsume: true)) {
+                if (TryRecognizeParameterList(module, reader, TokenType.OpenAngleBracket, TokenType.CloseAngleBracket, out var genericParameters, out newPosition, needConsume: true)) {
                     reader.SetLengthTo(newPosition.Value);
                 }
 
-                if (TryRecognizeParameters(module, reader, TokenType.OpenBracket, TokenType.CloseBracket, out var parameters, out newPosition, required: true, needConsume: true)) {
+                if (TryRecognizeParameterList(module, reader, TokenType.OpenBracket, TokenType.CloseBracket, out var parameters, out newPosition, required: true, needConsume: true)) {
                     reader.SetLengthTo(newPosition.Value);
                 }
 
@@ -497,7 +524,7 @@ namespace SCUMSLang.SyntaxTree
             return false;
         }
 
-        public static int? TryRecognize(BlockDefinition block, SpanReader<Token> reader, RecognizableReferences recognizableNodes, [MaybeNull] out Reference node)
+        public static int? Recognize(BlockDefinition block, SpanReader<Token> reader, RecognizableReferences recognizableNodes, [MaybeNull] out Reference node)
         {
             int? newPosition;
             var module = block.Module;

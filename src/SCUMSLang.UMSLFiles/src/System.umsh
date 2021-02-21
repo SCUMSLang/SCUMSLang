@@ -8,7 +8,7 @@ typedef Boolean bool;
 /// <summary>Used by compiler! The function is intended to be used as attribute to mark an abstract function as condition.</summary>
 function TriggerCondition();
 /// <summary>Used by compiler! The function is intended to be used as attribute to mark an abstract function as attribute.</summary>
-function Attribute();;
+function Attribute();
 
 /// <summary>
 /// Declares a death counter of (an) unit(s) from the specified player being reserved for compiler.

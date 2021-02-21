@@ -8,6 +8,7 @@ namespace SCUMSLang.Tokenization
         public TokenType TokenType { get; }
         public object? Value { get; }
         public int FilePosition { get; internal set; }
+        public byte FilePositionOffset { get; set; }
         public int FilePositionLength { get; }
         public int FileLine { get; internal set; }
         public int FileLinePosition { get; internal set; }
