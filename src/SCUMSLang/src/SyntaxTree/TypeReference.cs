@@ -1,4 +1,5 @@
 ﻿using System;
+using SCUMSLang.SyntaxTree.Visitors;
 
 namespace SCUMSLang.SyntaxTree
 {
@@ -68,6 +69,9 @@ namespace SCUMSLang.SyntaxTree
 
         internal string TypeLongName() =>
             Name;
+
+        protected internal override Reference Accept(SyntaxNodeVisitor visitor) =>
+            visitor.VisitTypeReference(this);
 
         public override bool Equals(object? obj)
         {

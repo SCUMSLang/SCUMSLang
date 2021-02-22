@@ -1,5 +1,6 @@
 ﻿using System.Collections.Generic;
 using System.Linq;
+using SCUMSLang.SyntaxTree.Visitors;
 using Teronis.Collections.Specialized;
 
 namespace SCUMSLang.SyntaxTree
@@ -15,10 +16,10 @@ namespace SCUMSLang.SyntaxTree
                 BlockScope.Module;
 
             public override ModuleDefinition Module { get; }
-            public override TypeReference DeclaringType => Module;
+            //public override TypeReference DeclaringType => Module;
 
-            public override string Name =>
-                string.Empty;
+            //public override string Name =>
+            //    string.Empty;
 
             public IReadOnlyDictionary<string, UsingStaticDirectiveEntry> UsingStaticDirectives =>
                 usingStaticDirectives;
@@ -103,6 +104,9 @@ namespace SCUMSLang.SyntaxTree
 
             public void Import(MemberReference member) =>
                 _ = TryAddMember(member);
+
+            protected internal override Reference Accept(SyntaxNodeVisitor visitor) =>
+                visitor.VisitModuleBlockDefinition(this);
 
             private class NestedReferenceResolver : ReferenceResolver
             {

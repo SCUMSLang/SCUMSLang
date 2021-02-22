@@ -1,4 +1,6 @@
-﻿namespace SCUMSLang.SyntaxTree
+﻿using SCUMSLang.SyntaxTree.Visitors;
+
+namespace SCUMSLang.SyntaxTree
 {
     public class FieldDefinition : FieldReference
     {
@@ -24,5 +26,8 @@
             return base.Equals(obj) && obj is FieldDefinition field
                 && Equals(field.Value, Value);
         }
+
+        protected internal override Reference Accept(SyntaxNodeVisitor visitor) =>
+            visitor.VisitFieldDefinition(this);
     }
 }

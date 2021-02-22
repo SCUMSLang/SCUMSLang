@@ -2,9 +2,8 @@
 {
     internal interface IBlockHolder
     {
-        string Name { get; }
+        //string Name { get; }
         bool IsExandable { get; }
         BlockDefinition? Block { get; set; }
-        TypeReference DeclaringType { get; }
     }
 }

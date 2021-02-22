@@ -1,8 +1,9 @@
 ﻿using System;
+using SCUMSLang.SyntaxTree.Visitors;
 
 namespace SCUMSLang.SyntaxTree
 {
-    public abstract class Reference
+    public abstract class Reference : IVisitableReference
     {
         public abstract SyntaxTreeNodeType NodeType { get; }
 
@@ -14,5 +15,10 @@ namespace SCUMSLang.SyntaxTree
 
         public override int GetHashCode() =>
             HashCode.Combine(NodeType);
+
+        internal protected abstract Reference Accept(SyntaxNodeVisitor visitor);
+
+        void IVisitableReference.Accept(SyntaxNodeVisitor visitor) =>
+            throw new NotImplementedException();
     }
 }

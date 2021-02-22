@@ -1,4 +1,5 @@
-﻿using Teronis.Collections.Specialized;
+﻿using SCUMSLang.SyntaxTree.Visitors;
+using Teronis.Collections.Specialized;
 
 namespace SCUMSLang.SyntaxTree
 {
@@ -12,10 +13,7 @@ namespace SCUMSLang.SyntaxTree
             public override ModuleDefinition Module =>
                 ParentBlock.Module;
 
-            public override string Name => blockHolder.Name;
-
-            public override TypeReference DeclaringType =>
-                blockHolder.DeclaringType;
+            //public override string? Name => blockHolder.Name;
 
             internal protected override LinkedBucketList<string, TypeReference> CascadingTypes =>
                 Module.Block.CascadingTypes;
@@ -31,6 +29,9 @@ namespace SCUMSLang.SyntaxTree
                 this.parentBlock = parentBlock;
                 this.blockHolder = blockHolder;
             }
+
+            protected internal override Reference Accept(SyntaxNodeVisitor visitor) =>
+                visitor.VisitLocalBlockDefinition(this);
         }
     }
 }

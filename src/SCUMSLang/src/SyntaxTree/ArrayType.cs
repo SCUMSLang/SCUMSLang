@@ -1,6 +1,8 @@
-﻿namespace SCUMSLang.SyntaxTree
+﻿using SCUMSLang.SyntaxTree.Visitors;
+
+namespace SCUMSLang.SyntaxTree
 {
-    public class ArrayType : TypeSpecification
+    public sealed class ArrayType : TypeSpecification
     {
         public override bool IsArray => true;
 
@@ -9,5 +11,8 @@
 
         public ArrayType(TypeReference elementType)
             : base(elementType) { }
+
+        protected internal override Reference Accept(SyntaxNodeVisitor visitor) =>
+            visitor.VisitArrayType(this);
     }
 }

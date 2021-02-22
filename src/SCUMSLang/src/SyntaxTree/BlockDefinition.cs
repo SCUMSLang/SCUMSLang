@@ -3,9 +3,8 @@ using System.Collections.Generic;
 using System.Diagnostics;
 using System.Diagnostics.CodeAnalysis;
 using System.Linq;
-using System.Text;
+using SCUMSLang.SyntaxTree.Visitors;
 using Teronis.Collections.Specialized;
-using Teronis.Text;
 
 namespace SCUMSLang.SyntaxTree
 {
@@ -16,12 +15,12 @@ namespace SCUMSLang.SyntaxTree
 
         public abstract BlockScope BlockScope { get; }
         public abstract ModuleDefinition Module { get; }
-        public abstract TypeReference DeclaringType { get; }
+        //public
 
-        public abstract string Name { get; }
+        //public abstract string Name { get; }
 
-        public virtual string LongName =>
-            BlockLongName();
+        //public virtual string LongName =>
+        //    BlockLongName();
 
         public BlockDefinition CurrentBlock { get; protected set; }
 
@@ -240,75 +239,65 @@ namespace SCUMSLang.SyntaxTree
             CurrentBlock = CurrentBlock.ParentBlock;
         }
 
-        internal string BlockLongName(StringSeparationHelper? helper = null)
-        {
-            var seperationHelper = helper ?? new StringSeparationHelper(".");
-            var fullNameBuilder = new StringBuilder();
-            var block = this;
-
-            while (!ReferenceEquals(block, block.ParentBlock)) {
-                if (!string.IsNullOrEmpty(block.Name)) {
-                    fullNameBuilder.Insert(0, block.Name);
-                    seperationHelper.SetStringSeparator(fullNameBuilder, 0);
-                }
-
-                block = block.ParentBlock;
-            }
-
-            return fullNameBuilder.ToString();
-        }
-
-        internal string BlockMemberFullName(string name)
-        {
-            var seperationHelper = new StringSeparationHelper(".");
-            var blockLongName = BlockLongName(seperationHelper);
-            var blockMemberFullNameBuilder = new StringBuilder(blockLongName);
-            seperationHelper.SetStringSeparator(blockMemberFullNameBuilder);
-            blockMemberFullNameBuilder.Append(name);
-            return blockMemberFullNameBuilder.ToString();
-        }
-
         public FieldDefinition GetField(string name)
         {
             if (!BlockMembers.TryGetBucket(name, out var bucket)) {
-                throw SyntaxTreeThrowHelper.CreateFieldNotFoundException(name);
+                throw SyntaxTreeThrowHelper.FieldNotFound(name);
             }
 
             var types = bucket.Cast<FieldDefinition>();
             var type = types.SingleOrDefault();
-            return type ?? throw SyntaxTreeThrowHelper.CreateFieldNotFoundException(name);
+            return type ?? throw SyntaxTreeThrowHelper.FieldNotFound(name);
         }
 
-        public MethodDefinition GetMethod(MethodReference method)
+        protected MethodDefinition GetMethodDefinition(MethodReference method)
         {
             if (!BlockMembers.TryGetBucket(method.Name, out var bucket)) {
-                throw SyntaxTreeThrowHelper.CreateMethodNotFoundException(method.Name);
+                throw SyntaxTreeThrowHelper.MethodNotFound(method.Name);
             }
 
             var types = bucket.OfType<MethodDefinition>();
             var type = types.SingleOrDefault(x => MethodReferenceEqualityComparer.OverloadComparer.Default.Equals(x, method));
-            return type ?? throw SyntaxTreeThrowHelper.CreateMethodNotFoundException(method.Name);
+            return type ?? throw SyntaxTreeThrowHelper.MethodNotFound(method.Name);
         }
 
-        public MethodDefinition GetMethod(MethodCallDefinition methodCall) =>
-            GetMethod(methodCall.InferredMethod);
+        public MethodDefinition GetMethod(MethodReference method) =>
+            GetMethodDefinition(
+                new MethodReference(
+                    method.Name,
+                    method.GenericParameters,
+                    method.Parameters,
+                    Module));
+
+        //public MethodDefinition GetMethod(MethodCallDefinition methodCall) =>
+        //    GetMethodDefinition(
+        //        new MethodReference(
+        //            methodCall.InferredMethod.Name,
+        //            methodCall.InferredMethod.GenericParameters,
+        //            methodCall.InferredMethod.Parameters,
+        //            Module));
 
         public MethodDefinition GetMethod(
             string name,
             IReadOnlyList<ParameterDefinition>? genericParameters = null,
             IReadOnlyList<ParameterDefinition>? parameters = null) =>
-            GetMethod(new MethodReference(name, genericParameters, parameters, DeclaringType));
+            GetMethodDefinition(
+                new MethodReference(
+                    name, 
+                    genericParameters, 
+                    parameters, 
+                    Module));
 
-        public EventHandlerDefinition GetEventHandler(EventHandlerReference eventHandler)
+        protected EventHandlerDefinition GetEventHandlerDefinition(EventHandlerReference eventHandler)
         {
             if (!BlockMembers.TryGetBucket(eventHandler.Name, out var bucket)) {
-                throw SyntaxTreeThrowHelper.CreateEventHandlerdNotFoundException(eventHandler.Name);
+                throw SyntaxTreeThrowHelper.EventHandlerdNotFound(eventHandler.Name);
             }
 
             var types = bucket.OfType<EventHandlerDefinition>();
 
             var type = types.SingleOrDefault(x => EventHandlerReferenceEqualityComparer.OverloadComparer.Default.Equals(x, eventHandler))
-                ?? throw SyntaxTreeThrowHelper.CreateEventHandlerdNotFoundException(eventHandler.Name);
+                ?? throw SyntaxTreeThrowHelper.EventHandlerdNotFound(eventHandler.Name);
 
             return type;
         }
@@ -318,7 +307,22 @@ namespace SCUMSLang.SyntaxTree
             IReadOnlyList<ParameterDefinition>? genericParameters = null,
             IReadOnlyList<ParameterDefinition>? parameters = null,
             IReadOnlyList<MethodCallDefinition>? conditions = null) =>
-            GetEventHandler(new EventHandlerReference(name, genericParameters, parameters, conditions, DeclaringType));
+            GetEventHandlerDefinition(
+                new EventHandlerReference(
+                    name,
+                    genericParameters,
+                    parameters,
+                    conditions,
+                    Module));
+
+        public EventHandlerDefinition GetEventHandler(EventHandlerReference eventHandler) =>
+            GetEventHandlerDefinition(
+                new EventHandlerReference(
+                    eventHandler.Name,
+                    eventHandler.GenericParameters,
+                    eventHandler.Parameters,
+                    eventHandler.Conditions,
+                    Module));
 
         public override bool Equals(object? obj)
         {

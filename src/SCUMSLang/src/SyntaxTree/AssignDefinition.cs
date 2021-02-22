@@ -1,5 +1,6 @@
 ﻿using System;
 using System.Diagnostics;
+using SCUMSLang.SyntaxTree.Visitors;
 
 namespace SCUMSLang.SyntaxTree
 {
@@ -31,5 +32,8 @@ namespace SCUMSLang.SyntaxTree
 
         public override int GetHashCode() =>
             HashCode.Combine(NodeType, FieldName, Constant);
+
+        internal protected override Reference Accept(SyntaxNodeVisitor visitor) =>
+            visitor.VisitAssignDefinition(this);
     }
 }

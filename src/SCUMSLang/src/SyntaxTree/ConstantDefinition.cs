@@ -1,14 +1,15 @@
 ﻿using System;
+using SCUMSLang.SyntaxTree.Visitors;
 
 namespace SCUMSLang.SyntaxTree
 {
-    public class ConstantDefinition : Reference, IResolvableDependencies
+    public sealed class ConstantDefinition : Reference, IResolvableDependencies
     {
         public override SyntaxTreeNodeType NodeType => 
             SyntaxTreeNodeType.ConstantReference;
 
         public TypeReference ValueType { get; }
-        public virtual object? Value { get; }
+        public object? Value { get; }
 
         public ConstantDefinition(TypeReference valueType, object? value)
         {
@@ -29,5 +30,16 @@ namespace SCUMSLang.SyntaxTree
 
         public override int GetHashCode() =>
             HashCode.Combine(NodeType, ValueType, Value);
+
+        public ConstantDefinition Rewrite(TypeReference valueType) {
+            if (ReferenceEquals(ValueType, valueType)) {
+                return this;
+            }
+
+            return new ConstantDefinition(valueType, Value);
+        }
+
+        protected internal override Reference Accept(SyntaxNodeVisitor visitor) =>
+            visitor.VisitConstantDefinition(this);
     }
 }

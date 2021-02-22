@@ -1,4 +1,6 @@
-﻿namespace SCUMSLang.SyntaxTree
+﻿using SCUMSLang.SyntaxTree.Visitors;
+
+namespace SCUMSLang.SyntaxTree
 {
     public class ParameterDefinition : ParameterReference, IConstantProvider
     {
@@ -42,5 +44,8 @@
             base.Equals(obj) && obj is ParameterDefinition parameter
             && Equals(parameter.HasConstant, HasConstant)
             && Equals(parameter.Constant, Constant);
+
+        protected internal override Reference Accept(SyntaxNodeVisitor visitor) =>
+            visitor.VisitParameterDefinition(this);
     }
 }

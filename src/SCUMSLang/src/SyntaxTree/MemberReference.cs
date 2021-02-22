@@ -8,7 +8,7 @@ namespace SCUMSLang.SyntaxTree
         public override SyntaxTreeNodeType NodeType =>
             SyntaxTreeNodeType.MemberReference;
 
-        public virtual TypeReference DeclaringType {
+        public virtual TypeReference? DeclaringType {
             get => declaringType;
             internal set => declaringType = value;
         }
@@ -20,7 +20,7 @@ namespace SCUMSLang.SyntaxTree
         public virtual string Name { get; }
         public abstract string LongName { get; }
 
-        private TypeReference declaringType = null!;
+        private TypeReference? declaringType;
 
         internal MemberReference() =>
             Name = string.Empty;

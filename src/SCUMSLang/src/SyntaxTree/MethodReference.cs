@@ -1,6 +1,7 @@
 ﻿using System;
 using System.Collections.Generic;
 using System.Linq;
+using SCUMSLang.SyntaxTree.Visitors;
 
 namespace SCUMSLang.SyntaxTree
 {
@@ -10,7 +11,7 @@ namespace SCUMSLang.SyntaxTree
         public override string LongName => MemberFullName();
         public IReadOnlyList<ParameterDefinition> GenericParameters { get; }
         public IReadOnlyList<ParameterDefinition> Parameters { get; }
-        public override TypeReference DeclaringType { get; internal set; }
+        public override TypeReference? DeclaringType { get; internal set; }
 
         private MethodDefinition? resolvedDefinition;
 
@@ -18,13 +19,19 @@ namespace SCUMSLang.SyntaxTree
             string name,
             IReadOnlyList<ParameterDefinition>? genericParameters,
             IReadOnlyList<ParameterDefinition>? parameters,
-            TypeReference declaringType)
+            TypeReference? declaringType)
             : base(name)
         {
             GenericParameters = genericParameters ?? new List<ParameterDefinition>();
             Parameters = parameters ?? new List<ParameterDefinition>();
-            DeclaringType = declaringType ?? throw new ArgumentNullException(nameof(declaringType));
+            DeclaringType = declaringType;
         }
+
+        public MethodReference(
+            string name,
+            IReadOnlyList<ParameterDefinition>? genericParameters,
+            IReadOnlyList<ParameterDefinition>? parameters)
+            : this(name, genericParameters, parameters, declaringType: null) { }
 
         protected override void ResolveDependencies()
         {
@@ -46,9 +53,12 @@ namespace SCUMSLang.SyntaxTree
                 ?? throw new NotSupportedException();
         }
 
-        public override bool Equals(object? obj) => 
+        public override bool Equals(object? obj) =>
             base.Equals(obj) && obj is MethodReference method
             && Enumerable.SequenceEqual(method.GenericParameters, GenericParameters)
             && Enumerable.SequenceEqual(method.Parameters, Parameters);
+
+        protected internal override Reference Accept(SyntaxNodeVisitor visitor) =>
+            visitor.VisitMethodReference(this);
     }
 }

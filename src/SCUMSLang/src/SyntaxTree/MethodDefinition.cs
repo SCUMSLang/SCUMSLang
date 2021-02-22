@@ -23,6 +23,12 @@ namespace SCUMSLang.SyntaxTree
             TypeReference declaringType)
             : base(name, genericParameters, parameters, declaringType) { }
 
+        public MethodDefinition(
+            string name,
+            IReadOnlyList<ParameterDefinition> genericParameters,
+            IReadOnlyList<ParameterDefinition> parameters)
+            : base(name, genericParameters, parameters) { }
+
         protected override IMemberDefinition ResolveDefinition() => 
             Resolve();
 

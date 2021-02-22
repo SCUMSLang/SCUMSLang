@@ -385,7 +385,7 @@ namespace SCUMSLang.SyntaxTree
                 if (reader.ConsumeNext(TokenType.CloseSquareBracket)) {
                     newPosition = reader.UpperPosition;
                     var functionName = nameTokenPosition.GetValue<string>();
-                    var methodCall = new MethodCallDefinition(functionName, null, arguments, module.Block.CurrentBlock.DeclaringType);
+                    var methodCall = new MethodCallDefinition(functionName, null, arguments);
                     node = new AttributeDefinition(methodCall);
                     return true;
                 } else {
@@ -442,8 +442,7 @@ namespace SCUMSLang.SyntaxTree
                     node = new MethodCallDefinition(
                         functionName,
                         genericArguments,
-                        arguments,
-                        module.Block.CurrentBlock.DeclaringType);
+                        arguments);
 
                     return true;
                 }
@@ -482,8 +481,7 @@ namespace SCUMSLang.SyntaxTree
                     node = new MethodDefinition(
                         functionNameToken.GetValue<string>(),
                         genericParameters,
-                        parameters,
-                        module.Block.CurrentBlock.DeclaringType) {
+                        parameters) {
                         IsAbstract = isFunctionAbstract
                     };
 
@@ -504,8 +502,7 @@ namespace SCUMSLang.SyntaxTree
                                 functionNameToken.GetValue<string>(),
                                 genericParameters,
                                 parameters,
-                                conditions,
-                                module.Block.CurrentBlock.DeclaringType);
+                                conditions);
 
                             return true;
                         }
@@ -546,6 +543,18 @@ namespace SCUMSLang.SyntaxTree
             return false;
         }
 
+        //public static bool TryRecognizeTemplateForExpression(ModuleDefinition module, SpanReader<Token> reader, [NotNullWhen(true)] out int? newPosition, [MaybeNullWhen(false)] out Reference node)
+        //{
+        //    if (reader.ViewLastValue.TryRecognize(TokenType.TemplateKeyword)
+        //        && reader.PeekNext(TokenType.ForKeyword)) {
+
+
+        //        do {
+
+        //        } while (true);
+        //    }
+        //}
+
         public static int? Recognize(BlockDefinition block, SpanReader<Token> reader, RecognizableReferences recognizableNodes, [MaybeNull] out Reference node)
         {
             int? newPosition;
@@ -561,7 +570,7 @@ namespace SCUMSLang.SyntaxTree
                 return newPosition;
             }
 
-            if (recognizableNodes.HasFlag(RecognizableReferences.TypeAlias)
+            if (recognizableNodes.HasFlag(RecognizableReferences.Typedef)
                 && TryRecognizeTypeAliasReference(module, reader, out newPosition, out node)) {
                 return newPosition;
             }
@@ -590,6 +599,11 @@ namespace SCUMSLang.SyntaxTree
                 && TryRecognizeAssignment(module, reader, TokenType.Number, out newPosition, out node)) {
                 return newPosition;
             }
+
+            //if (recognizableNodes.HasFlag(RecognizableReferences.UsingStatic)
+            //    && TryRecognizeTemplateForExpression(module, reader, out newPosition, out node)) {
+            //    return newPosition;
+            //}
 
             node = null;
             return null;

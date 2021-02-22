@@ -1,12 +1,22 @@
-﻿namespace SCUMSLang.SyntaxTree
+﻿using System.Collections.Generic;
+using SCUMSLang.SyntaxTree.Visitors;
+
+namespace SCUMSLang.SyntaxTree
 {
-    public class AttributeDefinition : Reference
+    public sealed class AttributeDefinition : Reference
     {
         public override SyntaxTreeNodeType NodeType => SyntaxTreeNodeType.Attribute;
-        public MethodDefinition Function { get; internal set; } = null!;
-        public MethodCallDefinition FunctionCall { get; }
+        public MethodCallDefinition MethodCall { get; }
 
         public AttributeDefinition(MethodCallDefinition functionCall) =>
-            FunctionCall = functionCall;
+            MethodCall = functionCall;
+
+        public override bool Equals(object? obj) => 
+            obj is AttributeDefinition definition && base.Equals(obj) 
+            && NodeType == definition.NodeType 
+            && EqualityComparer<MethodCallDefinition>.Default.Equals(MethodCall, definition.MethodCall);
+
+        internal protected override Reference Accept(SyntaxNodeVisitor visitor) =>
+            visitor.VisitAttributeDefinition(this);
     }
 }

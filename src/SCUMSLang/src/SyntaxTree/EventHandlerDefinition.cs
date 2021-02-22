@@ -13,13 +13,20 @@ namespace SCUMSLang.SyntaxTree
             set => Block = value;
         }
 
-        public EventHandlerDefinition(            
+        public EventHandlerDefinition(
             string name,
             IReadOnlyList<ParameterDefinition>? genericParameters,
             IReadOnlyList<ParameterDefinition>? parameters,
             IReadOnlyList<MethodCallDefinition>? conditions,
             TypeReference declaringType)
             : base(name, genericParameters, parameters, conditions, declaringType) { }
+
+        public EventHandlerDefinition(
+            string name,
+            IReadOnlyList<ParameterDefinition>? genericParameters,
+            IReadOnlyList<ParameterDefinition>? parameters,
+            IReadOnlyList<MethodCallDefinition>? conditions)
+            : base(name, genericParameters, parameters, conditions) { }
 
         public new EventHandlerDefinition Resolve() {
             ResolveDependencies();

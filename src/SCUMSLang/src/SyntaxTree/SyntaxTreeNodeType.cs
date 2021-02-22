@@ -25,5 +25,7 @@
         MethodDefinition,
         TypeSpecification,
         UsingStaticDirective,
+        ForInDefinition,
+        TemplateForInDefinition,
     }
 }

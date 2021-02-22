@@ -40,7 +40,7 @@ namespace SCUMSLang.SyntaxTree
         public TypeDefinition GetType(string shortName, bool isLongName = false)
         {
             if (!TryGetType(shortName, isLongName: isLongName, out var type)) {
-                throw SyntaxTreeThrowHelper.CreateTypeNotFoundException(shortName);
+                throw SyntaxTreeThrowHelper.TypeNotFound(shortName);
             }
 
             return type;

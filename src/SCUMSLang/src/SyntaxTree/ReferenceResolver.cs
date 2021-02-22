@@ -28,7 +28,7 @@ namespace SCUMSLang.SyntaxTree
         public TypeDefinition Resolve(TypeReference type)
         {
             var typeDefinition = findSingleReference<TypeDefinition>(CascadingTypes, type)
-                ?? throw SyntaxTreeThrowHelper.CreateTypeNotFoundException(type.LongName, SyntaxTreeThrowHelper.ResolutionDefinitionNotFoundExceptionDelegate);
+                ?? throw SyntaxTreeThrowHelper.TypeNotFound(type.LongName, SyntaxTreeThrowHelper.ResolutionDefinitionNotFoundExceptionDelegate);
 
             return typeDefinition.Resolve();
         }
@@ -47,7 +47,7 @@ namespace SCUMSLang.SyntaxTree
             }
 
             if (fieldDefinition is null) {
-                throw SyntaxTreeThrowHelper.CreateFieldNotFoundException(field.Name, SyntaxTreeThrowHelper.ResolutionDefinitionNotFoundExceptionDelegate);
+                throw SyntaxTreeThrowHelper.FieldNotFound(field.Name, SyntaxTreeThrowHelper.ResolutionDefinitionNotFoundExceptionDelegate);
             }
 
             return fieldDefinition.Resolve();
@@ -68,7 +68,7 @@ namespace SCUMSLang.SyntaxTree
             }
 
             if (methodDefinition is null) {
-                throw SyntaxTreeThrowHelper.CreateMethodNotFoundException(method.Name, SyntaxTreeThrowHelper.ResolutionDefinitionNotFoundExceptionDelegate);
+                throw SyntaxTreeThrowHelper.MethodNotFound(method.Name, SyntaxTreeThrowHelper.ResolutionDefinitionNotFoundExceptionDelegate);
             }
 
             return methodDefinition.Resolve();
@@ -89,7 +89,7 @@ namespace SCUMSLang.SyntaxTree
             }
 
             if (eventHandlerDefinition is null) {
-                throw SyntaxTreeThrowHelper.CreateEventHandlerdNotFoundException(eventHandler.Name, SyntaxTreeThrowHelper.ResolutionDefinitionNotFoundExceptionDelegate);
+                throw SyntaxTreeThrowHelper.EventHandlerdNotFound(eventHandler.Name, SyntaxTreeThrowHelper.ResolutionDefinitionNotFoundExceptionDelegate);
             }
 
             return eventHandlerDefinition.Resolve();

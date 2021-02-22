@@ -1,4 +1,6 @@
-﻿namespace SCUMSLang.SyntaxTree
+﻿using SCUMSLang.SyntaxTree.Visitors;
+
+namespace SCUMSLang.SyntaxTree
 {
     public abstract class ParameterReference : Reference, IResolvableDependencies
     {
@@ -34,5 +36,8 @@
 
         public override string ToString() =>
             Name;
+
+        protected internal override Reference Accept(SyntaxNodeVisitor visitor) =>
+            visitor.VisitTypeReference(ParameterType);
     }
 }

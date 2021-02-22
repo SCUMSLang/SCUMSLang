@@ -1,4 +1,5 @@
 ﻿using System;
+using SCUMSLang.SyntaxTree.Visitors;
 
 namespace SCUMSLang.SyntaxTree
 {
@@ -49,5 +50,8 @@ namespace SCUMSLang.SyntaxTree
                 && reference.IsStatic == IsStatic
                 && Equals(reference.FieldType, FieldType);
         }
+
+        protected internal override Reference Accept(SyntaxNodeVisitor visitor) =>
+            visitor.VisitFieldReference(this);
     }
 }

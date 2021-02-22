@@ -1,4 +1,5 @@
 ﻿using System;
+using SCUMSLang.SyntaxTree.Visitors;
 
 namespace SCUMSLang.SyntaxTree
 {
@@ -17,5 +18,8 @@ namespace SCUMSLang.SyntaxTree
 
         public override int GetHashCode() =>
             HashCode.Combine(NodeType, FilePath);
+
+        protected internal override Reference Accept(SyntaxNodeVisitor visitor) =>
+            visitor.VisitImportDefinition(this);
     }
 }

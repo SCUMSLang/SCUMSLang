@@ -6,18 +6,28 @@ namespace SCUMSLang.SyntaxTree
 {
     public class EventHandlerReference : MethodReference
     {
-        public override SyntaxTreeNodeType NodeType => SyntaxTreeNodeType.EventHandlerDefinition;
+        public override SyntaxTreeNodeType NodeType => 
+            SyntaxTreeNodeType.EventHandlerDefinition;
+
         public IReadOnlyList<MethodCallDefinition> Conditions { get; }
 
         private EventHandlerDefinition? resolvedDefinition;
 
         public EventHandlerReference(
             string name,
-            IReadOnlyList<ParameterDefinition>? genericParameters, 
+            IReadOnlyList<ParameterDefinition>? genericParameters,
             IReadOnlyList<ParameterDefinition>? parameters,
             IReadOnlyList<MethodCallDefinition>? conditions,
             TypeReference declaringType)
             : base(name, genericParameters, parameters, declaringType) =>
+            Conditions = conditions ?? new List<MethodCallDefinition>();
+
+        public EventHandlerReference(
+            string name,
+            IReadOnlyList<ParameterDefinition>? genericParameters,
+            IReadOnlyList<ParameterDefinition>? parameters,
+            IReadOnlyList<MethodCallDefinition>? conditions)
+            : base(name, genericParameters, parameters) =>
             Conditions = conditions ?? new List<MethodCallDefinition>();
 
         protected override void ResolveDependencies() {

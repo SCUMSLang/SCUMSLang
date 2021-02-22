@@ -133,8 +133,7 @@ function daisy<Unit UnitId>() when cond_one<Player.Player1>(0xf) {}";
                     new MethodCallDefinition(
                         "cond_one",
                         new []{new ConstantDefinition(playerType, 1)},
-                        new []{ new ConstantDefinition(UInt32Type, 15) },
-                        module)
+                        new []{ new ConstantDefinition(UInt32Type, 15) })
                     }).Resolve();
 
                 Assert.Equal("daisy", eventHandler.Name);

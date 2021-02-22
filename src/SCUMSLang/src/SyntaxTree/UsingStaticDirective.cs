@@ -1,4 +1,6 @@
-﻿namespace SCUMSLang.SyntaxTree
+﻿using SCUMSLang.SyntaxTree.Visitors;
+
+namespace SCUMSLang.SyntaxTree
 {
     public class UsingStaticDirective : MemberReference, IBlockScopedReference
     {
@@ -19,6 +21,10 @@
         public UsingStaticDirective(TypeReference elementType) =>
             ElementType = elementType;
 
-        protected override IMemberDefinition ResolveDefinition() => throw new System.NotImplementedException();
+        protected override IMemberDefinition ResolveDefinition() => 
+            throw new System.NotImplementedException();
+
+        protected internal override Reference Accept(SyntaxNodeVisitor visitor) =>
+            visitor.VisitUsingStaticDirective(this);
     }
 }
