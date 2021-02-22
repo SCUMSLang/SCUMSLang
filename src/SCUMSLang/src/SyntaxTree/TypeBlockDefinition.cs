@@ -1,19 +1,26 @@
 ﻿using System.Linq;
 using Teronis.Collections.Specialized;
 using Teronis;
+using System;
+using System.Diagnostics.CodeAnalysis;
 
 namespace SCUMSLang.SyntaxTree
 {
     public abstract class TypeBlockDefinition : BlockDefinition, IReferenceResolver
     {
-        public override SyntaxTreeNodeType NodeType => SyntaxTreeNodeType.ModuleBlockDefinition;
+        public override SyntaxTreeNodeType NodeType =>
+            SyntaxTreeNodeType.TypeBlockDefinition;
 
-        public TypeDefinition GetType(string shortName, bool isLongName = false)
-        {
+        private TypeBlockOwnedReferenceResolver referenceResolver;
+
+        public TypeBlockDefinition() =>
+            referenceResolver = new TypeBlockOwnedReferenceResolver(this);
+
+        public bool TryGetType(string shortName, bool isLongName, [MaybeNullWhen(false)] out TypeDefinition type) {
             IReadOnlyLinkedBucketList<string, Reference> typesByName;
 
             if (isLongName) {
-                typesByName = ModuleTypes;
+                typesByName = CascadingTypes;
             } else {
                 typesByName = BlockMembers;
             }
@@ -21,29 +28,48 @@ namespace SCUMSLang.SyntaxTree
             var (success, bucket) = typesByName.Buckets.TryGetValue(shortName);
 
             if (!success) {
-                throw SyntaxTreeThrowHelper.CreateTypeNotFoundException(shortName);
+                type = null;
+                return false;
             }
 
             var types = bucket.Cast<TypeDefinition>();
-            var type = types.Single();
+            type = types.Single();
+            return true;
+        }
+
+        public TypeDefinition GetType(string shortName, bool isLongName = false)
+        {
+            if (!TryGetType(shortName, isLongName: isLongName, out var type)) {
+                throw SyntaxTreeThrowHelper.CreateTypeNotFoundException(shortName);
+            }
+
             return type;
         }
 
-        protected abstract TypeDefinition Resolve(TypeReference type);
-        protected abstract FieldDefinition Resolve(FieldReference field);
-        protected abstract MethodDefinition Resolve(MethodReference method);
-        protected abstract EventHandlerDefinition Resolve(EventHandlerReference eventHandler);
+        TypeDefinition IReferenceResolver.Resolve(TypeReference type) =>
+            referenceResolver.Resolve(type);
 
-        TypeDefinition IReferenceResolver.Resolve(TypeReference type) => 
-            Resolve(type);
+        FieldDefinition IReferenceResolver.Resolve(FieldReference field) =>
+            referenceResolver.Resolve(field);
 
-        FieldDefinition IReferenceResolver.Resolve(FieldReference field) => 
-            Resolve(field);
+        MethodDefinition IReferenceResolver.Resolve(MethodReference method) =>
+            referenceResolver.Resolve(method);
 
-        MethodDefinition IReferenceResolver.Resolve(MethodReference method) => 
-            Resolve(method);
+        EventHandlerDefinition IReferenceResolver.Resolve(EventHandlerReference eventHandler) =>
+            referenceResolver.Resolve(eventHandler);
 
-        EventHandlerDefinition IReferenceResolver.Resolve(EventHandlerReference eventHandler) => 
-            Resolve(eventHandler);
+        private class TypeBlockOwnedReferenceResolver : ReferenceResolver
+        {
+            public override LinkedBucketList<string, Reference> BlockMembers =>
+                block.BlockMembers;
+
+            public override LinkedBucketList<string, TypeReference> CascadingTypes =>
+                block.CascadingTypes;
+
+            private readonly BlockDefinition block;
+
+            public TypeBlockOwnedReferenceResolver(BlockDefinition block) =>
+                this.block = block ?? throw new ArgumentNullException(nameof(block));
+        }
     }
 }

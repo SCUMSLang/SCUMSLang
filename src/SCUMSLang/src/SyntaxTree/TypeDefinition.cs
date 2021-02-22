@@ -1,6 +1,5 @@
 ﻿using System;
 using System.Collections.Generic;
-using System.Collections.ObjectModel;
 using System.Linq;
 
 namespace SCUMSLang.SyntaxTree
@@ -63,7 +62,6 @@ namespace SCUMSLang.SyntaxTree
         internal bool AllowOverwriteOnce { get; set; }
 
         private IReadOnlyList<FieldDefinition>? fields;
-        private readonly Collection<TypeReference> nestedTypes;
 
         public TypeDefinition(ModuleDefinition module, string name)
             : base(module, name) { }
@@ -74,7 +72,7 @@ namespace SCUMSLang.SyntaxTree
                 return valueString;
             }
 
-            return fields?.SingleOrDefault(x => Equals(x.Value, value)).Name;
+            return fields?.SingleOrDefault(x => Equals(x.Value, value))?.Name;
         }
 
         public override bool Equals(object? obj)

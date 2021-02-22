@@ -134,6 +134,7 @@
         /// <summary>
         /// ;
         /// </summary>
+        [Sequence(";")]
         Semicolon,
         /// <summary>
         /// for

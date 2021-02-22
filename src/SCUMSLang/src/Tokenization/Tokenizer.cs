@@ -48,7 +48,10 @@ namespace SCUMSLang.Tokenization
                     void setNextLine()
                     {
                         lastLine++;
-                        previousLastLinePosition = currentIndex;
+
+                        if (currentIndex > previousLastLinePosition) {
+                            previousLastLinePosition = currentIndex + 1;
+                        }
                     }
 
                     if (detectedEndOfLine != '\0') {

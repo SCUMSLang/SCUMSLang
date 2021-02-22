@@ -1,8 +1,8 @@
 ﻿namespace SCUMSLang.SyntaxTree
 {
-    public enum Scope
+    public enum BlockScope
     {
-        Static,
+        Module,
         Local
     }
 }

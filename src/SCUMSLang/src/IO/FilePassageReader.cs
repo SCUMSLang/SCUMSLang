@@ -18,14 +18,11 @@ namespace SCUMSLang.IO
         {
             if (FileStreamLocker.Default.TryAcquire(filePath, out var fileStream, FileMode.Open, FileAccess.Read, FileShare.Read)) {
                 try {
+                    var fileStreamLength = fileStream.Length;
                     var positionLength = position + length;
-                    var beginPosition = position - SPACING;
+                    var beginPosition = position;
 
-
-
-                    if (beginPosition < 0) {
-                        beginPosition = 0;
-                    } else {
+                    if (beginPosition > 0) {
                         do {
                             fileStream.Seek(beginPosition - 1, SeekOrigin.Begin);
                             var previousByte = (byte)fileStream.ReadByte();
@@ -38,16 +35,23 @@ namespace SCUMSLang.IO
                         } while (beginPosition > 0);
                     }
 
-                    fileStream.Seek(beginPosition, SeekOrigin.Begin);
-
                     var relativePosition = position - beginPosition;
                     var relativePositionLength = relativePosition + length;
 
-                    var endPosition = position + length + SPACING;
+                    var endPosition = position + length;
 
-                    if (endPosition >= fileStream.Length) {
-                        endPosition = (int)fileStream.Length - 1;
-                    }
+                    do {
+                        fileStream.Seek(endPosition, SeekOrigin.Begin);
+                        var nextByte = (byte)fileStream.ReadByte();
+
+                        if (nextByte == '\r' || nextByte == '\n') {
+                            break;
+                        }
+
+                        endPosition++;
+                    } while (endPosition < fileStreamLength);
+
+                    fileStream.Seek(beginPosition, SeekOrigin.Begin);
 
                     var fileBytes = new byte[endPosition - beginPosition];
                     await fileStream.ReadAsync(fileBytes).ConfigureAwait(false);
@@ -70,32 +74,34 @@ namespace SCUMSLang.IO
                     var lineListIndexOfPositionLength = -1;
                     int linePositionOfPositionLength = -1;
 
-                    while (currentIndex < utf8ContentLength) {
-                        void sliceNextLine()
-                        {
-                            if (lineListIndexOfPosition == -1) {
-                                if (currentIndex >= relativePosition) {
-                                    lineListIndexOfPosition = lineList.Count;
-                                    linePositionOfPosition = relativePosition - utf8ContentIndexOfNextLine;
-                                }
-                            } else if (lineListIndexOfPositionLength == -1) {
-                                if (currentIndex >= relativePositionLength) {
-                                    linePositionOfPositionLength = relativePositionLength - utf8ContentIndexOfNextLine;
+                    void sliceNextLine()
+                    {
+                        if (lineListIndexOfPosition == -1) {
+                            if (currentIndex >= relativePosition) {
+                                lineListIndexOfPosition = lineList.Count;
+                                linePositionOfPosition = relativePosition - utf8ContentIndexOfNextLine;
+                            }
+                        } else if (lineListIndexOfPositionLength == -1) {
+                            if (currentIndex >= relativePositionLength) {
+                                linePositionOfPositionLength = relativePositionLength - utf8ContentIndexOfNextLine;
 
-                                    // If the position at position+length is \r\n, \n, \r ..
-                                    if (linePositionOfPositionLength <= 0) {
-                                        // .. find previous line with at least one character.
-                                        lineListIndexOfPositionLength = lineList.FindLastIndex(x => x.Length != 0);
-                                        linePositionOfPositionLength = lineList[lineListIndexOfPositionLength].Length - 1;
-                                    } else {
-                                        lineListIndexOfPositionLength = lineList.Count;
-                                    }
+                                // If the position at position+length is \r\n, \n, \r ..
+                                if (linePositionOfPositionLength <= 0) {
+                                    // .. find previous line with at least one character.
+                                    lineListIndexOfPositionLength = lineList.FindLastIndex(x => x.Length != 0);
+                                    linePositionOfPositionLength = lineList[lineListIndexOfPositionLength].Length - 1;
+                                } else {
+                                    lineListIndexOfPositionLength = lineList.Count;
                                 }
                             }
-
-                            lineList.Add(utf8Content.Substring(utf8ContentIndexOfNextLine, currentIndex - utf8ContentIndexOfNextLine));
-                            utf8ContentIndexOfNextLine = currentIndex;
                         }
+
+                        lineList.Add(utf8Content.Substring(utf8ContentIndexOfNextLine, currentIndex - utf8ContentIndexOfNextLine));
+                        utf8ContentIndexOfNextLine = currentIndex;
+                    }
+
+                    while (currentIndex < utf8ContentLength) {
+                        
 
                         var character = fileBytesMemory.Span[currentIndex];
 
@@ -122,6 +128,8 @@ namespace SCUMSLang.IO
                         currentIndex++;
                     }
 
+                    sliceNextLine();
+
                     if (lineList.Count == 0) {
                         lineList.Add(utf8Content);
                     }
@@ -133,7 +141,7 @@ namespace SCUMSLang.IO
 
                     if (lineListIndexOfPositionLength == -1) {
                         lineListIndexOfPositionLength = lineList.FindLastIndex(x => x.Length != 0);
-                        linePositionOfPositionLength = lineList[lineList.Count - 1].Length - 1;
+                        linePositionOfPositionLength = lineList[lineListIndexOfPositionLength].Length - 1;
                     }
 
                     var stringBuilder = new StringBuilder();

@@ -3,7 +3,11 @@
     public enum SyntaxTreeNodeType
     {
         BlockDefinition,
+        TypeBlockDefinition,
+        ModuleBlockDefinition,
+
         ImportDefinition,
+
         MemberReference,
         FieldReference,
         FieldDefinition,
@@ -19,7 +23,7 @@
         ParameterReference,
         MethodReference,
         MethodDefinition,
-        ModuleBlockDefinition,
         TypeSpecification,
+        UsingStaticDirective,
     }
 }

@@ -1,17 +1,18 @@
 ﻿using System;
+using System.Collections;
 using System.Collections.Generic;
 using System.Runtime.ExceptionServices;
 
 namespace SCUMSLang.SyntaxTree
 {
-    public class ReferenceResolverPool : IReferenceResolver
+    public class ReferenceResolverPool : IReferenceResolver, IEnumerable<IReferenceResolver>
     {
         private List<IReferenceResolver> modules;
 
         public ReferenceResolverPool() =>
             modules = new List<IReferenceResolver>();
 
-        public void AddModuleResolver(IReferenceResolver module)
+        public void Add(IReferenceResolver module)
         {
             if (module is null) {
                 throw new ArgumentNullException(nameof(module));
@@ -35,7 +36,7 @@ namespace SCUMSLang.SyntaxTree
                 try {
                     return resolveDelegate(module);
                 } catch (ResolutionDefinitionNotFoundException error) {
-                    if (!(firstError is null)) {
+                    if (firstError is null) {
                         firstError = error;
                     }
                 } catch {
@@ -58,5 +59,11 @@ namespace SCUMSLang.SyntaxTree
 
         public EventHandlerDefinition Resolve(EventHandlerReference eventHandler) =>
             getFirstOrThrowFirst(module => module.Resolve(eventHandler));
+
+        public IEnumerator<IReferenceResolver> GetEnumerator() =>
+            YieldModules().GetEnumerator();
+
+        IEnumerator IEnumerable.GetEnumerator() =>
+            GetEnumerator();
     }
 }

@@ -4,7 +4,8 @@ namespace SCUMSLang.SyntaxTree
 {
     public class ImportDefinition : Reference
     {
-        public override SyntaxTreeNodeType NodeType => SyntaxTreeNodeType.ImportDefinition;
+        public override SyntaxTreeNodeType NodeType => 
+            SyntaxTreeNodeType.ImportDefinition;
 
         public string FilePath { get; }
 

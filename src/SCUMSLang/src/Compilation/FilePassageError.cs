@@ -22,7 +22,11 @@ namespace SCUMSLang.Compilation
                 var fileLine = error.FileLine;
 
                 string? filePassage;
-                var filePassageLines = await FilePassageReader.Default.ReadPassageAsync(filePath, filePosition, filePositionLength);
+
+                var filePassageLines = await FilePassageReader.Default.ReadPassageAsync(
+                    filePath, 
+                    filePosition + error.FilePositionOffset, 
+                    filePositionLength);
 
                 if (!(filePassageLines is null)) {
                     filePassage = "| " + string.Join($"{Environment.NewLine}| ", filePassageLines);
@@ -87,7 +91,6 @@ namespace SCUMSLang.Compilation
             stringBuilder.Append($"--> {FilePath}:{Line}:{LinePosition}{Environment.NewLine}");
 
             if (!(FilePassage is null)) {
-                stringBuilder.Append($"| {Environment.NewLine}");
                 stringBuilder.Append(FilePassage);
             }
 

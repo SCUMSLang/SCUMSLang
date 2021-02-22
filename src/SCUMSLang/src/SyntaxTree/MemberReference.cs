@@ -14,8 +14,7 @@ namespace SCUMSLang.SyntaxTree
         }
 
         public virtual ModuleDefinition Module {
-            get => DeclaringType?.Module
-                ?? throw new InvalidOperationException();
+            get => DeclaringType?.Module ?? throw new InvalidOperationException();
         }
 
         public virtual string Name { get; }

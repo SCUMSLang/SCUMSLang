@@ -1,4 +1,5 @@
-﻿using System.Collections.Generic;
+﻿using System;
+using System.Collections.Generic;
 using Xunit;
 
 namespace SCUMSLang.Tokenization
@@ -271,6 +272,20 @@ namespace SCUMSLang.Tokenization
                 AssertTools.Equal(new Token[] { token }, tokens.Span, TokenOnlyTypeComparer.Default);
                 Assert.Equal("", tokens.Span[0].GetValue<string>());
             }
+        }
+
+        [Fact]
+        public void Should_have_correct_line_position()
+        {
+            var content = @"using static Player;
+using static Unit;
+
+template";
+
+
+            var tokens = Tokenizer.Tokenize(content);
+            var templateToken = tokens.Span.Last(TokenType.TemplateKeyword, TokenOnlyTypeComparer.Default);
+            Assert.Equal(0, templateToken.FileLinePosition);
         }
     }
 }

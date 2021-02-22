@@ -14,7 +14,7 @@ namespace SCUMSLang.SyntaxTree
         public override SyntaxTreeNodeType NodeType =>
             SyntaxTreeNodeType.BlockDefinition;
 
-        public abstract Scope Scope { get; }
+        public abstract BlockScope BlockScope { get; }
         public abstract ModuleDefinition Module { get; }
         public abstract TypeReference DeclaringType { get; }
 
@@ -31,12 +31,16 @@ namespace SCUMSLang.SyntaxTree
         public IReadOnlyList<Reference> ReferenceRecords =>
             referenceRecords;
 
-        public IReadOnlyLinkedBucketList<string, TypeReference> Types =>
-            ModuleTypes;
+        /// <summary>
+        /// All types
+        /// </summary>
+        public IReadOnlyLinkedBucketList<string, TypeReference> ReadOnlyCascadingTypes =>
+            CascadingTypes;
 
-        protected LinkedBucketList<string, Reference> BlockMembers;
+        internal protected LinkedBucketList<string, Reference> BlockMembers { get; }
+        internal protected abstract LinkedBucketList<string, TypeReference> CascadingTypes { get; }
+
         protected abstract BlockDefinition ParentBlock { get; }
-        protected abstract LinkedBucketList<string, TypeReference> ModuleTypes { get; }
 
         private List<Reference> referenceRecords;
         private bool isBlockClosed;
@@ -54,11 +58,23 @@ namespace SCUMSLang.SyntaxTree
         protected IEnumerable<BlockDefinition> YieldBlocks()
         {
             BlockDefinition parentBlock = this;
+            BlockDefinition? previousParentBlock;
 
             do {
                 yield return parentBlock;
+                previousParentBlock = parentBlock;
                 parentBlock = parentBlock.ParentBlock;
-            } while (!ReferenceEquals(Module.Block, parentBlock));
+            } while (!ReferenceEquals(Module.Block, previousParentBlock));
+        }
+
+        protected IEnumerable<BlockType> YieldBlocks<BlockType>()
+            where BlockType : BlockDefinition
+        {
+            foreach (var block in YieldBlocks()) {
+                if (block is BlockType typedBlock) {
+                    yield return typedBlock;
+                }
+            }
         }
 
         public bool TryGetMembers(string name, [MaybeNullWhen(false)] out List<Reference> foundNodes)
@@ -91,7 +107,7 @@ namespace SCUMSLang.SyntaxTree
                     var candidates = nodes.Cast<T>().ToList();
                     return candidates;
                 } catch (InvalidCastException) {
-                    throw new ArgumentException($"A programming structure of another type with the name {name} exists already.");
+                    throw new NameReservedException(name, $"A programming structure of another type with the name {name} exists already.");
                 }
             }
 
@@ -155,10 +171,10 @@ namespace SCUMSLang.SyntaxTree
         /// </summary>
         /// <param name="member"></param>
         /// <returns>False indicates skip.</returns>
-        protected bool TryAddMember(Reference member)
+        protected virtual bool TryAddMember(Reference member)
         {
             if (member is IMemberDefinition memberDefinition) {
-                bool hasDuplication = BlockMembers.TryGetBucket(memberDefinition.Name, out _);
+                bool hasDuplication = TryGetMembers(memberDefinition.Name, out _);
 
                 // If node has name, then it can handle name duplications.
                 if (hasDuplication && member is IOverloadableReference nameDuplicationHandleableNode) {
@@ -172,13 +188,13 @@ namespace SCUMSLang.SyntaxTree
                 }
 
                 if (hasDuplication) {
-                    throw new ArgumentException($"The name '{memberDefinition.Name}' is already reserved.");
+                    throw new NameReservedException(memberDefinition.Name);
                 }
 
                 BlockMembers.AddLast(memberDefinition.Name, member);
 
                 if (member is TypeReference type) {
-                    ModuleTypes.Add(type.LongName, type);
+                    CascadingTypes.Add(type.LongName, type);
                 }
             }
 
@@ -193,6 +209,11 @@ namespace SCUMSLang.SyntaxTree
 
         public void AddNode(Reference node)
         {
+            if (node is IBlockScopedReference blockScopableReference
+                && blockScopableReference.BlockScope != BlockScope) {
+                throw new BadBlockScopeException();
+            }
+
             if (TryAddMember(node)) {
                 referenceRecords.Add(node);
 
@@ -207,13 +228,13 @@ namespace SCUMSLang.SyntaxTree
         public void EndBlock()
         {
             if (isBlockClosed) {
-                throw new InvalidOperationException("You cannot end the block twice.");
+                throw new BlockEvaluatingException("You cannot end the block twice.");
             }
 
             isBlockClosed = true;
 
             if (ReferenceEquals(this, Module)) {
-                throw new InvalidOperationException("You cannot end the block of the root block.");
+                throw new BlockEvaluatingException("You cannot end the block of the root block.");
             }
 
             CurrentBlock = CurrentBlock.ParentBlock;
@@ -278,7 +299,8 @@ namespace SCUMSLang.SyntaxTree
             IReadOnlyList<ParameterDefinition>? parameters = null) =>
             GetMethod(new MethodReference(name, genericParameters, parameters, DeclaringType));
 
-        public EventHandlerDefinition GetEventHandler(EventHandlerReference eventHandler) {
+        public EventHandlerDefinition GetEventHandler(EventHandlerReference eventHandler)
+        {
             if (!BlockMembers.TryGetBucket(eventHandler.Name, out var bucket)) {
                 throw SyntaxTreeThrowHelper.CreateEventHandlerdNotFoundException(eventHandler.Name);
             }

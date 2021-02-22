@@ -4,7 +4,9 @@ namespace SCUMSLang.SyntaxTree
 {
     public class ConstantDefinition : Reference, IResolvableDependencies
     {
-        public override SyntaxTreeNodeType NodeType => SyntaxTreeNodeType.ConstantReference;
+        public override SyntaxTreeNodeType NodeType => 
+            SyntaxTreeNodeType.ConstantReference;
+
         public TypeReference ValueType { get; }
         public virtual object? Value { get; }
 

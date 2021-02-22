@@ -145,18 +145,19 @@ namespace SCUMSLang.SyntaxTree
             return false;
         }
 
-        public static TypeReference GetTypeReference(ModuleDefinition module, SpanReader<Token> reader)
+        public static int ExpectTypeReference(ModuleDefinition module, SpanReader<Token> reader, out TypeReference typeReference, bool needConsume = false)
         {
-            var typeToken = reader.ViewLastValue;
-
-            if (!(typeToken.Value is string typeName) || string.IsNullOrEmpty(typeName)) {
-                throw new SyntaxTreeParsingException(typeToken, "A type was expected.");
+            if (!reader.ConsumeNext(needConsume)
+                || !(reader.ViewLastValue.Value is string typeName)
+                || string.IsNullOrEmpty(typeName)) {
+                throw new SyntaxTreeParsingException(reader.ViewLastValue, "A type was expected.");
             }
 
-            return new TypeReference(module, typeName);
+            typeReference = new TypeReference(module, typeName);
+            return reader.UpperPosition;
         }
 
-        public static TypeReference GetArgumentTypeReference(ModuleDefinition module, SpanReader<Token> reader, out int newPosition)
+        public static int ExpectArgumentTypeReference(ModuleDefinition module, SpanReader<Token> reader, out TypeReference typeReference)
         {
             var typeToken = reader.ViewLastValue;
 
@@ -165,18 +166,18 @@ namespace SCUMSLang.SyntaxTree
                     throw new SyntaxTreeParsingException(reader.ViewLastValue, "A type was expected after the keyword params.");
                 }
 
-                var elementType = GetTypeReference(module, reader);
+                _ = ExpectTypeReference(module, reader, out var elementType);
 
                 if (!reader.ConsumeNext(TokenType.OpenSquareBracket) || !reader.ConsumeNext(TokenType.CloseSquareBracket)) {
                     throw new SyntaxTreeParsingException(reader.ViewLastValue, "The params parameter must be an one dimensional array. (e.g. params Unit[])");
                 }
 
-                newPosition = reader.UpperPosition;
-                return new ArrayType(elementType);
+                typeReference = new ArrayType(elementType);
+                return reader.UpperPosition;
             }
 
-            newPosition = reader.UpperPosition;
-            return GetTypeReference(module, reader);
+            _ = ExpectTypeReference(module, reader, out typeReference);
+            return reader.UpperPosition;
         }
 
         public static bool TryRecognizeField(ModuleDefinition module, SpanReader<Token> reader, out int? newPosition, [MaybeNull] out Reference node)
@@ -193,13 +194,11 @@ namespace SCUMSLang.SyntaxTree
                 isStatic = false;
             }
 
-            //var fieldTypeToken = reader.ViewLastValue;
-
             if (reader.PeekNext(out var variableNameToken) && variableNameToken.Value.TokenType == TokenType.Name
                 && reader.PeekNext(2, out var equalSignOrSemicolonToken)
                 && equalSignOrSemicolonToken.Value.TryRecognize(TokenType.EqualSign, TokenType.Semicolon)) {
                 //var typeReference = GetTypeReference(module, fieldTypeToken);
-                var typeReference = GetTypeReference(module, reader);
+                _ = ExpectTypeReference(module, reader, out var typeReference);
 
                 if (equalSignOrSemicolonToken.Value.TokenType == TokenType.Semicolon) {
                     newPosition = equalSignOrSemicolonToken.UpperReaderPosition;
@@ -266,8 +265,7 @@ namespace SCUMSLang.SyntaxTree
                         break;
                     }
 
-                    var typeReference = GetArgumentTypeReference(module, reader, out var newPositionOfArgumentType);
-                    reader.SetLengthTo(newPositionOfArgumentType);
+                    reader.SetLengthTo(ExpectArgumentTypeReference(module, reader, out var typeReference));
 
                     if (!reader.ConsumeNext(TokenType.Name, out var parameterNameToken)) {
                         throw new SyntaxTreeParsingException(reader.ViewLastValue, "Parameter name is missing.");
@@ -524,6 +522,30 @@ namespace SCUMSLang.SyntaxTree
             return false;
         }
 
+        public static int ExpectToken(SpanReader<Token> reader, TokenType tokenType, bool needConsume = false)
+        {
+            if (!reader.ConsumeNext(needConsume) || !reader.ViewLastValue.TryRecognize(tokenType)) {
+                throw new SyntaxTreeParsingException(reader.ViewLastValue, $"Specific token was expected: '{TokenTypeLibrary.SequenceDictionary[tokenType]}'");
+            }
+
+            return reader.UpperPosition;
+        }
+
+        public static bool TryRecognizeUsingStaticDirective(ModuleDefinition module, SpanReader<Token> reader, [NotNullWhen(true)] out int? newPosition, [MaybeNullWhen(false)] out Reference node)
+        {
+            if (reader.ViewLastValue.TryRecognize(TokenType.UsingKeyword)
+                && reader.ConsumeNext(TokenType.StaticKeyword)) {
+                reader.SetLengthTo(ExpectTypeReference(module, reader, out var usingStaticDirectiveElementType, needConsume: true));
+                newPosition = ExpectToken(reader, TokenType.Semicolon, needConsume: true);
+                node = new UsingStaticDirective(usingStaticDirectiveElementType);
+                return true;
+            }
+
+            newPosition = null;
+            node = null;
+            return false;
+        }
+
         public static int? Recognize(BlockDefinition block, SpanReader<Token> reader, RecognizableReferences recognizableNodes, [MaybeNull] out Reference node)
         {
             int? newPosition;
@@ -531,6 +553,11 @@ namespace SCUMSLang.SyntaxTree
 
             if (recognizableNodes.HasFlag(RecognizableReferences.Import)
                 && TryRecognizeImport(module, reader, out newPosition, out node)) {
+                return newPosition;
+            }
+
+            if (recognizableNodes.HasFlag(RecognizableReferences.UsingStatic)
+                && TryRecognizeUsingStaticDirective(block.Module, reader, out newPosition, out node)) {
                 return newPosition;
             }
 

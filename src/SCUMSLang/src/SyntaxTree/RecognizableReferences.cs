@@ -6,7 +6,8 @@ namespace SCUMSLang.SyntaxTree
     public enum RecognizableReferences
     {
         Import = 1 << 0,
-        TypeAlias = Import << 1,
+        UsingStatic = Import << 1,
+        TypeAlias = UsingStatic << 1,
         Enumeration = TypeAlias << 1,
         Attribute = Enumeration << 1,
         FunctionOrEventHandler = Attribute << 1,
