@@ -16,7 +16,7 @@
         Attribute,
         DeclarationReference,
         DeclarationDefinition,
-        AssignmentDefinition,
+        MemberAssignmentDefinition,
         ConstantReference,
         MethodCallDefinition,
         EventHandlerDefinition,

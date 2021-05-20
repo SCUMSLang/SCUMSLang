@@ -25,10 +25,10 @@ namespace SCUMSLang.SyntaxTree
         {
             public new static OverloadComparer Default = new OverloadComparer();
 
-            public MethodReferenceEqualityComparer.OverloadComparer MethodOverloadComparer {
+            public MethodReferenceEqualityComparer.ViaModuleResolve MethodOverloadComparer {
                 get {
                     if (methodComparer is null) {
-                        methodComparer = MethodReferenceEqualityComparer.OverloadComparer.Default;
+                        methodComparer = MethodReferenceEqualityComparer.ViaModuleResolve.Default;
                     }
 
                     return methodComparer;
@@ -36,7 +36,6 @@ namespace SCUMSLang.SyntaxTree
 
                 set => methodComparer = value;
             }
-
 
             public MethodCallDefinitionEqualityComparer.OverloadComparer MethodCallOverloadComparer {
                 get {
@@ -50,7 +49,7 @@ namespace SCUMSLang.SyntaxTree
                 set => methodCallComparer = value;
             }
 
-            private MethodReferenceEqualityComparer.OverloadComparer? methodComparer;
+            private MethodReferenceEqualityComparer.ViaModuleResolve? methodComparer;
             private MethodCallDefinitionEqualityComparer.OverloadComparer? methodCallComparer;
 
             public override bool Equals([AllowNull] EventHandlerReference x, [AllowNull] EventHandlerReference y) =>

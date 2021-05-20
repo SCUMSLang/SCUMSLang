@@ -15,5 +15,8 @@ namespace SCUMSLang.SyntaxTree
         protected TypeSpecification(TypeReference elementType)
             : base(name: null) =>
             this.elementType = elementType ?? throw new ArgumentNullException(nameof(elementType));
+
+        protected override IMemberDefinition ResolveMemberDefinition() =>
+            throw new NotSupportedException();
     }
 }

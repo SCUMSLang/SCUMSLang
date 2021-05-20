@@ -40,10 +40,10 @@ namespace SCUMSLang.SyntaxTree
                 int? newPosition;
 
                 if (tokenReader.ViewLastValue.TryRecognize(TokenType.CloseBrace)) {
-                    block.CurrentBlock.EndBlock();
+                    block.ContextBlock.EndBlock();
                     newPosition = tokenReader.UpperPosition;
                 } else {
-                    newPosition = Recognize(block.CurrentBlock, tokenReader, Options.RecognizableNodes, out var node);
+                    newPosition = Recognize(block.ContextBlock, tokenReader, Options.RecognizableNodes, out var node);
 
                     if (newPosition == null) {
                         if (Options.EmptyRecognizationResultsIntoWhileBreak) {
@@ -61,9 +61,9 @@ namespace SCUMSLang.SyntaxTree
                         } else if (Options.WhileBreakDelegate?.Invoke(node) ?? false) {
                             break;
                         } else if (node is FieldReference filed) {
-                            block.CurrentBlock.AddNode(filed);
-                        } else if (node is AssignDefinition assignment) {
-                            block.CurrentBlock.AddNode(assignment);
+                            block.ContextBlock.AddNode(filed);
+                        } else if (node is MemberAssignmenDefinition assignment) {
+                            block.ContextBlock.AddNode(assignment);
                         } else {
                             block.AddNode(node);
                         }

@@ -26,7 +26,7 @@ namespace SCUMSLang.SyntaxTree
 
             internal IReferenceResolver ModuleExclusiveReferenceResolver { get; }
 
-            internal protected override LinkedBucketList<string, TypeReference> CascadingTypes { get; }
+            internal protected override LinkedBucketList<string, TypeReference> ModuleTypeList { get; }
 
             protected override BlockDefinition ParentBlock => this;
 
@@ -45,7 +45,7 @@ namespace SCUMSLang.SyntaxTree
 
                 typeNamesOfResolvedUsingStaticDirective = new HashSet<string>();
                 usingStaticDirectives = new Dictionary<string, UsingStaticDirectiveEntry>();
-                CascadingTypes = new LinkedBucketList<string, TypeReference>();
+                ModuleTypeList = new LinkedBucketList<string, TypeReference>();
                 Module = module;
             }
 
@@ -58,9 +58,9 @@ namespace SCUMSLang.SyntaxTree
                         continue;
                     }
 
-                    var elementType = directiveEntry.Directive.ElementType.ResolveNonAlias();
+                    var elementType = directiveEntry.Directive.ElementType.Resolve();
 
-                    if (typeNamesOfResolvedUsingStaticDirective.Contains(elementType.LongName)) {
+                    if (typeNamesOfResolvedUsingStaticDirective.Contains(elementType.Name)) {
                         throw new BlockEvaluatingException("Two using static directives cannot point to the same type.");
                     }
 
@@ -69,11 +69,11 @@ namespace SCUMSLang.SyntaxTree
                     }
 
                     foreach (var nestedType in nestedTypesProvider.GetNestedTypes()) {
-                        nestedReferenceResolver.CascadingTypes.Add(nestedType.LongName, nestedType);
+                        nestedReferenceResolver.CascadingTypes.Add(nestedType.Name, nestedType);
                     }
 
                     usingStaticDirectives[directiveName] = UsingStaticDirectiveEntry.Resolved(directiveEntry);
-                    typeNamesOfResolvedUsingStaticDirective.Add(elementType.LongName);
+                    typeNamesOfResolvedUsingStaticDirective.Add(elementType.Name);
                 }
             }
 
@@ -88,9 +88,9 @@ namespace SCUMSLang.SyntaxTree
 
                     if (TryGetType(usingStaticDirective.ElementType.Name, isLongName: false, out var type)) {
                         try {
-                            _ = type.ResolveNonAlias();
+                            _ = type.Resolve();
                             ResolveUsingStaticDirectives();
-                        } catch (ResolutionDefinitionNotFoundException) {
+                        } catch (DefinitionNotFoundException) {
                             // Here we can *try* to resolve using 
                             // static directive so ignore error.
                         }

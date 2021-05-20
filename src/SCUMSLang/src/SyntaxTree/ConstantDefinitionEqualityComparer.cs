@@ -1,4 +1,5 @@
-﻿using System.Collections.Generic;
+﻿using System;
+using System.Collections.Generic;
 using System.Diagnostics.CodeAnalysis;
 
 namespace SCUMSLang.SyntaxTree
@@ -12,16 +13,16 @@ namespace SCUMSLang.SyntaxTree
             && x.Equals(y);
 
         public override int GetHashCode([DisallowNull] ConstantDefinition obj) =>
-            throw new System.NotImplementedException();
+            throw new NotImplementedException();
 
-        public class OverloadComparer : EqualityComparer<ConstantDefinition>
+        public class ViaModuleResolve : EqualityComparer<ConstantDefinition>
         {
-            public new static OverloadComparer Default = new OverloadComparer();
+            public new static ViaModuleResolve Default = new ViaModuleResolve();
 
-            public TypeReferenceEqualityComparer TypeReferenceComparer {
+            public TypeReferenceEqualityComparer.ViaResolveComparer TypeReferenceComparer {
                 get {
                     if (typeReferenceComparer is null) {
-                        typeReferenceComparer = TypeReferenceEqualityComparer.Default;
+                        typeReferenceComparer = TypeReferenceEqualityComparer.ViaResolveComparer.Default;
                     }
 
                     return typeReferenceComparer;
@@ -30,7 +31,7 @@ namespace SCUMSLang.SyntaxTree
                 set => typeReferenceComparer = value;
             }
 
-            private TypeReferenceEqualityComparer? typeReferenceComparer;
+            private TypeReferenceEqualityComparer.ViaResolveComparer? typeReferenceComparer;
 
             public override bool Equals([AllowNull] ConstantDefinition x, [AllowNull] ConstantDefinition y)
             {
@@ -42,28 +43,18 @@ namespace SCUMSLang.SyntaxTree
                     return false;
                 }
 
-                var xValueTypeDefinition = x.ValueType.ResolveNonAlias();
-                var yValueTypeDefinition = y.ValueType.ResolveNonAlias();
+                if (x.Value is null || y.Value is null || !Equals(x.Value, y.Value)) {
+                    return false;
+                }
+
+                var xValueTypeDefinition = x.ValueType.Resolve();
+                var yValueTypeDefinition = y.ValueType.Resolve();
 
                 if (!TypeReferenceComparer.Equals(xValueTypeDefinition, yValueTypeDefinition)) {
                     return false;
                 }
 
-                if (Equals(x.Value, y.Value)) {
-                    return true;
-                } else if (x.Value is null || y.Value is null) {
-                    return false;
-                }
-
-                if (xValueTypeDefinition.IsEnum && yValueTypeDefinition.IsEnum) {
-                    var xEnumFieldName = xValueTypeDefinition.GetEnumerationName(x.Value);
-                    var yEnumFieldName = yValueTypeDefinition.GetEnumerationName(y.Value);
-
-                    return !(xEnumFieldName is null) && !(yEnumFieldName is null)
-                        && Equals(xEnumFieldName, yEnumFieldName);
-                }
-
-                return false;
+                return true;
             }
 
             public override int GetHashCode([DisallowNull] ConstantDefinition obj) => throw new System.NotImplementedException();

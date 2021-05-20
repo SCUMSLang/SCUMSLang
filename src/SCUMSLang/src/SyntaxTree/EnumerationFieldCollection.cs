@@ -16,6 +16,14 @@ namespace SCUMSLang.SyntaxTree
             DeclaringType = declaringType;
         }
 
+        public EnumerationFieldCollection(TypeReference fieldType, TypeReference declaringType, IEnumerable<FieldDefinition> fields)
+            : this(fieldType, declaringType)
+        {
+            foreach (var field in fields) {
+                Add(field);
+            }
+        }
+
         public EnumerationFieldCollection(TypeReference fieldType, TypeReference declaringType, IEnumerable<string> nameList)
             : this(fieldType, declaringType)
         {

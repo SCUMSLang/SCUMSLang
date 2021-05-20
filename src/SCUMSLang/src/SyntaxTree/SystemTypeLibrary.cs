@@ -5,7 +5,8 @@ using static SCUMSLang.SCUMSLangTools;
 namespace SCUMSLang.SyntaxTree
 {
     public static class SystemTypeLibrary {
-        public static IReadOnlyDictionary<SystemType, string> Sequences => sequences;
+        public static IReadOnlyDictionary<SystemType, string> Sequences => 
+            sequences;
 
         private static Dictionary<SystemType, string> sequences;
 

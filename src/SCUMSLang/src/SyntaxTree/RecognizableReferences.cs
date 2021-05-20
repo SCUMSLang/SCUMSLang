@@ -11,8 +11,8 @@ namespace SCUMSLang.SyntaxTree
         Enumeration = Typedef << 1,
         Attribute = Enumeration << 1,
         FunctionOrEventHandler = Attribute << 1,
-        Declaration = FunctionOrEventHandler << 1,
-        Assignment = Declaration << 1,
+        Field = FunctionOrEventHandler << 1,
+        Assignment = Field << 1,
         TemplateFor = Assignment << 1
     }
 }

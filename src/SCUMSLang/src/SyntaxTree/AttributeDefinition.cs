@@ -11,11 +11,6 @@ namespace SCUMSLang.SyntaxTree
         public AttributeDefinition(MethodCallDefinition functionCall) =>
             MethodCall = functionCall;
 
-        public override bool Equals(object? obj) => 
-            obj is AttributeDefinition definition && base.Equals(obj) 
-            && NodeType == definition.NodeType 
-            && EqualityComparer<MethodCallDefinition>.Default.Equals(MethodCall, definition.MethodCall);
-
         internal protected override Reference Accept(SyntaxNodeVisitor visitor) =>
             visitor.VisitAttributeDefinition(this);
     }

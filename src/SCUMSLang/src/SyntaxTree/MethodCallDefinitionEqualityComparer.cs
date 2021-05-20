@@ -20,10 +20,10 @@ namespace SCUMSLang.SyntaxTree
         {
             public new static OverloadComparer Default = new OverloadComparer();
 
-            public MethodReferenceEqualityComparer.OverloadComparer MethodOveroladComparer {
+            public MethodReferenceEqualityComparer.ViaModuleResolve MethodOveroladComparer {
                 get {
                     if (methodReferenceComparer is null) {
-                        methodReferenceComparer = MethodReferenceEqualityComparer.OverloadComparer.Default;
+                        methodReferenceComparer = MethodReferenceEqualityComparer.ViaModuleResolve.Default;
                     }
 
                     return methodReferenceComparer;
@@ -32,10 +32,10 @@ namespace SCUMSLang.SyntaxTree
                 set => methodReferenceComparer = value;
             }
 
-            public ConstantDefinitionEqualityComparer.OverloadComparer ConstantDefinitionComparer {
+            public ConstantDefinitionEqualityComparer.ViaModuleResolve ConstantDefinitionComparer {
                 get {
                     if (constantDefinitionComparer is null) {
-                        constantDefinitionComparer = ConstantDefinitionEqualityComparer.OverloadComparer.Default;
+                        constantDefinitionComparer = ConstantDefinitionEqualityComparer.ViaModuleResolve.Default;
                     }
 
                     return constantDefinitionComparer;
@@ -44,17 +44,17 @@ namespace SCUMSLang.SyntaxTree
                 set => constantDefinitionComparer = value;
             }
 
-            private MethodReferenceEqualityComparer.OverloadComparer? methodReferenceComparer;
-            private ConstantDefinitionEqualityComparer.OverloadComparer? constantDefinitionComparer;
+            private MethodReferenceEqualityComparer.ViaModuleResolve? methodReferenceComparer;
+            private ConstantDefinitionEqualityComparer.ViaModuleResolve? constantDefinitionComparer;
 
             public override bool Equals([AllowNull] MethodCallDefinition x, [AllowNull] MethodCallDefinition y) =>
                 ReferenceEquals(x, y) || !(x is null) && !(y is null)
-                && MethodOveroladComparer.Equals(x.InferredMethod, y.InferredMethod)
+                && MethodOveroladComparer.Equals(x.Method, y.Method)
                 && Enumerable.SequenceEqual(x.GenericArguments, y.GenericArguments, ConstantDefinitionComparer)
                 && Enumerable.SequenceEqual(x.Arguments, y.Arguments, ConstantDefinitionComparer);
 
             public override int GetHashCode([DisallowNull] MethodCallDefinition obj) =>
-                HashCode.Combine(obj.NodeType, obj.InferredMethod, obj.GenericArguments, obj.Arguments);
+                HashCode.Combine(obj.NodeType, obj.Method, obj.GenericArguments, obj.Arguments);
         }
     }
 }

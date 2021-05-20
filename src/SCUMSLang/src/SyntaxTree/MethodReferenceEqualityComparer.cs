@@ -9,12 +9,6 @@ namespace SCUMSLang.SyntaxTree
     {
         public new static MethodReferenceEqualityComparer Default = new MethodReferenceEqualityComparer();
 
-        public static MethodReferenceEqualityComparer NonResolvableComparer = new MethodReferenceEqualityComparer() {
-            ParameterComparer = new ParameterReferenceEqualityComparer() { 
-                
-            }
-        };
-
         public ParameterReferenceEqualityComparer ParameterComparer {
             get {
                 if (parameterComparer is null) {
@@ -38,9 +32,9 @@ namespace SCUMSLang.SyntaxTree
         public override int GetHashCode([DisallowNull] MethodReference obj) =>
             HashCode.Combine(obj.NodeType, obj.Name, obj.GenericParameters, obj.Parameters);
 
-        public class OverloadComparer : EqualityComparer<MethodReference>
+        public class ViaModuleResolve : EqualityComparer<MethodReference>
         {
-            public new static OverloadComparer Default = new OverloadComparer();
+            public new static ViaModuleResolve Default = new ViaModuleResolve();
 
             public ParameterReferenceEqualityComparer.OverloadComparer ParameterOverloadComparer {
                 get {

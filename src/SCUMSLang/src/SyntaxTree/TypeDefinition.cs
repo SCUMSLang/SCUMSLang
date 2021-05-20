@@ -1,112 +1,91 @@
 ﻿using System;
 using System.Collections.Generic;
+using System.Diagnostics.CodeAnalysis;
 using System.Linq;
+using SCUMSLang.SyntaxTree.Visitors;
 
 namespace SCUMSLang.SyntaxTree
 {
-    public sealed class TypeDefinition : TypeReference, INameReservableReference, IOverloadableReference, IMemberDefinition, INestedTypesProvider
+    public partial class TypeDefinition : TypeReference, INameReservableReference, IOverloadableReference, IMemberDefinition, ITypeDefinition
     {
-        public static TypeDefinition CreateEnumDefinition(
-            ModuleDefinition module,
-            string name,
-            IEnumerable<string> names,
-            TypeReference? valueType = null,
-            bool usableAsConstants = false,
-            bool allowOverwriteOnce = false)
-        {
-            var enumType = new TypeDefinition(module, name) {
-                IsEnum = true,
-                FieldsAreConstants = usableAsConstants,
-                AllowOverwriteOnce = allowOverwriteOnce,
-            };
-
-            valueType ??= new TypeReference(module, SystemTypeLibrary.Sequences[SystemType.Integer]);
-            enumType.Fields = new EnumerationFieldCollection(valueType, enumType, names);
-            return enumType;
-        }
-
-        public static TypeDefinition CreateAliasDefinition(
-            ModuleDefinition module,
-            string name,
-            TypeReference baseType)
-        {
-            var alias = new TypeDefinition(module, name) {
-                IsAlias = true,
-                BaseType = baseType,
-            };
-
-            return alias;
-        }
-
-        public override SyntaxTreeNodeType NodeType => SyntaxTreeNodeType.TypeDefinition;
+        public override SyntaxTreeNodeType NodeType =>
+            SyntaxTreeNodeType.TypeDefinition;
 
         public TypeReference? BaseType { get; internal set; }
-        public IReadOnlyList<TypeReference>? NestedTypes { get; private set; }
         public bool IsEnum { get; internal set; }
         public bool IsAlias { get; internal set; }
+        public virtual IReadOnlyList<FieldDefinition>? Fields { get; }
 
-        public IReadOnlyList<FieldDefinition> Fields {
-            get {
-                if (fields is null) {
-                    fields = new List<FieldDefinition>();
-                }
-
-                return fields;
-            }
-
-            internal set => fields = value;
+        [AllowNull]
+        public override ModuleDefinition Module {
+            get => module ?? BaseType?.Module ?? throw new InvalidOperationException();
+            internal set => module = value;
         }
+
+        [MemberNotNullWhen(true, nameof(Fields))]
+        public bool HasFields =>
+            !(Fields is null) && Fields.Count > 0;
+
+        [MemberNotNullWhen(true, nameof(Module))]
+        public override bool HasModule =>
+            module is not null;
 
         public bool FieldsAreConstants { get; internal set; }
 
         internal bool AllowOverwriteOnce { get; set; }
 
-        private IReadOnlyList<FieldDefinition>? fields;
+        private ModuleDefinition? module;
 
-        public TypeDefinition(ModuleDefinition module, string name)
-            : base(module, name) { }
+        bool ITypeDefinition.AllowOverwriteOnce =>
+            AllowOverwriteOnce;
 
-        public string? GetEnumerationName(object value)
+        public TypeDefinition(string name)
+            : base(name) { }
+
+        public bool TryGetFieldByName(string fieldName, [MaybeNullWhen(false)] out FieldDefinition field)
         {
-            if (value is string valueString) {
-                return valueString;
+            if (!HasFields) {
+                field = null;
+                return false;
             }
 
-            return fields?.SingleOrDefault(x => Equals(x.Value, value))?.Name;
-        }
-
-        public override bool Equals(object? obj)
-        {
-            return base.Equals(obj) && obj is TypeDefinition type
-                && type.FieldsAreConstants == FieldsAreConstants
-                && type.IsEnum == IsEnum
-                && type.IsAlias == IsAlias
-                && type.IsArray == IsArray
-                && Equals(type.BaseType, BaseType)
-                && MemberReferenceEqualityComparer.ShallowComparer.Default.Equals(type.DeclaringType, DeclaringType)
-                && Enumerable.SequenceEqual(type.Fields, Fields);
+            field = Fields.SingleOrDefault(x => Equals(x.Name, fieldName));
+            return field is not null;
         }
 
         public override int GetHashCode() =>
             HashCode.Combine(base.GetHashCode(), NodeType, Name);
 
-        public new TypeDefinition Resolve()
-        {
-            ResolveDependencies();
-            return this;
-        }
+        public new TypeDefinition Resolve() =>
+            this;
 
-        protected override IMemberDefinition ResolveDefinition() =>
+        protected override IMemberDefinition ResolveMemberDefinition() =>
             Resolve();
 
-        public override TypeDefinition ResolveNonAlias() =>
-            ResolveNonAlias(this);
+        protected internal override Reference Accept(SyntaxNodeVisitor visitor) =>
+            visitor.VisitTypeDefinition(this);
+
+        public TypeDefinition Update(TypeReference? baseType)
+        {
+            if (ReferenceEquals(baseType, BaseType)) {
+                return this;
+            }
+
+            return new TypeDefinition(Name) {
+                AllowOverwriteOnce = AllowOverwriteOnce,
+                BaseType = baseType,
+                DeclaringType = DeclaringType,
+                IsAlias = IsAlias,
+                IsArray = IsArray,
+                Module = Module
+            };
+        }
 
         #region IConditionalNameReservableNode
 
         OverloadConflictResult IOverloadableReference.SolveConflict(BlockDefinition blockNode)
         {
-            var candidates = blockNode.GetMembersCasted<TypeDefinition>(Name);
+            var candidates = blockNode.BlocksMembersByName<TypeDefinition>(Name);
 
             if (candidates is null) {
                 return OverloadConflictResult.True;
@@ -125,20 +104,20 @@ namespace SCUMSLang.SyntaxTree
         }
 
         #endregion
+    }
 
-        #region IAliasesHavingReference
-
-        bool INestedTypesProvider.HasNestedTypes =>
-            FieldsAreConstants;
-
-        IEnumerable<TypeReference> INestedTypesProvider.GetNestedTypes()
+    partial class TypeDefinition
+    {
+        public static TypeDefinition CreateAliasDefinition(
+            string name,
+            TypeReference baseType)
         {
-            foreach (var field in Fields) {
-                var alias = CreateAliasDefinition(field.Module, field.Name, baseType: field.DeclaringType);
-                yield return alias;
-            }
-        }
+            var alias = new TypeDefinition(name) {
+                IsAlias = true,
+                BaseType = baseType,
+            };
 
-        #endregion
+            return alias;
+        }
     }
 }

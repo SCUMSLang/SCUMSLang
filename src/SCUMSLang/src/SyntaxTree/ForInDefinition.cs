@@ -1,4 +1,5 @@
 ﻿using System.Collections.Generic;
+using System.Linq;
 using SCUMSLang.SyntaxTree.Visitors;
 
 namespace SCUMSLang.SyntaxTree
@@ -19,5 +20,13 @@ namespace SCUMSLang.SyntaxTree
 
         protected internal override Reference Accept(SyntaxNodeVisitor visitor) =>
             visitor.VisitForInDefinition(this);
+
+        public ForInDefinition Update(TypeReference parameter, IReadOnlyList<ConstantDefinition> arguments) {
+            if (ReferenceEquals(Parameter, parameter) && Enumerable.SequenceEqual(Arguments, arguments, ReferenceEqualityComparer.Instance)) {
+                return this;
+            }
+
+            return new ForInDefinition(parameter, arguments);
+        }
     }
 }

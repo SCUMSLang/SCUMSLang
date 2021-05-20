@@ -10,7 +10,6 @@ namespace SCUMSLang.SyntaxTree
 
         public override bool Equals([AllowNull] ParameterReference x, [AllowNull] ParameterReference y) =>
             ReferenceEquals(x, y) || !(x is null) && !(y is null)
-            && x.Name == y.Name
             && x.ParameterType == y.ParameterType;
 
         public override int GetHashCode([DisallowNull] ParameterReference obj) => throw new NotImplementedException();
@@ -19,10 +18,10 @@ namespace SCUMSLang.SyntaxTree
         {
             public new static OverloadComparer Default = new OverloadComparer();
 
-            public TypeReferenceEqualityComparer.OverloadComparer TypeOverloadComparer {
+            public TypeReferenceEqualityComparer.ViaResolveComparer TypeOverloadComparer {
                 get {
                     if (typeOverloadComparer is null) {
-                        typeOverloadComparer = TypeReferenceEqualityComparer.OverloadComparer.Default;
+                        typeOverloadComparer = TypeReferenceEqualityComparer.ViaResolveComparer.Default;
                     }
 
                     return typeOverloadComparer;
@@ -31,14 +30,14 @@ namespace SCUMSLang.SyntaxTree
                 set => typeOverloadComparer = value;
             }
 
-            private TypeReferenceEqualityComparer.OverloadComparer? typeOverloadComparer;
+            private TypeReferenceEqualityComparer.ViaResolveComparer? typeOverloadComparer;
 
             public override bool Equals([AllowNull] ParameterReference x, [AllowNull] ParameterReference y) =>
                 ReferenceEquals(x, y) || !(x is null) && !(y is null)
                 && TypeOverloadComparer.Equals(x.ParameterType, y.ParameterType);
 
             public override int GetHashCode([DisallowNull] ParameterReference obj) =>
-                HashCode.Combine(obj.NodeType, obj.Name, obj.ParameterType);
+                HashCode.Combine(obj.NodeType, obj.ParameterType);
         }
     }
 }

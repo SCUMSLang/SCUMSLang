@@ -10,8 +10,11 @@ namespace SCUMSLang.SyntaxTree
 
         public IReadOnlyList<ForInDefinition> ForInCollection { get; }
 
-        public bool IsExandable => throw new System.NotImplementedException();
-        public BlockDefinition? Block { get => block; }
+        public bool IsExpandable => 
+            throw new System.NotImplementedException();
+
+        public BlockDefinition? Block =>
+            block;
 
         public TypeReference DeclaringType => throw new System.NotImplementedException();
 

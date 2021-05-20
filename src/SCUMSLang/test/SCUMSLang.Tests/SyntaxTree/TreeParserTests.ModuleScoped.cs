@@ -6,7 +6,8 @@ namespace SCUMSLANG.SyntaxTree
 {
     public partial class TreeParserTests
     {
-        public class ModuleScoped : TreeParserTests {
+        public class ModuleScoped : TreeParserTests
+        {
             [Fact]
             public void Should_parse_static_int_declaration_and_assignment()
             {
@@ -39,16 +40,10 @@ function daisy() {}";
 
                 var module = DefaultParser.Parse(content).Module;
 
-                var uint32Type = module.Block.GetType("UInt32").Resolve();
-                var intType = module.Block.GetType("int").Resolve();
-                var intTypeRootType = intType.ResolveNonAlias();
-                Assert.True(ReferenceEquals(uint32Type, intTypeRootType));
-
-                var daisyHelloFunction = module.Block.GetMethod("daisy", parameters: new[] { new ParameterDefinition(uint32Type) });
+                var daisyHelloFunction = module.Block.GetMethod(new MethodReference("daisy", genericParameters: null, parameters: new[] { new ParameterReference(IntType) }));
                 Assert.Equal(1, daisyHelloFunction.Parameters.Count);
-                Assert.Equal("hello", daisyHelloFunction.Parameters[0].Name);
 
-                var daisyFunction = module.Block.GetMethod("daisy");
+                var daisyFunction = module.Block.GetMethod(new MethodReference("daisy", genericParameters: null, parameters: null));
                 Assert.Equal(0, daisyFunction.Parameters.Count);
             }
 
@@ -70,29 +65,18 @@ function daisy<Player PlayerId>() {}";
                 var player2Field = module.Resolve(new FieldReference("Player2", uint32Type, playerEnum));
                 Assert.Equal(0, player2Field.Value);
 
-                var daisyFunction = module.Block.GetMethod("daisy", genericParameters: new[] { new ParameterDefinition(playerEnum) }).Resolve();
+                var daisyFunction = module.Block.GetMethod("daisy").Resolve();
                 Assert.Equal(1, daisyFunction.GenericParameters.Count);
-                Assert.Equal("PlayerId", daisyFunction.GenericParameters[0].Name);
             }
 
             [Fact]
-            public void Should_parse_function_with_declared_assignment()
+            public void Should_throw_because_non_static_field_declaration_in_function()
             {
-                var content = @"
-typedef UInt32 int;
-
-function daisy() {
-    int local_var = 2;
+                var content = @"function beka() {
+int local_var = 2;
 }";
 
-                var module = DefaultParser.Parse(content).Module;
-
-                Assert.Throws<BlockEvaluatingException>(() => {
-                    module.Block.GetField("local_var");
-                });
-
-                var daisyFunction = module.Block.GetMethod("daisy").Resolve();
-                daisyFunction.Block.GetField("local_var").Resolve();
+                Assert.Throws<NotSupportedException>(() => DefaultParser.Parse(content));
             }
 
             [Fact]
@@ -109,7 +93,7 @@ function daisy() {
                 var module = DefaultParser.Parse(content).Module;
                 var daisyMethod = module.Block.GetMethod("daisy").Resolve();
                 Assert.Equal(1, daisyMethod.Block.ReferenceRecords.Count);
-                Assert.IsType<AssignDefinition>(daisyMethod.Block.ReferenceRecords[0]);
+                Assert.IsType<MemberAssignmenDefinition>(daisyMethod.Block.ReferenceRecords[0]);
             }
 
             [Fact]
@@ -126,15 +110,7 @@ function daisy<Unit UnitId>() when cond_one<Player.Player1>(0xf) {}";
                 var playerType = module.Block.GetType("Player").Resolve();
                 var unitType = module.Block.GetType("Unit").Resolve();
 
-                var eventHandler = module.Block.GetEventHandler(
-                    "daisy",
-                    genericParameters: new[] { new ParameterDefinition(unitType) },
-                    conditions: new[] {
-                    new MethodCallDefinition(
-                        "cond_one",
-                        new []{new ConstantDefinition(playerType, 1)},
-                        new []{ new ConstantDefinition(UInt32Type, 15) })
-                    }).Resolve();
+                var eventHandler = module.Block.GetEventHandler("daisy");
 
                 Assert.Equal("daisy", eventHandler.Name);
                 Assert.Equal(1, eventHandler.Conditions.Count);
@@ -201,21 +177,19 @@ function goofy() when daisy(false) {}";
 
                 var module = DefaultParser.Parse(content).Module;
 
-                var booleanEnum = module.Block.GetType("Boolean").Resolve();
+                module.Resolve();
+
+                var booleanEnum = module.Block.GetType("Boolean");
                 Assert.True(booleanEnum.IsEnum);
 
-                var boolAlias = module.Block.GetType("bool").Resolve();
+                var boolAlias = module.Block.GetType("bool");
                 Assert.True(boolAlias.IsAlias);
 
                 var boolAliasBooleanEnum = boolAlias.BaseType.Resolve();
                 Assert.True(ReferenceEquals(booleanEnum, boolAliasBooleanEnum));
 
-                var boolAliasRootType = boolAlias.BaseType.ResolveNonAlias();
-                Assert.True(ReferenceEquals(booleanEnum, boolAliasRootType));
-
                 module.Block.TryGetMemberFirst("goofy", out EventHandlerDefinition goofyEventHandler);
-                var resolvedGoofyEventHandler = goofyEventHandler.Resolve();
-                Assert.Equal(booleanEnum, resolvedGoofyEventHandler.Conditions[0].Arguments[0].ValueType, TypeReferenceEqualityComparer.OverloadComparer.Default);
+                Assert.Equal(booleanEnum, goofyEventHandler.Conditions[0].Arguments[0].ValueType, TypeReferenceEqualityComparer.ViaResolveComparer.Default);
             }
 
             [Fact]
@@ -223,13 +197,15 @@ function goofy() when daisy(false) {}";
             {
                 var module = DefaultParser.Parse(@"function daisy(inter32 test_int);").Module;
 
-                Assert.Throws<ResolutionDefinitionNotFoundException>(() => {
+                var aggregatedError = Assert.Throws<AggregateException>(() => {
                     if (!module.Block.TryGetMemberFirst<MethodDefinition>("daisy", out var method)) {
                         throw new InvalidOperationException();
                     }
 
-                    method.Resolve();
+                    _ = module.Resolve(method);
                 });
+
+                Assert.Contains(aggregatedError.InnerExceptions, error => error.Message.Contains("inter32"));
             }
 
             [Fact]
@@ -237,13 +213,15 @@ function goofy() when daisy(false) {}";
             {
                 var module = DefaultParser.Parse(@"function daisy<Player PlayerId>();").Module;
 
-                Assert.Throws<ResolutionDefinitionNotFoundException>(() => {
+                var aggregatedError = Assert.Throws<AggregateException>(() => {
                     if (!module.Block.TryGetMemberFirst<MethodDefinition>("daisy", out var method)) {
                         throw new InvalidOperationException();
                     }
 
-                    method.Resolve();
+                    _ = module.Resolve(method);
                 });
+
+                Assert.Contains(aggregatedError.InnerExceptions, error => error.Message.Contains("Player"));
             }
 
             [Fact]
@@ -255,13 +233,15 @@ function daisy() when cond_one<>(2) {}";
 
                 var module = DefaultParser.Parse(content).Module;
 
-                Assert.Throws<ResolutionDefinitionNotFoundException>(() => {
+                var aggregatedError = Assert.Throws<AggregateException>(() => {
                     if (!module.Block.TryGetMemberFirst<EventHandlerDefinition>("daisy", out var eventHandler)) {
                         throw new InvalidOperationException();
                     }
 
-                    eventHandler.Resolve();
+                    eventHandler.Conditions[0].Method.Resolve();
                 });
+
+                Assert.Contains(aggregatedError.InnerExceptions, error => error.Message.Contains("inter32"));
             }
 
             [Fact]
@@ -269,7 +249,7 @@ function daisy() when cond_one<>(2) {}";
                 DefaultParser.Parse(@"function daisy<Player PlayerId>(inter32 test_int) when cond_one<Player.Player2>(""test"") {}");
 
             [Fact]
-            public void Should_throw_because_declaration_name_duplication()
+            public void Should_throw_because_non_static_variable_declaration()
             {
                 var content = @"
 static int global_var;
@@ -278,7 +258,7 @@ function daisy() {
     int global_var;
 }";
 
-                Assert.Throws<NameReservedException>(() => DefaultParser.Parse(content).Module);
+                Assert.Throws<NotSupportedException>(() => DefaultParser.Parse(content).Module);
             }
         }
     }

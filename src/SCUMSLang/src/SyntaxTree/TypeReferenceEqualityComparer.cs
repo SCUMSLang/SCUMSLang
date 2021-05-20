@@ -15,9 +15,9 @@ namespace SCUMSLang.SyntaxTree
         public override int GetHashCode([DisallowNull] TypeReference obj) =>
             obj.GetHashCode();
 
-        public class OverloadComparer : EqualityComparer<TypeReference>
+        public class ViaResolveComparer : EqualityComparer<TypeReference>
         {
-            public new static OverloadComparer Default = new OverloadComparer();
+            public new static ViaResolveComparer Default = new ViaResolveComparer();
 
             public override bool Equals([AllowNull] TypeReference x, [AllowNull] TypeReference y)
             {
@@ -29,8 +29,8 @@ namespace SCUMSLang.SyntaxTree
                     return false;
                 }
 
-                var xDefinition = x.ResolveNonAlias();
-                var yDefinition = y.ResolveNonAlias();
+                var xDefinition = x.Resolve();
+                var yDefinition = y.Resolve();
                 return xDefinition.Equals(yDefinition);
             }
 

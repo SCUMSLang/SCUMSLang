@@ -1,9 +1,11 @@
 ﻿using System;
-using Teronis.Text;
+using System.Diagnostics;
+using System.Diagnostics.CodeAnalysis;
 
 namespace SCUMSLang.SyntaxTree
 {
-    public abstract class MemberReference : Reference, IResolvableDependencies
+    [DebuggerDisplay("{" + nameof(GetDebuggerDisplay) + "(),nq}")]
+    public abstract class MemberReference : Reference, IOwnedReference, IOwnableReference
     {
         public override SyntaxTreeNodeType NodeType =>
             SyntaxTreeNodeType.MemberReference;
@@ -13,49 +15,52 @@ namespace SCUMSLang.SyntaxTree
             internal set => declaringType = value;
         }
 
+        public virtual string Name =>
+            name;
+
+        [AllowNull]
         public virtual ModuleDefinition Module {
-            get => DeclaringType?.Module ?? throw new InvalidOperationException();
+            get => module ?? throw new InvalidOperationException();
+            internal set => module = value;
         }
 
-        public virtual string Name { get; }
-        public abstract string LongName { get; }
+        [MemberNotNullWhen(true, nameof(Module))]
+        public virtual bool HasModule =>
+            module is not null;
 
         private TypeReference? declaringType;
+        private ModuleDefinition? module;
+        private string name;
+        private MemberReference? resolvedDefinition;
+
+        [AllowNull]
+        ModuleDefinition IOwnableReference.Module {
+            get => Module;
+            set => Module = value;
+        }
 
         internal MemberReference() =>
-            Name = string.Empty;
+            name = string.Empty;
 
         internal MemberReference(string? name) =>
-            Name = name ?? string.Empty;
+            this.name = name ?? string.Empty;
 
-        internal string MemberFullName()
+        protected abstract IMemberDefinition ResolveMemberDefinition();
+
+        protected T CacheOrResolve<T>(Func<T> resolveHandler)
+            where T : MemberReference
         {
-            if (declaringType is null) {
-                return Name;
+            if (resolvedDefinition is null) {
+                resolvedDefinition = resolveHandler();
             }
 
-            var declaringTypeFullName = declaringType.LongName;
-            var seperationHelper = new StringSeparationHelper(".");
-            seperationHelper.SetStringSeparator(ref declaringTypeFullName);
-            return declaringTypeFullName += Name;
+            return (T)resolvedDefinition;
         }
-
-        protected abstract IMemberDefinition ResolveDefinition();
-
-        protected virtual void ResolveDependencies() =>
-            DeclaringType?.Resolve();
-
-        void IResolvableDependencies.ResolveDependencies() =>
-             ResolveDependencies();
 
         public IMemberDefinition Resolve() =>
-            ResolveDefinition();
+            ResolveMemberDefinition();
 
-        public override bool Equals(object? obj)
-        {
-            return base.Equals(obj) && obj is MemberReference member
-                && Equals(member.LongName, LongName)
-                && MemberReferenceEqualityComparer.ShallowComparer.Default.Equals(member.DeclaringType, DeclaringType);
-        }
+        private string GetDebuggerDisplay() =>
+            $"Name = {Name}, Type = {GetType().Name}";
     }
 }

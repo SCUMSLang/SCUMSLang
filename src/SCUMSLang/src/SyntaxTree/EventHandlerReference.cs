@@ -1,12 +1,12 @@
 ﻿using System;
 using System.Collections.Generic;
-using System.Linq;
+using SCUMSLang.SyntaxTree.Visitors;
 
 namespace SCUMSLang.SyntaxTree
 {
     public class EventHandlerReference : MethodReference
     {
-        public override SyntaxTreeNodeType NodeType => 
+        public override SyntaxTreeNodeType NodeType =>
             SyntaxTreeNodeType.EventHandlerDefinition;
 
         public IReadOnlyList<MethodCallDefinition> Conditions { get; }
@@ -15,8 +15,8 @@ namespace SCUMSLang.SyntaxTree
 
         public EventHandlerReference(
             string name,
-            IReadOnlyList<ParameterDefinition>? genericParameters,
-            IReadOnlyList<ParameterDefinition>? parameters,
+            IReadOnlyList<ParameterReference>? genericParameters,
+            IReadOnlyList<ParameterReference>? parameters,
             IReadOnlyList<MethodCallDefinition>? conditions,
             TypeReference declaringType)
             : base(name, genericParameters, parameters, declaringType) =>
@@ -24,37 +24,40 @@ namespace SCUMSLang.SyntaxTree
 
         public EventHandlerReference(
             string name,
-            IReadOnlyList<ParameterDefinition>? genericParameters,
-            IReadOnlyList<ParameterDefinition>? parameters,
+            IReadOnlyList<ParameterReference>? genericParameters,
+            IReadOnlyList<ParameterReference>? parameters,
             IReadOnlyList<MethodCallDefinition>? conditions)
             : base(name, genericParameters, parameters) =>
             Conditions = conditions ?? new List<MethodCallDefinition>();
 
-        protected override void ResolveDependencies() {
-            base.ResolveDependencies();
-
-            foreach (IResolvableDependencies condition in Conditions) {
-                condition.ResolveDependencies();
-            }
-        }
-
         public new EventHandlerDefinition Resolve()
         {
-            ResolveDependencies();
-
             return resolvedDefinition = resolvedDefinition
                 ?? Module?.Resolve(this)
                 ?? throw new NotSupportedException();
         }
 
-        protected override IMemberDefinition ResolveDefinition() =>
+        protected override IMemberDefinition ResolveMemberDefinition() =>
             Resolve();
 
-        public override bool Equals(object? obj) =>
-            base.Equals(obj) && obj is EventHandlerReference eventHandler
-            && Enumerable.SequenceEqual(eventHandler.Conditions, Conditions);
+        protected internal override Reference Accept(SyntaxNodeVisitor visitor) =>
+            visitor.VisitEventHandlerReference(this);
 
-        public override int GetHashCode() =>
-            HashCode.Combine(base.GetHashCode(), Conditions);
+        public EventHandlerReference UpdateReference(
+            IReadOnlyList<ParameterReference>? genericParameters,
+            IReadOnlyList<ParameterReference>? parameters,
+            IReadOnlyList<MethodCallDefinition>? conditions)
+        {
+            if (ReferenceEquals(genericParameters, GenericParameters)
+                && ReferenceEquals(parameters, Parameters)
+                && ReferenceEquals(conditions, Conditions)) {
+                return this;
+            }
+
+            return new EventHandlerReference(Name, genericParameters, parameters, conditions) {
+                DeclaringType = DeclaringType,
+                Module = Module,
+            };
+        }
     }
 }

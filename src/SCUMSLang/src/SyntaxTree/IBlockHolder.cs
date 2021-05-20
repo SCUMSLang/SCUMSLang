@@ -2,8 +2,7 @@
 {
     internal interface IBlockHolder
     {
-        //string Name { get; }
-        bool IsExandable { get; }
+        bool IsExpandable { get; }
         BlockDefinition? Block { get; set; }
     }
 }

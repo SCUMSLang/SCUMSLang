@@ -20,9 +20,9 @@ namespace SCUMSLang.SyntaxTree
             IReadOnlyLinkedBucketList<string, Reference> typesByName;
 
             if (isLongName) {
-                typesByName = CascadingTypes;
+                typesByName = ModuleTypeList;
             } else {
-                typesByName = BlockMembers;
+                typesByName = LocalMemberList;
             }
 
             var (success, bucket) = typesByName.Buckets.TryGetValue(shortName);
@@ -61,10 +61,10 @@ namespace SCUMSLang.SyntaxTree
         private class TypeBlockOwnedReferenceResolver : ReferenceResolver
         {
             public override LinkedBucketList<string, Reference> BlockMembers =>
-                block.BlockMembers;
+                block.LocalMemberList;
 
             public override LinkedBucketList<string, TypeReference> CascadingTypes =>
-                block.CascadingTypes;
+                block.ModuleTypeList;
 
             private readonly BlockDefinition block;
 

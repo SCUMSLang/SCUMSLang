@@ -1,6 +1,7 @@
 ﻿using System;
 using System.Collections;
 using System.Collections.Generic;
+using System.Linq;
 using System.Runtime.ExceptionServices;
 
 namespace SCUMSLang.SyntaxTree
@@ -30,22 +31,20 @@ namespace SCUMSLang.SyntaxTree
 
         private T getFirstOrThrowFirst<T>(Func<IReferenceResolver, T> resolveDelegate)
         {
-            Exception firstError = null!;
+            var errors = new List<Exception>();
 
             foreach (var module in YieldModules()) {
                 try {
                     return resolveDelegate(module);
-                } catch (ResolutionDefinitionNotFoundException error) {
-                    if (firstError is null) {
-                        firstError = error;
-                    }
+                } catch (DefinitionNotFoundException error) {
+                    errors.Add(error);
                 } catch {
                     throw;
                 }
             }
 
-            ExceptionDispatchInfo.Capture(firstError).Throw();
-            throw new InvalidOperationException();
+            // We only want show unique error messages.
+            throw new AggregateException("One or more exceptions occured while trying to resolve definition.", errors.GroupBy(x => x.Message).Select(x => x.First()));
         }
 
         public TypeDefinition Resolve(TypeReference type) =>

@@ -2,24 +2,29 @@
 {
     public static class ModuleDefinitionExtensions
     {
+        /// <summary>
+        /// Adds the system types to the module.
+        /// </summary>
+        /// <param name="module"></param>
+        /// <param name="definitionOwner"></param>
+        /// <returns></returns>
         public static ModuleDefinition AddSystemTypes(this ModuleDefinition module)
         {
-            module.Import(new TypeDefinition(module, SystemTypeLibrary.Sequences[SystemType.Integer]) {
+            module.Block.AddNode(new TypeDefinition(SystemTypeLibrary.Sequences[SystemType.Integer]) {
                 AllowOverwriteOnce = true
             });
 
-            module.Import(new TypeDefinition(module, SystemTypeLibrary.Sequences[SystemType.String]) {
+            module.Block.AddNode(new TypeDefinition(SystemTypeLibrary.Sequences[SystemType.String]) {
                 AllowOverwriteOnce = true
             });
 
-            var booleanType = TypeDefinition.CreateEnumDefinition(
-                module,
+            var boolEnumType = Reference.CreateEnumDefinition(
                 SystemTypeLibrary.Sequences[SystemType.Boolean],
                 new[] { "false", "true" },
-                usableAsConstants: true,
+                fieldsAreConstants: true,
                 allowOverwriteOnce: true);
 
-            module.Import(booleanType);
+            module.Block.AddNode(boolEnumType);
             return module;
         }
     }

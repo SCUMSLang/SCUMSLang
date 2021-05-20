@@ -9,7 +9,7 @@ namespace SCUMSLANG.SyntaxTree
     {
         public Action<SyntaxTreeParserOptions> ParserChannelParserOptionsCallback { get; }
         public SyntaxTreeParser DefaultParser { get; }
-        public ModuleDefinition ExpectedModule { get; }
+        //public ModuleDefinition ExpectedModule { get; }
 
         public TypeDefinition UInt32Type { get; }
         public TypeDefinition IntType { get; }
@@ -19,17 +19,17 @@ namespace SCUMSLANG.SyntaxTree
         {
             Trace.Listeners.Add(new DefaultTraceListener());
 
-            ExpectedModule = new ModuleDefinition()
-                .AddSystemTypes();
+            //ExpectedModule = new ModuleDefinition()
+            //    .AddSystemTypes();
 
             ParserChannelParserOptionsCallback = options => {
                 options.TokenReaderBehaviour
                     .SetSkipConditionForNonParserChannelTokens();
             };
 
-            UInt32Type = new TypeDefinition(ExpectedModule, "UInt32");
-            StringType = new TypeDefinition(ExpectedModule, "String");
-            IntType = new TypeDefinition(ExpectedModule, "int") { BaseType = new TypeReference(ExpectedModule, "UInt32") };
+            UInt32Type = new TypeDefinition("UInt32");
+            StringType = new TypeDefinition("String");
+            IntType = new TypeDefinition("int") { BaseType = new TypeReference("UInt32") };
 
             DefaultParser = new SyntaxTreeParser(options => {
                 options.Module.AddSystemTypes();

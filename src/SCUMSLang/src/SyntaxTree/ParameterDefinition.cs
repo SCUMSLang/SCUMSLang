@@ -1,51 +1,47 @@
-﻿using SCUMSLang.SyntaxTree.Visitors;
+﻿using System.Diagnostics.CodeAnalysis;
+using SCUMSLang.SyntaxTree.Visitors;
 
 namespace SCUMSLang.SyntaxTree
 {
     public class ParameterDefinition : ParameterReference, IConstantProvider
     {
         public bool HasConstant {
-            get => !ReferenceEquals(constant, ConstantLibrary.Null);
+            get => !ReferenceEquals(Constant, ConstantLibrary.Null);
 
-            set {
+            protected set {
                 if (!value) {
-                    constant = ConstantLibrary.Null;
+                    Constant = ConstantLibrary.Null;
                 }
             }
         }
 
-        public object Constant => constant;
+        public object Constant { get; private set; }
+        public string? Name { get; private set; }
 
-        private object constant;
+        [MemberNotNullWhen(true, nameof(Name))]
+        public bool HasName => Name is not null;
 
-        internal ParameterDefinition(TypeReference parameterType, object constant)
+        internal ParameterDefinition(TypeReference parameterType, object constant, string? name = null)
             : base(parameterType) =>
-            this.constant = constant;
+            Constant = constant;
 
-        internal ParameterDefinition(TypeReference parameterType)
+        internal ParameterDefinition(TypeReference parameterType, string? name = null)
             : base(parameterType) =>
-            constant = ConstantLibrary.Null;
-
-        public ParameterDefinition(string name, TypeReference parameterType, object constant)
-            : base(name, parameterType) =>
-            this.constant = constant;
-
-        public ParameterDefinition(string name, TypeReference parameterType)
-            : base(name, parameterType) =>
-            constant = ConstantLibrary.Null;
-
-        public override ParameterDefinition Resolve()
-        {
-            ResolveDependencies();
-            return this;
-        }
-
-        public override bool Equals(object? obj) =>
-            base.Equals(obj) && obj is ParameterDefinition parameter
-            && Equals(parameter.HasConstant, HasConstant)
-            && Equals(parameter.Constant, Constant);
+            Constant = ConstantLibrary.Null;
 
         protected internal override Reference Accept(SyntaxNodeVisitor visitor) =>
             visitor.VisitParameterDefinition(this);
+
+        public ParameterDefinition Update(TypeReference parameterType)
+        {
+            if (ReferenceEquals(parameterType, ParameterType)) {
+                return this;
+            }
+
+            return new ParameterDefinition(parameterType) {
+                Constant = Constant,
+                Name = Name
+            };
+        }
     }
 }

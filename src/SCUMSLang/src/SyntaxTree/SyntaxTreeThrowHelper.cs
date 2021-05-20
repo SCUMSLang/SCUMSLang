@@ -23,7 +23,7 @@ namespace SCUMSLang.SyntaxTree
         public static BlockEvaluatingException EventHandlerdNotFound(string name, Func<string, BlockEvaluatingException>? errorFactory = null) =>
             MemberNotFound("event handler", name, errorFactory);
 
-        public static ResolutionDefinitionNotFoundException ResolutionDefinitionNotFoundExceptionDelegate(string message) =>
-            new ResolutionDefinitionNotFoundException(message);
+        public static DefinitionNotFoundException DefinitionNotFoundExceptionDelegate(string message) =>
+            new DefinitionNotFoundException(message);
     }
 }

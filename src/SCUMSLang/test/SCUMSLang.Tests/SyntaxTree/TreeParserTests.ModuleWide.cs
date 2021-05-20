@@ -22,7 +22,7 @@ using static Boolean;";
                 var result = parser.Parse(content);
                 var module = result.Module;
 
-                _ = module.Resolve(new TypeReference(module, "false"));
+                _ = module.Resolve(new TypeReference("false"));
             }
 
             [Fact]

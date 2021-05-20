@@ -3,9 +3,9 @@ using SCUMSLang.SyntaxTree.Visitors;
 
 namespace SCUMSLang.SyntaxTree
 {
-    public sealed class ConstantDefinition : Reference, IResolvableDependencies
+    public sealed class ConstantDefinition : Reference
     {
-        public override SyntaxTreeNodeType NodeType => 
+        public override SyntaxTreeNodeType NodeType =>
             SyntaxTreeNodeType.ConstantReference;
 
         public TypeReference ValueType { get; }
@@ -17,29 +17,16 @@ namespace SCUMSLang.SyntaxTree
             Value = value;
         }
 
-        protected void ResolveDependencies() =>
-            ValueType.Resolve();
+        protected internal override Reference Accept(SyntaxNodeVisitor visitor) =>
+            visitor.VisitConstantDefinition(this);
 
-        void IResolvableDependencies.ResolveDependencies() =>
-            ResolveDependencies();
-
-        public override bool Equals(object? obj) =>
-            base.Equals(obj) && obj is ConstantDefinition constant
-            && Equals(constant.Value, Value)
-            && Equals(constant.ValueType, ValueType);
-
-        public override int GetHashCode() =>
-            HashCode.Combine(NodeType, ValueType, Value);
-
-        public ConstantDefinition Rewrite(TypeReference valueType) {
+        public ConstantDefinition Update(TypeReference valueType)
+        {
             if (ReferenceEquals(ValueType, valueType)) {
                 return this;
             }
 
             return new ConstantDefinition(valueType, Value);
         }
-
-        protected internal override Reference Accept(SyntaxNodeVisitor visitor) =>
-            visitor.VisitConstantDefinition(this);
     }
 }

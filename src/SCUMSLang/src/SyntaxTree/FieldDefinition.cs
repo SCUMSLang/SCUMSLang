@@ -1,33 +1,47 @@
-﻿using SCUMSLang.SyntaxTree.Visitors;
+﻿using System;
+using System.Diagnostics.CodeAnalysis;
+using SCUMSLang.SyntaxTree.Visitors;
 
 namespace SCUMSLang.SyntaxTree
 {
-    public class FieldDefinition : FieldReference
+    public class FieldDefinition : FieldReference, IMemberDefinition
     {
         public object? Value { get; set; }
+
+        [AllowNull]
+        public override TypeReference FieldType {
+            get => base.FieldType ?? throw new InvalidOperationException();
+            internal set => base.FieldType = value;
+        }
 
         public FieldDefinition(string name, TypeReference fieldType)
             : base(name, fieldType) { }
 
         public FieldDefinition(string name, TypeReference fieldType, TypeReference declaringType)
-            : base(name, fieldType, declaringType) { }
+            : base(name, fieldType) =>
+            DeclaringType = declaringType ?? throw new ArgumentNullException(nameof(declaringType));
 
-        protected override IMemberDefinition ResolveDefinition() =>
+        public new virtual FieldDefinition Resolve() =>
+            CacheOrResolve(() => Module.Resolve(this));
+
+        protected override IMemberDefinition ResolveMemberDefinition() =>
             Resolve();
-
-        public new virtual FieldDefinition Resolve()
-        {
-            ResolveDependencies();
-            return this;
-        }
-
-        public override bool Equals(object? obj)
-        {
-            return base.Equals(obj) && obj is FieldDefinition field
-                && Equals(field.Value, Value);
-        }
 
         protected internal override Reference Accept(SyntaxNodeVisitor visitor) =>
             visitor.VisitFieldDefinition(this);
+
+        public FieldDefinition UpdateDefinition(TypeReference fieldType)
+        {
+            if (ReferenceEquals(FieldType, fieldType)) {
+                return this;
+            }
+
+            return new FieldDefinition(Name, fieldType) {
+                DeclaringType = DeclaringType,
+                IsStatic = IsStatic,
+                Module = Module,
+                Value = Value,
+            };
+        }
     }
 }

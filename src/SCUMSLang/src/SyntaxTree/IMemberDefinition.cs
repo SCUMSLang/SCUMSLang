@@ -3,6 +3,5 @@
     public interface IMemberDefinition
     {
         public string Name { get; }
-        public string LongName { get; }
     }
 }

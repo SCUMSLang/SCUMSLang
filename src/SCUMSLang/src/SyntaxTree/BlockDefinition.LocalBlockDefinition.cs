@@ -13,10 +13,8 @@ namespace SCUMSLang.SyntaxTree
             public override ModuleDefinition Module =>
                 ParentBlock.Module;
 
-            //public override string? Name => blockHolder.Name;
-
-            internal protected override LinkedBucketList<string, TypeReference> CascadingTypes =>
-                Module.Block.CascadingTypes;
+            internal protected override LinkedBucketList<string, TypeReference> ModuleTypeList =>
+                Module.Block.ModuleTypeList;
 
             protected override BlockDefinition ParentBlock =>
                 parentBlock;

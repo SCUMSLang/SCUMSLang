@@ -3,7 +3,7 @@ using SCUMSLang.SyntaxTree.Visitors;
 
 namespace SCUMSLang.SyntaxTree
 {
-    public abstract class Reference : IVisitableReference
+    public abstract partial class Reference : IVisitableReference
     {
         public abstract SyntaxTreeNodeType NodeType { get; }
 

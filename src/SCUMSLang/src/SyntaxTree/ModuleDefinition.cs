@@ -1,10 +1,14 @@
-﻿namespace SCUMSLang.SyntaxTree
+﻿using SCUMSLang.SyntaxTree.Visitors;
+
+namespace SCUMSLang.SyntaxTree
 {
-    public sealed partial class ModuleDefinition : TypeReference, IReferenceResolver
+    public sealed partial class ModuleDefinition : TypeReference, IReferenceResolver, IMemberDefinition
     {
         public TypeBlockDefinition Block => block;
         public override ModuleDefinition Module => this;
         public string FilePath { get; }
+
+        internal SyntaxNodeModuleFillingVisitor ModuleFillingVisitor { get; }
 
         private ModuleBlockDefinition block;
         private readonly IReferenceResolver moduleExclusiveReferenceResolver;
@@ -14,6 +18,7 @@
             : base(name: string.Empty)
         {
             block = new ModuleBlockDefinition(this);
+            ModuleFillingVisitor = new SyntaxNodeModuleFillingVisitor(this);
             FilePath = parameters?.FilePath ?? string.Empty;
 
             if (parameters?.ReferenceResolver is null) {
@@ -39,6 +44,9 @@
         public ModuleDefinition()
             : this(parameters: null) { }
 
+        protected override IMemberDefinition ResolveMemberDefinition() =>
+            Resolve();
+
         public void ResolveUsingStaticDirectives() =>
             block.ResolveUsingStaticDirectives();
 
@@ -54,8 +62,21 @@
         public EventHandlerDefinition Resolve(EventHandlerReference method) =>
             moduleExclusiveReferenceResolver.Resolve(method);
 
+        //public new ModuleDefinition Resolve()
+        //{
+        //    var visitor = new SyntaxNodeResolvingVisitor();
+        //    visitor.Visit(this); // TODO: VERIFY
+        //    return this;
+        //}
+
+        public new ModuleDefinition Resolve() =>
+            this;
+
         public void Import(MemberReference member) =>
             block.Import(member);
+
+        protected internal override Reference Accept(SyntaxNodeVisitor visitor) =>
+            visitor.VisitModuleDefinition(this);
 
         #region IReferenceResolver
 

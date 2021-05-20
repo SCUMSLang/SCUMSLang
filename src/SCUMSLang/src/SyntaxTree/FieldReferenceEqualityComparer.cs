@@ -6,7 +6,7 @@ namespace SCUMSLang.SyntaxTree
 {
     public class FieldReferenceEqualityComparer : EqualityComparer<FieldReference>
     {
-        public new static ParameterReferenceEqualityComparer Default = new ParameterReferenceEqualityComparer();
+        public new static FieldReferenceEqualityComparer Default = new FieldReferenceEqualityComparer();
 
         public TypeReferenceEqualityComparer TypeReferenceComparer { get; }
 
@@ -20,6 +20,7 @@ namespace SCUMSLang.SyntaxTree
             && TypeReferenceComparer.Equals(x.FieldType, y.FieldType)
             && TypeReferenceComparer.Equals(x.DeclaringType, y.DeclaringType);
 
-        public override int GetHashCode([DisallowNull] FieldReference obj) => throw new NotImplementedException();
+        public override int GetHashCode([DisallowNull] FieldReference obj) => 
+            throw new NotImplementedException();
     }
 }
