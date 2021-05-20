@@ -44,6 +44,6 @@ namespace SCUMSLang.SyntaxTree
             RecognizableNodes = (RecognizableReferences)Enum
                 .GetValues(typeof(RecognizableReferences))
                     .Cast<int>()
-                    .Sum();
+                    .Sum(); // All.
     }
 }

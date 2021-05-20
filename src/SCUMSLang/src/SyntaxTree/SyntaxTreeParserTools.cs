@@ -3,6 +3,7 @@ using System;
 using System.Collections.Generic;
 using System.Diagnostics.CodeAnalysis;
 using System.IO;
+using System.Linq;
 
 namespace SCUMSLang.SyntaxTree
 {
@@ -328,8 +329,8 @@ namespace SCUMSLang.SyntaxTree
             SpanReader<Token> reader,
             TokenType openTokenType,
             TokenType endTokenType,
-            [NotNullWhen(true)] out int? newPosition,
             out List<ConstantDefinition> arguments,
+            [NotNullWhen(true)] out int? newPosition,
             bool required = false,
             bool needConsume = false)
         {
@@ -377,7 +378,7 @@ namespace SCUMSLang.SyntaxTree
                 List<ConstantDefinition>? arguments;
 
                 if (reader.PeekNext(TokenType.OpenBracket)
-                    && TryRecognizeArgumentList(reader, TokenType.OpenBracket, TokenType.CloseBracket, out newPosition, out arguments, required: true, needConsume: true)) {
+                    && TryRecognizeArgumentList(reader, TokenType.OpenBracket, TokenType.CloseBracket, out arguments, out newPosition, required: true, needConsume: true)) {
                     reader.SetLengthTo(newPosition.Value);
                 } else {
                     arguments = null;
@@ -417,8 +418,8 @@ namespace SCUMSLang.SyntaxTree
                         reader,
                         TokenType.OpenAngleBracket,
                         TokenType.CloseAngleBracket,
-                        out newPosition,
                         out genericArguments,
+                        out newPosition,
                         needConsume: true)) {
                     reader.SetLengthTo(newPosition.Value);
                 } else {
@@ -429,8 +430,8 @@ namespace SCUMSLang.SyntaxTree
                         reader,
                         TokenType.OpenBracket,
                         TokenType.CloseBracket,
-                        out newPosition,
                         out var arguments,
+                        out newPosition,
                         required: true,
                         needConsume: true)) {
                     reader.SetLengthTo(newPosition.Value);
@@ -541,17 +542,48 @@ namespace SCUMSLang.SyntaxTree
             return false;
         }
 
-        //public static bool TryRecognizeTemplateForExpression(ModuleDefinition module, SpanReader<Token> reader, [NotNullWhen(true)] out int? newPosition, [MaybeNullWhen(false)] out Reference node)
-        //{
-        //    if (reader.ViewLastValue.TryRecognize(TokenType.TemplateKeyword)
-        //        && reader.PeekNext(TokenType.ForKeyword)) {
+        public static bool TryRecognizeTemplateForExpression(SpanReader<Token> reader, [NotNullWhen(true)] out int? newPosition, [MaybeNullWhen(false)] out Reference node)
+        {
+            if (reader.ViewLastValue.TryRecognize(TokenType.TemplateKeyword)) {
+                var forInCollection = new List<ForInDefinition>();
+                int? forInArgumentLength = null;
 
+                while (reader.ConsumeNext(TokenType.ForKeyword)) {
+                    if (TryRecognizeParameterList(reader, TokenType.OpenBracket, TokenType.CloseBracket, out var parameters, out newPosition, required: true, needConsume: true)) {
+                        reader.SetLengthTo(newPosition.Value);
+                    }
 
-        //        do {
+                    var parameter = parameters.SingleOrDefault();
 
-        //        } while (true);
-        //    }
-        //}
+                    if (parameter is null) {
+                        throw new SyntaxTreeParsingException(reader.ViewLastPosition, "Only one parameter was expected. (e.g. '(Player PlayerId)')");
+                    }
+
+                    reader.SetLengthTo(ExpectToken(reader, TokenType.InKeyword, needConsume: true));
+
+                    if (TryRecognizeArgumentList(reader, TokenType.OpenBracket, TokenType.CloseBracket, out var arguments, out newPosition, required: true, needConsume: true)) {
+                        reader.SetLengthTo(newPosition.Value);
+                    }
+
+                    var forInDefinition = new ForInDefinition(parameter, arguments);
+                    forInCollection.Add(forInDefinition);
+
+                    if (forInArgumentLength == null) {
+                        forInArgumentLength = forInDefinition.Arguments.Count;
+                    } else if (forInArgumentLength != forInDefinition.Arguments.Count) {
+                        throw new SyntaxTreeParsingException(reader.ViewLastValue, "Argument list count of current 'template for'-expression must be even across all for-in declarations.");
+                    }
+                }
+
+                newPosition = reader.UpperPosition;
+                node = new TemplateForInDefinition(forInCollection);
+                return true;
+            }
+
+            newPosition = null;
+            node = null;
+            return false;
+        }
 
         public static int? Recognize(BlockDefinition block, SpanReader<Token> reader, RecognizableReferences recognizableNodes, [MaybeNull] out Reference node)
         {
@@ -598,10 +630,10 @@ namespace SCUMSLang.SyntaxTree
                 return newPosition;
             }
 
-            //if (recognizableNodes.HasFlag(RecognizableReferences.UsingStatic)
-            //    && TryRecognizeTemplateForExpression(module, reader, out newPosition, out node)) {
-            //    return newPosition;
-            //}
+            if (recognizableNodes.HasFlag(RecognizableReferences.TemplateFor)
+                && TryRecognizeTemplateForExpression(reader, out newPosition, out node)) {
+                return newPosition;
+            }
 
             node = null;
             return null;

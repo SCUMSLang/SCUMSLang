@@ -9,10 +9,10 @@ namespace SCUMSLang.SyntaxTree
         public override SyntaxTreeNodeType NodeType => 
             SyntaxTreeNodeType.ForInDefinition;
 
-        public TypeReference Parameter { get; }
+        public ParameterDefinition Parameter { get; }
         public IReadOnlyList<ConstantDefinition> Arguments { get; }
 
-        public ForInDefinition(TypeReference parameter, IReadOnlyList<ConstantDefinition> arguments)
+        public ForInDefinition(ParameterDefinition parameter, IReadOnlyList<ConstantDefinition> arguments)
         {
             Parameter = parameter;
             Arguments = arguments;
@@ -21,7 +21,7 @@ namespace SCUMSLang.SyntaxTree
         protected internal override Reference Accept(SyntaxNodeVisitor visitor) =>
             visitor.VisitForInDefinition(this);
 
-        public ForInDefinition Update(TypeReference parameter, IReadOnlyList<ConstantDefinition> arguments) {
+        public ForInDefinition Update(ParameterDefinition parameter, IReadOnlyList<ConstantDefinition> arguments) {
             if (ReferenceEquals(Parameter, parameter) && Enumerable.SequenceEqual(Arguments, arguments, ReferenceEqualityComparer.Instance)) {
                 return this;
             }

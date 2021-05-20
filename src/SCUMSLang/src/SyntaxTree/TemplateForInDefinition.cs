@@ -1,4 +1,5 @@
-﻿using System.Collections.Generic;
+﻿using System;
+using System.Collections.Generic;
 using SCUMSLang.SyntaxTree.Visitors;
 
 namespace SCUMSLang.SyntaxTree
@@ -10,20 +11,21 @@ namespace SCUMSLang.SyntaxTree
 
         public IReadOnlyList<ForInDefinition> ForInCollection { get; }
 
-        public bool IsExpandable => 
-            throw new System.NotImplementedException();
+        public bool IsExpandable =>
+            throw new NotImplementedException();
 
         public BlockDefinition? Block =>
             block;
 
-        public TypeReference DeclaringType => throw new System.NotImplementedException();
-
         private BlockDefinition? block;
 
-        BlockDefinition? IBlockHolder.Block { 
+        BlockDefinition? IBlockHolder.Block {
             get => block;
             set => block = value;
         }
+
+        public TemplateForInDefinition(IReadOnlyList<ForInDefinition>? forInCollection) =>
+            ForInCollection = forInCollection ?? new ForInDefinition[0];
 
         protected internal override Reference Accept(SyntaxNodeVisitor visitor) =>
             visitor.VisitTemplateForInDefinition(this);

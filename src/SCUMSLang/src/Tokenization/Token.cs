@@ -48,7 +48,14 @@ namespace SCUMSLang.Tokenization
             value = default!;
             return false;
         }
-
+        
+        /// <summary>
+        /// Token type of current position is compared to each
+        /// specified token type and returns <see langword="true"/>
+        /// as soon it is equal.
+        /// </summary>
+        /// <param name="tokenTypes"></param>
+        /// <returns></returns>
         public bool TryRecognize(params TokenType[] tokenTypes)
         {
             var index = tokenTypes.Length;
