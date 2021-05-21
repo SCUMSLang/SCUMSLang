@@ -4,8 +4,12 @@ namespace SCUMSLang.SyntaxTree
 {
     public sealed partial class ModuleDefinition : TypeReference, IReferenceResolver, IMemberDefinition
     {
-        public TypeBlockDefinition Block => block;
-        public override ModuleDefinition Module => this;
+        public TypeBlockDefinition Block =>
+            block;
+
+        public override ModuleDefinition Module =>
+            this;
+
         public string FilePath { get; }
 
         internal SyntaxNodeModuleFillingVisitor ModuleFillingVisitor { get; }

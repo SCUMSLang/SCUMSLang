@@ -1,8 +1,7 @@
 ﻿using System;
-using SCUMSLang.SyntaxTree;
 using Xunit;
 
-namespace SCUMSLANG.SyntaxTree
+namespace SCUMSLang.SyntaxTree
 {
     public partial class TreeParserTests
     {
@@ -130,18 +129,6 @@ static int goofy;";
             }
 
             [Fact]
-            public void Should_parse_short_cut_attribute()
-            {
-                var content = @"
-function TriggerCondition();
-
-[TriggerCondition]";
-
-                var module = DefaultParser.Parse(content).Module;
-                module.Block.GetMethod("TriggerCondition").Resolve();
-            }
-
-            [Fact]
             public void Should_parse_enumeration()
             {
                 var content = @"
@@ -176,8 +163,6 @@ function daisy(bool test_bool);
 function goofy() when daisy(false) {}";
 
                 var module = DefaultParser.Parse(content).Module;
-
-                module.Resolve();
 
                 var booleanEnum = module.Block.GetType("Boolean");
                 Assert.True(booleanEnum.IsEnum);

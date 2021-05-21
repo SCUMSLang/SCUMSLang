@@ -1,9 +1,9 @@
 ﻿using System.Threading.Tasks;
 using SCUMSLang.Compilation;
 using Xunit;
-using static SCUMSLANG.SCUMSLangTestsLibrary;
+using static SCUMSLang.SCUMSLangTestsLibrary;
 
-namespace SCUMSLANG.Compilation
+namespace SCUMSLang.Compilation
 {
     public class CompilerTests
     {

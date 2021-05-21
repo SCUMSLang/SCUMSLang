@@ -1,5 +1,4 @@
-﻿using System;
-using System.Collections.Generic;
+﻿using System.Collections.Generic;
 using SCUMSLang.SyntaxTree.Visitors;
 
 namespace SCUMSLang.SyntaxTree
@@ -11,8 +10,8 @@ namespace SCUMSLang.SyntaxTree
 
         public IReadOnlyList<ForInDefinition> ForInCollection { get; }
 
-        public bool IsExpandable =>
-            throw new NotImplementedException();
+        public bool IsBlockOwnable =>
+            true;
 
         public BlockDefinition? Block =>
             block;

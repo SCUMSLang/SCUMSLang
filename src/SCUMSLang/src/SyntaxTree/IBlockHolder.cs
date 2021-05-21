@@ -2,7 +2,11 @@
 {
     internal interface IBlockHolder
     {
-        bool IsExpandable { get; }
         BlockDefinition? Block { get; set; }
+        /// <summary>
+        /// Indicates whether the block
+        /// holder can own a block.
+        /// </summary>
+        bool IsBlockOwnable { get; }
     }
 }

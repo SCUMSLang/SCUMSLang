@@ -15,12 +15,20 @@ namespace SCUMSLang.Tokenization
         public string? FilePath { get; internal set; }
         /// <summary>
         /// The channel at which the token is belonging. If not other
-        /// specified it is by default <see cref="Channel.Parser"/>.
+        /// specified it is by default <see cref="TokenChannel.Parser"/>.
         /// </summary>
-        public Channel Channel { get; }
+        public TokenChannel Channel { get; }
         public int UpperPosition => FilePosition + FilePositionLength - 1;
 
-        public Token(TokenType tokenType, int position, int length, object? value, Channel channel)
+        /// <summary>
+        /// Creates a token.
+        /// </summary>
+        /// <param name="tokenType"></param>
+        /// <param name="position"></param>
+        /// <param name="length"></param>
+        /// <param name="value"></param>
+        /// <param name="channel"></param>
+        public Token(TokenType tokenType, int position, int length, object? value, TokenChannel channel)
         {
             TokenType = tokenType;
             Value = value;
@@ -29,14 +37,34 @@ namespace SCUMSLang.Tokenization
             FilePositionLength = length;
         }
 
+        /// <summary>
+        /// Creates a parser token.
+        /// </summary>
+        /// <param name="tokenType"></param>
+        /// <param name="position"></param>
+        /// <param name="length"></param>
+        /// <param name="value"></param>
         public Token(TokenType tokenType, int position, int length, object? value)
-            : this(tokenType, position, length, value, Channel.Parser) { }
+            : this(tokenType, position, length, value, TokenChannel.Parser) { }
 
-        public Token(TokenType tokenType, int position, int length, Channel channel)
+        /// <summary>
+        /// Creates a parser token.
+        /// </summary>
+        /// <param name="tokenType"></param>
+        /// <param name="position"></param>
+        /// <param name="length"></param>
+        /// <param name="channel"></param>
+        public Token(TokenType tokenType, int position, int length, TokenChannel channel)
             : this(tokenType, position, length, default, channel) { }
 
+        /// <summary>
+        /// Creates a parser token.
+        /// </summary>
+        /// <param name="tokenType"></param>
+        /// <param name="position"></param>
+        /// <param name="length"></param>
         public Token(TokenType tokenType, int position, int length)
-            : this(tokenType, position, length, default, Channel.Parser) { }
+            : this(tokenType, position, length, default, TokenChannel.Parser) { }
 
         public bool TryRecognize<T>(TokenType tokenType, [NotNullWhen(true)] out T value)
         {

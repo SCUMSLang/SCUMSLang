@@ -1,9 +1,8 @@
 ﻿using System;
 using System.Diagnostics;
-using SCUMSLang.SyntaxTree;
 using SCUMSLang.Tokenization;
 
-namespace SCUMSLANG.SyntaxTree
+namespace SCUMSLang.SyntaxTree
 {
     public partial class TreeParserTests
     {

@@ -1,10 +1,11 @@
 ﻿using System;
 using System.Collections.Generic;
+using System.Diagnostics.CodeAnalysis;
 using SCUMSLang.SyntaxTree.Visitors;
 
 namespace SCUMSLang.SyntaxTree
 {
-    public class MethodDefinition : MethodReference, IMemberDefinition, IOverloadableReference, IBlockHolder
+    public class MethodDefinition : MethodReference, IMemberDefinition, IOverloadableReference, IBlockHolder, IAttributesHolder
     {
         public override SyntaxTreeNodeType NodeType =>
             SyntaxTreeNodeType.MethodDefinition;
@@ -12,8 +13,10 @@ namespace SCUMSLang.SyntaxTree
         public bool IsAbstract { get; set; }
         public BlockDefinition? Block { get; internal set; }
 
-        bool IBlockHolder.IsExpandable =>
-            IsAbstract;
+        public IList<AttributeDefinition> Attributes { get; private set; }
+
+        bool IBlockHolder.IsBlockOwnable =>
+            !IsAbstract;
 
         BlockDefinition? IBlockHolder.Block {
             get => Block;
@@ -25,13 +28,19 @@ namespace SCUMSLang.SyntaxTree
             IReadOnlyList<ParameterReference>? genericParameters,
             IReadOnlyList<ParameterReference>? parameters,
             TypeReference declaringType)
-            : base(name, genericParameters, parameters, declaringType) { }
+            : base(name, genericParameters, parameters, declaringType) =>
+            OnConstruction();
 
         public MethodDefinition(
             string name,
             IReadOnlyList<ParameterReference>? genericParameters,
             IReadOnlyList<ParameterReference>? parameters)
-            : base(name, genericParameters, parameters) { }
+            : base(name, genericParameters, parameters) =>
+            OnConstruction();
+
+        [MemberNotNull(nameof(Attributes))]
+        private void OnConstruction() =>
+            Attributes = new List<AttributeDefinition>();
 
         public new MethodDefinition Resolve() =>
             this;

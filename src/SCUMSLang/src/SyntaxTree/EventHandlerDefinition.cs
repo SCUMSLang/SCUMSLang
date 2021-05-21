@@ -5,9 +5,13 @@ namespace SCUMSLang.SyntaxTree
 {
     public class EventHandlerDefinition : EventHandlerReference, IMemberDefinition, IBlockHolder
     {
-        public override SyntaxTreeNodeType NodeType => SyntaxTreeNodeType.EventHandlerDefinition;
+        public override SyntaxTreeNodeType NodeType =>
+            SyntaxTreeNodeType.EventHandlerDefinition;
+
         public BlockDefinition? Block { get; internal set; }
-        bool IBlockHolder.IsExpandable => true;
+
+        bool IBlockHolder.IsBlockOwnable =>
+            true;
 
         BlockDefinition? IBlockHolder.Block {
             get => Block;

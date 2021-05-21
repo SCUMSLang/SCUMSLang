@@ -2,6 +2,6 @@
 {
     public interface IBlockScopedReference
     {
-        public BlockScope BlockScope {get;}
+        public BlockScope BlockScope { get; }
     }
 }

@@ -5,7 +5,7 @@ using System.Diagnostics.CodeAnalysis;
 namespace SCUMSLang.SyntaxTree
 {
     [DebuggerDisplay("{" + nameof(GetDebuggerDisplay) + "(),nq}")]
-    public abstract class MemberReference : Reference, IOwnedReference, IOwnableReference
+    public abstract class MemberReference : Reference, IOwnableReference
     {
         public override SyntaxTreeNodeType NodeType =>
             SyntaxTreeNodeType.MemberReference;

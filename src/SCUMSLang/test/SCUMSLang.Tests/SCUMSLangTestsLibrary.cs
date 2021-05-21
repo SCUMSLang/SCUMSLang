@@ -1,6 +1,6 @@
 ﻿using System.IO;
 
-namespace SCUMSLANG
+namespace SCUMSLang
 {
     public static class SCUMSLangTestsLibrary
     {
@@ -11,7 +11,6 @@ namespace SCUMSLANG
         {
             var assemblyPath = typeof(SCUMSLangTestsLibrary).Assembly.Location;
             AssemblyDirectoryName = Path.GetDirectoryName(assemblyPath)!;
-
             UMSFilesFolderName = "UMSFiles";
         }
 

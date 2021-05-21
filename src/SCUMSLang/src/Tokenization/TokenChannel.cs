@@ -1,8 +1,8 @@
 ﻿namespace SCUMSLang.Tokenization
 {
-    public enum Channel
+    public enum TokenChannel
     {
         Parser = 1,
-        Comments= 2
+        Comments = 2
     }
 }

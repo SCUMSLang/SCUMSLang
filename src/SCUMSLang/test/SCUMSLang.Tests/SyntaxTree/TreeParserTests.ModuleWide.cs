@@ -1,7 +1,7 @@
 ﻿using SCUMSLang.SyntaxTree;
 using Xunit;
 
-namespace SCUMSLANG.SyntaxTree
+namespace SCUMSLang.SyntaxTree
 {
     public partial class TreeParserTests
     {

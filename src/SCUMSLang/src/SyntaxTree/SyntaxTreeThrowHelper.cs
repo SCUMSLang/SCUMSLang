@@ -25,5 +25,9 @@ namespace SCUMSLang.SyntaxTree
 
         public static DefinitionNotFoundException DefinitionNotFoundExceptionDelegate(string message) =>
             new DefinitionNotFoundException(message);
+
+        public static BlockEvaluatingException AttributeMisposition(string? causedName = null) => causedName is null
+            ? new BlockEvaluatingException($"The attribute cannot be positioned before {causedName}.")
+            : new BlockEvaluatingException($"The attribute could not be attached to any node.");
     }
 }

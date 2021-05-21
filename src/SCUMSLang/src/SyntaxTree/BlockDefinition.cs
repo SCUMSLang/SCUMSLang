@@ -30,16 +30,6 @@ namespace SCUMSLang.SyntaxTree
         public abstract ModuleDefinition Module { get; }
 
         /// <summary>
-        /// It is the current begun contextual block in THIS block.
-        /// At first it will be THIS instance. But when another block
-        /// gets created in this block, the current contextual block
-        /// is that block.
-        /// Only relevant when constructing this and nested blocks
-        /// with new references and definitions.
-        /// </summary>
-        public BlockDefinition ContextBlock { get; private set; }
-
-        /// <summary>
         /// All references (or definitions) as they appeared
         /// from top to bottom of a block.
         /// </summary>
@@ -52,19 +42,19 @@ namespace SCUMSLang.SyntaxTree
         public IReadOnlyLinkedBucketList<string, TypeReference> ModuleTypes =>
             ModuleTypeList;
 
+        private bool isBlockClosed;
+
         internal protected LinkedBucketList<string, Reference> LocalMemberList { get; }
         internal protected abstract LinkedBucketList<string, TypeReference> ModuleTypeList { get; }
 
         protected abstract BlockDefinition ParentBlock { get; }
 
         private List<Reference> referenceRecords;
-        private bool isBlockClosed;
 
         public BlockDefinition()
         {
             referenceRecords = new List<Reference>();
             LocalMemberList = new LinkedBucketList<string, Reference>();
-            ContextBlock = this;
         }
 
         /// <summary>
@@ -222,27 +212,11 @@ namespace SCUMSLang.SyntaxTree
             if (TryAddMember(node)) {
                 referenceRecords.Add(node);
 
-                if (node is IBlockHolder blockHolder) {
+                if (node is IBlockHolder blockHolder && blockHolder.IsBlockOwnable) {
                     var block = new LocalBlockDefinition(this, blockHolder);
                     blockHolder.Block = block;
-                    ContextBlock = block;
                 }
             }
-        }
-
-        public void EndBlock()
-        {
-            if (isBlockClosed) {
-                throw new BlockEvaluatingException("You cannot end the block twice.");
-            }
-
-            isBlockClosed = true;
-
-            if (ReferenceEquals(this, Module)) {
-                throw new BlockEvaluatingException("You cannot end the block of the root block.");
-            }
-
-            ContextBlock = ContextBlock.ParentBlock;
         }
 
         private TDefinition GetMemberDefinitionBySelector<TReference, TDefinition>(
