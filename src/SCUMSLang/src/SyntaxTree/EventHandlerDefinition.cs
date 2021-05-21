@@ -8,15 +8,16 @@ namespace SCUMSLang.SyntaxTree
         public override SyntaxTreeNodeType NodeType =>
             SyntaxTreeNodeType.EventHandlerDefinition;
 
-        public BlockDefinition? Block { get; internal set; }
+        public BlockDefinition? Body =>
+            body;
+
+        private BlockDefinition? body;
 
         bool IBlockHolder.IsBlockOwnable =>
             true;
 
-        BlockDefinition? IBlockHolder.Block {
-            get => Block;
-            set => Block = value;
-        }
+        BlockDefinition? IBlockHolder.Block =>
+            Body;
 
         public EventHandlerDefinition(
             string name,
@@ -32,6 +33,9 @@ namespace SCUMSLang.SyntaxTree
             IReadOnlyList<ParameterReference>? parameters,
             IReadOnlyList<MethodCallDefinition>? conditions)
             : base(name, genericParameters, parameters, conditions) { }
+
+        void IBlockHolder.SetupBlock(BlockDefinition parentBlock) =>
+            BlockHolderTools.SetupBlock(ref body, parentBlock, BlockScope.Local);
 
         public new EventHandlerDefinition Resolve() =>
             this;
@@ -54,9 +58,9 @@ namespace SCUMSLang.SyntaxTree
             }
 
             return new EventHandlerDefinition(Name, genericParameters, parameters, conditions) {
-                Block = Block,
                 DeclaringType = DeclaringType,
                 Module = Module,
+                body = body,
             };
         }
     }

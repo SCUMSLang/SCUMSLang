@@ -11,7 +11,7 @@ namespace SCUMSLang
         {
             var assemblyPath = typeof(SCUMSLangTestsLibrary).Assembly.Location;
             AssemblyDirectoryName = Path.GetDirectoryName(assemblyPath)!;
-            UMSFilesFolderName = "UMSFiles";
+            UMSFilesFolderName = "UMSLFiles";
         }
 
         public static string GetUMSLFilePath(string fileName) =>

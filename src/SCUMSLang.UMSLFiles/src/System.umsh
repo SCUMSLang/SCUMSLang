@@ -5,13 +5,21 @@ typedef String string;
 typedef enum { false, true } Boolean;
 typedef Boolean bool;
 
-/// <summary>Used by compiler! The function is intended to be used as attribute to mark an abstract function as condition.</summary>
-function TriggerCondition();
 /// <summary>Used by compiler! The function is intended to be used as attribute to mark an abstract function as attribute.</summary>
+[Attribute]
 function Attribute();
 
+/// <summary>Used by compiler! The function is intended to be used as attribute to mark an abstract function as condition.</summary>
+[Attribute]
+function TriggerCondition();
+
+/// <summary>Used by compiler! The function is intended to be used as attribute to mark an abstract function as only usable in module scope.</summary>
+[Attribute]
+function OnlyModuleScope();
+
 /// <summary>
-/// Declares a death counter of (an) unit(s) from the specified player being reserved for compiler.
+/// Declares a death counter of (an) unit(s) from the specified player being reservable by compiler.
 /// Internally a death counter represents an UInt32 value which the compiler specific triggers need.
 /// </summary>
+[OnlyModuleScope]
 function add_uint32(Player PlayerId, params Unit[] units);

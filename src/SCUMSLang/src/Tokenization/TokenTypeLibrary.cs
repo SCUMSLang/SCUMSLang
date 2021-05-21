@@ -1,6 +1,4 @@
-﻿using System;
-using System.Collections.Generic;
-using SCUMSLang.SyntaxTree;
+﻿using System.Collections.Generic;
 using static SCUMSLang.SCUMSLangTools;
 
 namespace SCUMSLang.Tokenization

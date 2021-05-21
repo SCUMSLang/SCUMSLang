@@ -20,11 +20,13 @@ namespace SCUMSLang.SyntaxTree
 
         BlockDefinition? IBlockHolder.Block {
             get => block;
-            set => block = value;
         }
 
         public TemplateForInDefinition(IReadOnlyList<ForInDefinition>? forInCollection) =>
             ForInCollection = forInCollection ?? new ForInDefinition[0];
+
+        void IBlockHolder.SetupBlock(BlockDefinition parentBlock) =>
+            BlockHolderTools.SetupBlock(ref block, parentBlock, parentBlock.BlockScope);
 
         protected internal override Reference Accept(SyntaxNodeVisitor visitor) =>
             visitor.VisitTemplateForInDefinition(this);

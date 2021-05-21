@@ -1,5 +1,4 @@
 ﻿using System.Threading.Tasks;
-using SCUMSLang.Compilation;
 using Xunit;
 using static SCUMSLang.SCUMSLangTestsLibrary;
 
@@ -8,7 +7,7 @@ namespace SCUMSLang.Compilation
     public class CompilerTests
     {
         [Fact]
-        public async Task Should_compile() =>
+        public async Task Should_compile_with_default_parameters() =>
             (await Compiler.Default.CompileAsync())
                 .ThrowOnError();
 
@@ -16,7 +15,7 @@ namespace SCUMSLang.Compilation
         public async Task Should_compile_set_death()
         {
             var result = await Compiler.Default.CompileAsync(parameters => {
-                parameters.UserSources.Add(GetUMSLFilePath("SetDeaths.umsl"));
+                parameters.ImplicitUInt32PoolSource = GetUMSLFilePath("SetDeaths.umsl");
             });
 
             result.ThrowOnError();

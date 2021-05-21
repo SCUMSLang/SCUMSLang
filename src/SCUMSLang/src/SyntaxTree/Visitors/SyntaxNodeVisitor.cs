@@ -104,7 +104,7 @@ namespace SCUMSLang.SyntaxTree.Visitors
         protected internal virtual Reference VisitArrayType(ArrayType arrayType) =>
             arrayType;
 
-        protected internal virtual Reference VisitLocalBlockDefinition(BlockDefinition.LocalBlockDefinition localBlock) =>
+        protected internal virtual Reference VisitScopedBlockDefinition(BlockDefinition.ScopedBlockDefinition localBlock) =>
             localBlock;
 
         protected internal virtual Reference VisitConstantDefinition(ConstantDefinition constant) =>

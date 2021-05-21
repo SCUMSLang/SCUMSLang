@@ -29,5 +29,8 @@ namespace SCUMSLang.SyntaxTree
         public static BlockEvaluatingException AttributeMisposition(string? causedName = null) => causedName is null
             ? new BlockEvaluatingException($"The attribute cannot be positioned before {causedName}.")
             : new BlockEvaluatingException($"The attribute could not be attached to any node.");
+
+        public static BlockEvaluatingException NonNullBlockSetup() =>
+            new BlockEvaluatingException("The block cannot be set up twice.");
     }
 }

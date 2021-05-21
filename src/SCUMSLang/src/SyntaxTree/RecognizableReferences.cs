@@ -13,6 +13,7 @@ namespace SCUMSLang.SyntaxTree
         FunctionOrEventHandler = Attribute << 1,
         Field = FunctionOrEventHandler << 1,
         Assignment = Field << 1,
-        TemplateFor = Assignment << 1
+        TemplateFor = Assignment << 1,
+        MethodCall = TemplateFor << 1
     }
 }

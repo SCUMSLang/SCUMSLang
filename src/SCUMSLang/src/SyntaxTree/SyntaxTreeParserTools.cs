@@ -77,6 +77,15 @@ namespace SCUMSLang.SyntaxTree
             return false;
         }
 
+        public static int ExpectToken(SpanReader<Token> reader, TokenType tokenType, bool needConsume = false)
+        {
+            if (!reader.ConsumeNext(needConsume) || !reader.ViewLastValue.TryRecognize(tokenType)) {
+                throw new SyntaxTreeParsingException(reader.ViewLastValue, $"Specific token was expected: '{TokenTypeLibrary.SequenceDictionary[tokenType]}'");
+            }
+
+            return reader.UpperPosition;
+        }
+
         public static bool TryRecognizeTypeAliasReference(SpanReader<Token> reader, [NotNullWhen(true)] out int? newPosition, [MaybeNullWhen(false)] out Reference node)
         {
             if (reader.ViewLastValue == TokenType.TypeDefKeyword) {
@@ -84,18 +93,14 @@ namespace SCUMSLang.SyntaxTree
                     throw new SyntaxTreeParsingException(typeTokenPosition, "A type was expected.");
                 }
 
-                static ReaderPosition<Token> expectNameAndEndToken(ref SpanReader<Token> reader, out int? newPosition)
+                static ReaderPosition<Token> expectNameAndDelimiterToken(ref SpanReader<Token> reader, out int? newPosition)
                 {
                     if (!reader.ConsumeNext(out ReaderPosition<Token> nameToken)
                         || string.IsNullOrEmpty(nameToken.Value?.ToString())) {
                         throw new SyntaxTreeParsingException(reader.ViewLastPosition, "A name was expected.");
                     }
 
-                    if (!reader.ConsumeNext(TokenType.Semicolon)) {
-                        throw new SyntaxTreeParsingException(reader.ViewLastPosition, "A semicolon was expected.");
-                    }
-
-                    newPosition = reader.UpperPosition;
+                    newPosition = ExpectToken(reader, TokenType.Semicolon, needConsume: true);
                     return nameToken;
                 }
 
@@ -103,7 +108,7 @@ namespace SCUMSLang.SyntaxTree
                     _ = TryRecognizeNameList(reader, TokenType.OpenBrace, TokenType.CloseBrace, out newPosition, out var nameList, required: true, needConsume: true);
                     reader.SetLengthTo(newPosition!.Value);
 
-                    var enumNameToken = expectNameAndEndToken(ref reader, out newPosition!);
+                    var enumNameToken = expectNameAndDelimiterToken(ref reader, out newPosition!);
                     var enumName = enumNameToken.Value.GetValue<string>();
                     node = Reference.CreateEnumDefinition(enumName, nameList!, fieldsAreConstants: true);
                     return true;
@@ -111,7 +116,7 @@ namespace SCUMSLang.SyntaxTree
 
                 {
                     var sourceTypeName = typeTokenPosition.Value.GetValue<string>();
-                    var aliasNameToken = expectNameAndEndToken(ref reader, out newPosition!);
+                    var aliasNameToken = expectNameAndDelimiterToken(ref reader, out newPosition!);
                     var aliasName = aliasNameToken.Value.GetValue<string>();
                     node = TypeDefinition.CreateAliasDefinition(aliasName, new TypeReference(sourceTypeName));
                     return true;
@@ -160,9 +165,7 @@ namespace SCUMSLang.SyntaxTree
 
         public static int ExpectArgumentTypeReference(SpanReader<Token> reader, out TypeReference typeReference)
         {
-            var typeToken = reader.ViewLastValue;
-
-            if (typeToken.TokenType == TokenType.ParamsKeyword) {
+            if (reader.ViewLastValue.TryRecognize(TokenType.ParamsKeyword)) {
                 if (!reader.ConsumeNext()) {
                     throw new SyntaxTreeParsingException(reader.ViewLastValue, "A type was expected after the keyword params.");
                 }
@@ -400,12 +403,23 @@ namespace SCUMSLang.SyntaxTree
             return false;
         }
 
+        /// <summary>
+        /// 
+        /// </summary>
+        /// <param name="reader"></param>
+        /// <param name="newPosition"></param>
+        /// <param name="node"></param>
+        /// <param name="required"></param>
+        /// <param name="needConsume">The next token gets consumed before the actual token gets evaluated.</param>
+        /// <param name="hasDelimiter">The </param>
+        /// <returns></returns>
         public static bool TryRecognizeMethodCall(
             SpanReader<Token> reader,
             [NotNullWhen(true)] out int? newPosition,
             [MaybeNullWhen(false)] out MethodCallDefinition node,
             bool required = false,
-            bool needConsume = false)
+            bool needConsume = false,
+            bool expectDelimiter = false)
         {
             if (reader.ConsumeNext(needConsume)
                 && reader.ViewLastValue.TryRecognize(TokenType.Name, out var nameToken)
@@ -434,7 +448,11 @@ namespace SCUMSLang.SyntaxTree
                         out newPosition,
                         required: true,
                         needConsume: true)) {
-                    reader.SetLengthTo(newPosition.Value);
+                    // Is delimiter expected?
+                    if (expectDelimiter) {
+                        reader.SetLengthTo(newPosition.Value);
+                        newPosition = ExpectToken(reader, TokenType.Semicolon, true);
+                    }
 
                     var functionName = nameToken.GetValue<string>();
 
@@ -516,15 +534,6 @@ namespace SCUMSLang.SyntaxTree
             newPosition = null;
             node = null;
             return false;
-        }
-
-        public static int ExpectToken(SpanReader<Token> reader, TokenType tokenType, bool needConsume = false)
-        {
-            if (!reader.ConsumeNext(needConsume) || !reader.ViewLastValue.TryRecognize(tokenType)) {
-                throw new SyntaxTreeParsingException(reader.ViewLastValue, $"Specific token was expected: '{TokenTypeLibrary.SequenceDictionary[tokenType]}'");
-            }
-
-            return reader.UpperPosition;
         }
 
         public static bool TryRecognizeUsingStaticDirective(SpanReader<Token> reader, [NotNullWhen(true)] out int? newPosition, [MaybeNullWhen(false)] out Reference node)
@@ -632,6 +641,12 @@ namespace SCUMSLang.SyntaxTree
 
             if (recognizableNodes.HasFlag(RecognizableReferences.TemplateFor)
                 && TryRecognizeTemplateForExpression(reader, out newPosition, out node)) {
+                return newPosition;
+            }
+
+            if (recognizableNodes.HasFlag(RecognizableReferences.MethodCall)
+                && TryRecognizeMethodCall(reader, out newPosition, out var methodCall, expectDelimiter: true)) {
+                node = methodCall;
                 return newPosition;
             }
 

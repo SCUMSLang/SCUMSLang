@@ -5,10 +5,10 @@ namespace SCUMSLang.SyntaxTree
 {
     public abstract partial class BlockDefinition
     {
-        public sealed class LocalBlockDefinition : BlockDefinition
+        public sealed class ScopedBlockDefinition : BlockDefinition
         {
             public override BlockScope BlockScope =>
-                BlockScope.Local;
+                blockScope;
 
             public override ModuleDefinition Module =>
                 ParentBlock.Module;
@@ -20,16 +20,16 @@ namespace SCUMSLang.SyntaxTree
                 parentBlock;
 
             private readonly BlockDefinition parentBlock;
-            private readonly IBlockHolder blockHolder;
+            private readonly BlockScope blockScope;
 
-            internal LocalBlockDefinition(BlockDefinition parentBlock, IBlockHolder blockHolder)
+            internal ScopedBlockDefinition(BlockDefinition parentBlock, BlockScope blockScope)
             {
                 this.parentBlock = parentBlock;
-                this.blockHolder = blockHolder;
+                this.blockScope = blockScope;
             }
 
             protected internal override Reference Accept(SyntaxNodeVisitor visitor) =>
-                visitor.VisitLocalBlockDefinition(this);
+                visitor.VisitScopedBlockDefinition(this);
         }
     }
 }

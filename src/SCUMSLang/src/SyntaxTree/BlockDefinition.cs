@@ -213,8 +213,7 @@ namespace SCUMSLang.SyntaxTree
                 referenceRecords.Add(node);
 
                 if (node is IBlockHolder blockHolder && blockHolder.IsBlockOwnable) {
-                    var block = new LocalBlockDefinition(this, blockHolder);
-                    blockHolder.Block = block;
+                    blockHolder.SetupBlock(this);
                 }
             }
         }

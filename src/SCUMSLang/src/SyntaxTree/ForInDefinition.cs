@@ -6,7 +6,7 @@ namespace SCUMSLang.SyntaxTree
 {
     public class ForInDefinition : Reference
     {
-        public override SyntaxTreeNodeType NodeType => 
+        public override SyntaxTreeNodeType NodeType =>
             SyntaxTreeNodeType.ForInDefinition;
 
         public ParameterDefinition Parameter { get; }
@@ -21,7 +21,8 @@ namespace SCUMSLang.SyntaxTree
         protected internal override Reference Accept(SyntaxNodeVisitor visitor) =>
             visitor.VisitForInDefinition(this);
 
-        public ForInDefinition Update(ParameterDefinition parameter, IReadOnlyList<ConstantDefinition> arguments) {
+        public ForInDefinition Update(ParameterDefinition parameter, IReadOnlyList<ConstantDefinition> arguments)
+        {
             if (ReferenceEquals(Parameter, parameter) && Enumerable.SequenceEqual(Arguments, arguments, ReferenceEqualityComparer.Instance)) {
                 return this;
             }

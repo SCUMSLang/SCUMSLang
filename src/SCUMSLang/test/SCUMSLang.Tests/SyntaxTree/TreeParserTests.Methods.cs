@@ -18,7 +18,7 @@ namespace SCUMSLang.SyntaxTree
 
                 // Assert
                 Assert.True(method.IsAbstract);
-                Assert.Null(method.Block);
+                Assert.Null(method.Body);
             }
         }
     }

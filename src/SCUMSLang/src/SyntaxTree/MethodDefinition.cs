@@ -11,16 +11,18 @@ namespace SCUMSLang.SyntaxTree
             SyntaxTreeNodeType.MethodDefinition;
 
         public bool IsAbstract { get; set; }
-        public BlockDefinition? Block { get; internal set; }
+        public BlockDefinition? Body =>
+            body;
 
         public IList<AttributeDefinition> Attributes { get; private set; }
+
+        private BlockDefinition? body;
 
         bool IBlockHolder.IsBlockOwnable =>
             !IsAbstract;
 
         BlockDefinition? IBlockHolder.Block {
-            get => Block;
-            set => Block = value;
+            get => Body;
         }
 
         public MethodDefinition(
@@ -41,6 +43,9 @@ namespace SCUMSLang.SyntaxTree
         [MemberNotNull(nameof(Attributes))]
         private void OnConstruction() =>
             Attributes = new List<AttributeDefinition>();
+
+        void IBlockHolder.SetupBlock(BlockDefinition parentBlock) =>
+            BlockHolderTools.SetupBlock(ref body, parentBlock, BlockScope.Local);
 
         public new MethodDefinition Resolve() =>
             this;
@@ -73,7 +78,8 @@ namespace SCUMSLang.SyntaxTree
 
             return new MethodDefinition(Name, genericParameters, parameters) {
                 DeclaringType = DeclaringType,
-                Module = Module
+                Module = Module,
+                body = body
             };
         }
     }
