@@ -1,4 +1,5 @@
-﻿using Xunit;
+﻿using SCUMSLang.SyntaxTree.Parser;
+using Xunit;
 
 namespace SCUMSLang.SyntaxTree
 {
@@ -51,7 +52,7 @@ function TriggerCondition();
 [TriggerCondition()]";
 
                 var error = Assert.Throws<BlockEvaluatingException>(() => DefaultParser.Parse(content));
-                Assert.Contains(error.Message, "attribute");
+                Assert.Contains("attribute", error.Message);
             }
         }
     }

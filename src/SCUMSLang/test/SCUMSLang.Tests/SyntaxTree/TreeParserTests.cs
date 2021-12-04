@@ -1,5 +1,8 @@
 ﻿using System;
 using System.Diagnostics;
+using SCUMSLang.SyntaxTree.Definitions;
+using SCUMSLang.SyntaxTree.Parser;
+using SCUMSLang.SyntaxTree.References;
 using SCUMSLang.Tokenization;
 
 namespace SCUMSLang.SyntaxTree
@@ -22,8 +25,7 @@ namespace SCUMSLang.SyntaxTree
             //    .AddSystemTypes();
 
             ParserChannelParserOptionsCallback = options => {
-                options.TokenReaderBehaviour
-                    .SetSkipConditionForNonParserChannelTokens();
+                options.TokenReaderBehaviour.SetSkipConditionForNonParserChannelTokens();
             };
 
             UInt32Type = new TypeDefinition("UInt32");

@@ -1,4 +1,7 @@
-﻿namespace SCUMSLang.SyntaxTree
+﻿using SCUMSLang.SyntaxTree.Definitions;
+using SCUMSLang.SyntaxTree.Parser;
+
+namespace SCUMSLang.SyntaxTree
 {
     public static class BlockHolderTools
     {

@@ -3,6 +3,8 @@ using System.Collections;
 using System.Collections.Generic;
 using System.Linq;
 using System.Runtime.ExceptionServices;
+using SCUMSLang.SyntaxTree.Definitions;
+using SCUMSLang.SyntaxTree.References;
 
 namespace SCUMSLang.SyntaxTree
 {

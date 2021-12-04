@@ -1,4 +1,7 @@
 ﻿using System;
+using SCUMSLang.SyntaxTree.Definitions;
+using SCUMSLang.SyntaxTree.Parser;
+using SCUMSLang.SyntaxTree.References;
 using Xunit;
 
 namespace SCUMSLang.SyntaxTree

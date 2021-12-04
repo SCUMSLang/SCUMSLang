@@ -1,0 +1,4 @@
+﻿function pauses_the_game()
+    when always() {
+    pause_game();
+}

@@ -1,4 +1,5 @@
-﻿using Xunit;
+﻿using SCUMSLang.SyntaxTree.Parser;
+using Xunit;
 
 namespace SCUMSLang.SyntaxTree
 {

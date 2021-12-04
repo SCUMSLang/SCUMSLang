@@ -1,4 +1,7 @@
 ﻿using System.Linq;
+using SCUMSLang.SyntaxTree.Definitions;
+using SCUMSLang.SyntaxTree.Parser;
+using SCUMSLang.SyntaxTree.References;
 using Teronis;
 using Teronis.Collections.Specialized;
 

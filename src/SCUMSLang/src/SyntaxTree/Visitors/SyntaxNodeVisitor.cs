@@ -1,6 +1,8 @@
 ﻿using System.Collections.Generic;
 using System.Diagnostics.CodeAnalysis;
 using System.Runtime.CompilerServices;
+using SCUMSLang.SyntaxTree.Definitions;
+using SCUMSLang.SyntaxTree.References;
 
 namespace SCUMSLang.SyntaxTree.Visitors
 {
@@ -143,7 +145,7 @@ namespace SCUMSLang.SyntaxTree.Visitors
         protected internal virtual Reference VisitTypeDefinition(TypeDefinition type) =>
             type.Update(VisitAndConvert(type.BaseType));
 
-        protected internal virtual Reference VisitUsingStaticDirective(UsingStaticDirective usingStaticDirective) =>
+        protected internal virtual Reference VisitUsingStaticDirective(UsingStaticDirectiveReference usingStaticDirective) =>
             usingStaticDirective.Update(VisitAndConvert(usingStaticDirective.ElementType));
 
         protected internal virtual Reference VisitEventHandlerReference(EventHandlerReference eventHandler) => eventHandler.UpdateReference(

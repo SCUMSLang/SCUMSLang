@@ -5,6 +5,9 @@ using System.Linq;
 using System.Threading;
 using System.Threading.Tasks;
 using SCUMSLang.SyntaxTree;
+using SCUMSLang.SyntaxTree.Definitions;
+using SCUMSLang.SyntaxTree.Parser;
+using SCUMSLang.SyntaxTree.References;
 using SCUMSLang.Tokenization;
 using Teronis.IO.FileLocking;
 

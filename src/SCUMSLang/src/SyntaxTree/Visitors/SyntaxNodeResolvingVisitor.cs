@@ -1,4 +1,6 @@
-﻿namespace SCUMSLang.SyntaxTree.Visitors
+﻿using SCUMSLang.SyntaxTree.References;
+
+namespace SCUMSLang.SyntaxTree.Visitors
 {
     public class SyntaxNodeResolvingVisitor : SyntaxNodeVisitor
     {

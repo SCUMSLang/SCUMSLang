@@ -1,4 +1,6 @@
-﻿namespace SCUMSLang.SyntaxTree
+﻿using SCUMSLang.SyntaxTree.References;
+
+namespace SCUMSLang.SyntaxTree
 {
     public class ModuleParameters
     {

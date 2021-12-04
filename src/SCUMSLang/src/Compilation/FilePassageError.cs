@@ -2,6 +2,7 @@
 using System.Text;
 using System.Threading.Tasks;
 using SCUMSLang.IO;
+using SCUMSLang.SyntaxTree.Parser;
 
 namespace SCUMSLang.Compilation
 {
