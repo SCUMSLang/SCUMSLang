@@ -587,7 +587,7 @@ namespace SCUMSLang.SyntaxTree.Parser
                 var blockContainer = new BlockContainer();
                 reader.SetLengthTo(ExpectTypeReference(reader, out var usingStaticDirectiveElementType, blockContainer, needConsume: true));
                 newPosition = ExpectToken(reader, TokenType.Semicolon, needConsume: true);
-                node = new UsingStaticDirectiveReference(usingStaticDirectiveElementType) { ParentBlockContainer = blockContainer };
+                node = new UsingStaticDirectiveDefinition(usingStaticDirectiveElementType) { ParentBlockContainer = blockContainer };
                 return true;
             }
 

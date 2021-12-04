@@ -1,7 +1,7 @@
 ﻿using System;
 using Teronis.Extensions;
 
-namespace SCUMSLang.SyntaxTree.Parser
+namespace SCUMSLang.SyntaxTree
 {
     internal static class SyntaxTreeThrowHelper
     {

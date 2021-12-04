@@ -3,7 +3,7 @@ using SCUMSLang.SyntaxTree.Visitors;
 
 namespace SCUMSLang.SyntaxTree.References
 {
-    public class UsingStaticDirectiveReference : MemberReference, IBlockScopedReference, IMemberDefinition
+    public class UsingStaticDirectiveDefinition : MemberReference, IBlockScopedReference, IMemberDefinition
     {
         public override SyntaxTreeNodeType NodeType =>
             SyntaxTreeNodeType.UsingStaticDirective;
@@ -16,10 +16,10 @@ namespace SCUMSLang.SyntaxTree.References
 
         public TypeReference ElementType { get; }
 
-        public UsingStaticDirectiveReference(TypeReference elementType) =>
+        public UsingStaticDirectiveDefinition(TypeReference elementType) =>
             ElementType = elementType;
 
-        public new UsingStaticDirectiveReference Resolve() =>
+        public new UsingStaticDirectiveDefinition Resolve() =>
             this;
 
         protected override IMemberDefinition ResolveMemberDefinition() =>
@@ -28,13 +28,13 @@ namespace SCUMSLang.SyntaxTree.References
         protected internal override Reference Accept(SyntaxNodeVisitor visitor) =>
             visitor.VisitUsingStaticDirective(this);
 
-        public UsingStaticDirectiveReference Update(TypeReference elementType)
+        public UsingStaticDirectiveDefinition Update(TypeReference elementType)
         {
             if (ReferenceEquals(elementType, ElementType)) {
                 return this;
             }
 
-            return new UsingStaticDirectiveReference(elementType);
+            return new UsingStaticDirectiveDefinition(elementType);
         }
     }
 }

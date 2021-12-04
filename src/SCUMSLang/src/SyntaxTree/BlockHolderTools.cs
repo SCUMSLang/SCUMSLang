@@ -1,5 +1,4 @@
 ﻿using SCUMSLang.SyntaxTree.Definitions;
-using SCUMSLang.SyntaxTree.Parser;
 
 namespace SCUMSLang.SyntaxTree
 {

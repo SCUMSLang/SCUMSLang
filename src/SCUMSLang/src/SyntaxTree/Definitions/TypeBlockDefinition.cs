@@ -3,7 +3,6 @@ using Teronis.Collections.Specialized;
 using Teronis;
 using System;
 using System.Diagnostics.CodeAnalysis;
-using SCUMSLang.SyntaxTree.Parser;
 using SCUMSLang.SyntaxTree.References;
 
 namespace SCUMSLang.SyntaxTree.Definitions

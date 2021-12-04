@@ -80,7 +80,7 @@ namespace SCUMSLang.SyntaxTree.Definitions
 
             protected override bool TryAddMember(Reference member)
             {
-                if (member is UsingStaticDirectiveReference usingStaticDirective) {
+                if (member is UsingStaticDirectiveDefinition usingStaticDirective) {
                     if (usingStaticDirectives.ContainsKey(usingStaticDirective.Name)) {
                         throw new NameReservedException(usingStaticDirective.Name, "You cannot add a using-static-directive with same type twice.");
                     }
@@ -124,28 +124,28 @@ namespace SCUMSLang.SyntaxTree.Definitions
 
             public readonly struct UsingStaticDirectiveEntry
             {
-                public static UsingStaticDirectiveEntry Resolved(UsingStaticDirectiveReference directive) =>
+                public static UsingStaticDirectiveEntry Resolved(UsingStaticDirectiveDefinition directive) =>
                     new UsingStaticDirectiveEntry(directive, true);
 
-                public UsingStaticDirectiveReference Directive { get; }
+                public UsingStaticDirectiveDefinition Directive { get; }
                 public bool IsResolved { get; }
 
-                private UsingStaticDirectiveEntry(UsingStaticDirectiveReference directive, bool isResolved)
+                private UsingStaticDirectiveEntry(UsingStaticDirectiveDefinition directive, bool isResolved)
                 {
                     Directive = directive;
                     IsResolved = isResolved;
                 }
 
-                public UsingStaticDirectiveEntry(UsingStaticDirectiveReference directive)
+                public UsingStaticDirectiveEntry(UsingStaticDirectiveDefinition directive)
                 {
                     Directive = directive;
                     IsResolved = false;
                 }
 
-                public static implicit operator UsingStaticDirectiveEntry(UsingStaticDirectiveReference directive) =>
+                public static implicit operator UsingStaticDirectiveEntry(UsingStaticDirectiveDefinition directive) =>
                     new UsingStaticDirectiveEntry(directive);
 
-                public static implicit operator UsingStaticDirectiveReference(UsingStaticDirectiveEntry entry) =>
+                public static implicit operator UsingStaticDirectiveDefinition(UsingStaticDirectiveEntry entry) =>
                     entry.Directive;
             }
         }

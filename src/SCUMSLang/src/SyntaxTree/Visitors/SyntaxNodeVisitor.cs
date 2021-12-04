@@ -145,7 +145,7 @@ namespace SCUMSLang.SyntaxTree.Visitors
         protected internal virtual Reference VisitTypeDefinition(TypeDefinition type) =>
             type.Update(VisitAndConvert(type.BaseType));
 
-        protected internal virtual Reference VisitUsingStaticDirective(UsingStaticDirectiveReference usingStaticDirective) =>
+        protected internal virtual Reference VisitUsingStaticDirective(UsingStaticDirectiveDefinition usingStaticDirective) =>
             usingStaticDirective.Update(VisitAndConvert(usingStaticDirective.ElementType));
 
         protected internal virtual Reference VisitEventHandlerReference(EventHandlerReference eventHandler) => eventHandler.UpdateReference(

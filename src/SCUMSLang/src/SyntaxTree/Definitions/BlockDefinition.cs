@@ -2,7 +2,6 @@
 using System.Collections.Generic;
 using System.Diagnostics.CodeAnalysis;
 using System.Linq;
-using SCUMSLang.SyntaxTree.Parser;
 using SCUMSLang.SyntaxTree.References;
 using Teronis.Collections.Generic;
 using Teronis.Collections.Specialized;
