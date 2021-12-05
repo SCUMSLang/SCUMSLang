@@ -8,23 +8,14 @@ namespace SCUMSLang.SyntaxTree.Definitions
 {
     public class MethodDefinition : MethodReference, IMemberDefinition, IOverloadableReference, IBlockHolder, IAttributesHolder
     {
-        public override SyntaxTreeNodeType NodeType =>
-            SyntaxTreeNodeType.MethodDefinition;
-
+        public override SyntaxTreeNodeType NodeType => SyntaxTreeNodeType.MethodDefinition;
         public bool IsAbstract { get; set; }
-        public BlockDefinition? Body =>
-            body;
-
+        public BlockDefinition? Body => body;
         public IList<AttributeDefinition> Attributes { get; private set; }
 
         private BlockDefinition? body;
-
-        bool IBlockHolder.IsBlockOwnable =>
-            !IsAbstract;
-
-        BlockDefinition? IBlockHolder.Block {
-            get => Body;
-        }
+        bool IBlockHolder.IsBlockOwnable => !IsAbstract;
+        BlockDefinition? IBlockHolder.Block => Body;
 
         public MethodDefinition(
             string name,

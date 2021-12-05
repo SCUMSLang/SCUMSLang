@@ -8,16 +8,9 @@ namespace SCUMSLang.SyntaxTree.References
     [DebuggerDisplay("{" + nameof(GetDebuggerDisplay) + "(),nq}")]
     public abstract class MemberReference : Reference, IOwnableReference
     {
-        public override SyntaxTreeNodeType NodeType =>
-            SyntaxTreeNodeType.MemberReference;
-
-        public virtual TypeReference? DeclaringType {
-            get => declaringType;
-            internal set => declaringType = value;
-        }
-
-        public virtual string Name =>
-            name;
+        public override SyntaxTreeNodeType NodeType => SyntaxTreeNodeType.MemberReference;
+        public virtual TypeReference? DeclaringType { get; internal set; }
+        public virtual string Name => name;
 
         [AllowNull]
         public BlockContainer ParentBlockContainer {
@@ -31,20 +24,19 @@ namespace SCUMSLang.SyntaxTree.References
             internal set => ParentBlockContainer.Block = value;
         }
 
-        [MemberNotNullWhen(true, nameof(ParentBlock))]
-        public virtual bool HasParentBlock =>
-            ParentBlockContainer.HasBlock;
-
-        private TypeReference? declaringType;
-        private BlockContainer? parentBlockContainer;
-        private string name;
-        private MemberReference? resolvedDefinition;
-
         [AllowNull]
         BlockDefinition IOwnableReference.ParentBlock {
             get => ParentBlock;
             set => ParentBlock = value;
         }
+
+        [MemberNotNullWhen(true, nameof(ParentBlock))]
+        public virtual bool HasParentBlock =>
+            ParentBlockContainer.HasBlock;
+
+        private BlockContainer? parentBlockContainer;
+        private string name;
+        private MemberReference? resolvedDefinition;
 
         internal MemberReference() =>
             name = string.Empty;

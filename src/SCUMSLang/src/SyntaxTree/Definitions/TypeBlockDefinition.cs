@@ -7,15 +7,18 @@ using SCUMSLang.SyntaxTree.References;
 
 namespace SCUMSLang.SyntaxTree.Definitions
 {
-    public abstract class TypeBlockDefinition : BlockDefinition, IReferenceResolver
+    public abstract class TypeBlockDefinition : BlockDefinition
     {
         public override SyntaxTreeNodeType NodeType =>
             SyntaxTreeNodeType.TypeBlockDefinition;
 
-        private TypeBlockOwnedReferenceResolver referenceResolver;
+        /// <summary>
+        /// Resolves the references that are exclusively part of this block.
+        /// </summary>
+        public IReferenceResolver BlockReferenceResolver;
 
         public TypeBlockDefinition() =>
-            referenceResolver = new TypeBlockOwnedReferenceResolver(this);
+            BlockReferenceResolver = new TypeBlockReferenceResolver(this);
 
         public bool TryGetType(string shortName, bool isLongName, [MaybeNullWhen(false)] out TypeDefinition type)
         {
@@ -48,19 +51,7 @@ namespace SCUMSLang.SyntaxTree.Definitions
             return type;
         }
 
-        TypeDefinition IReferenceResolver.Resolve(TypeReference type) =>
-            referenceResolver.Resolve(type);
-
-        FieldDefinition IReferenceResolver.Resolve(FieldReference field) =>
-            referenceResolver.Resolve(field);
-
-        MethodDefinition IReferenceResolver.Resolve(MethodReference method) =>
-            referenceResolver.Resolve(method);
-
-        EventHandlerDefinition IReferenceResolver.Resolve(EventHandlerReference eventHandler) =>
-            referenceResolver.Resolve(eventHandler);
-
-        private class TypeBlockOwnedReferenceResolver : ReferenceResolver
+        private class TypeBlockReferenceResolver : ReferenceResolver
         {
             public override LinkedBucketList<string, Reference> BlockMembers =>
                 block.LocalMemberList;
@@ -70,7 +61,7 @@ namespace SCUMSLang.SyntaxTree.Definitions
 
             private readonly BlockDefinition block;
 
-            public TypeBlockOwnedReferenceResolver(BlockDefinition block) =>
+            public TypeBlockReferenceResolver(BlockDefinition block) =>
                 this.block = block ?? throw new ArgumentNullException(nameof(block));
         }
     }

@@ -1,23 +1,32 @@
 ﻿using SCUMSLang.SyntaxTree.References;
-using SCUMSLang.SyntaxTree.Visitors;
 
 namespace SCUMSLang.SyntaxTree.Definitions
 {
-    public sealed partial class ModuleDefinition : TypeReference, IReferenceResolver, IMemberDefinition
+    public sealed partial class ModuleDefinition : TypeReference, IMemberDefinition
     {
-        public TypeBlockDefinition Block =>
-            block;
-
-        public override BlockDefinition ParentBlock =>
-            Block;
-
+        public TypeBlockDefinition Block => block;
+        public override BlockDefinition ParentBlock => Block;
+        /// <summary>
+        /// The file path of the module. Empty if not known.
+        /// </summary>
         public string FilePath { get; }
+        /// <summary>
+        /// Resolves the references that have been imported or are exclusively
+        /// part of this block; in this order.
+        /// If not found the reference resolver specified at construction time
+        /// is considered too.
+        /// </summary>
+        public IReferenceResolver ModuleReferenceResolver { get; }
+        /// <summary>
+        /// Resolves the references that are exclusively part of this block.
+        /// If not found the reference resolver specified at construction time
+        /// is considered too.
+        /// </summary>
+        public IReferenceResolver BlockReferenceResolver { get; }
 
         //internal SyntaxNodeModuleFillingVisitor ModuleFillingVisitor { get; }
 
         private ModuleBlockDefinition block;
-        private readonly IReferenceResolver moduleExclusiveReferenceResolver;
-        private readonly IReferenceResolver referenceResolver;
 
         public ModuleDefinition(ModuleParameters? parameters)
             : base(name: string.Empty)
@@ -27,22 +36,24 @@ namespace SCUMSLang.SyntaxTree.Definitions
             FilePath = parameters?.FilePath ?? string.Empty;
 
             if (parameters?.ReferenceResolver is null) {
-                moduleExclusiveReferenceResolver = block.ModuleExclusiveReferenceResolver;
-                referenceResolver = block;
+                ModuleReferenceResolver = block.ModuleReferenceResolver;
+                BlockReferenceResolver = block.BlockReferenceResolver;
             } else {
-                static ReferenceResolverPool createReferenceResolverPool(IReferenceResolver moduleBlockReferenceResolver, IReferenceResolver parametersReferenceResolver)
+                static ReferenceResolverPool createReferenceResolverPool(IReferenceResolver moduleReferenceResolver, IReferenceResolver parametersReferenceResolver)
                 {
                     var referenceResolverPool = new ReferenceResolverPool();
-                    referenceResolverPool.Add(moduleBlockReferenceResolver);
+                    referenceResolverPool.Add(moduleReferenceResolver);
                     referenceResolverPool.Add(parametersReferenceResolver);
                     return referenceResolverPool;
                 }
 
-                moduleExclusiveReferenceResolver = createReferenceResolverPool(
-                    block.ModuleExclusiveReferenceResolver,
-                    parameters.ReferenceResolver);
+                ModuleReferenceResolver = createReferenceResolverPool(
+                    moduleReferenceResolver: block.ModuleReferenceResolver,
+                    parametersReferenceResolver: parameters.ReferenceResolver);
 
-                referenceResolver = createReferenceResolverPool(block, parameters.ReferenceResolver);
+                BlockReferenceResolver = createReferenceResolverPool(
+                    moduleReferenceResolver: block.BlockReferenceResolver,
+                    parametersReferenceResolver: parameters.ReferenceResolver);
             }
         }
 
@@ -56,16 +67,16 @@ namespace SCUMSLang.SyntaxTree.Definitions
             block.ResolveUsingStaticDirectives();
 
         public TypeDefinition Resolve(TypeReference type) =>
-            moduleExclusiveReferenceResolver.Resolve(type);
+            ModuleReferenceResolver.Resolve(type);
 
         public FieldDefinition Resolve(FieldReference field) =>
-            moduleExclusiveReferenceResolver.Resolve(field);
+            ModuleReferenceResolver.Resolve(field);
 
         public MethodDefinition Resolve(MethodReference method) =>
-            moduleExclusiveReferenceResolver.Resolve(method);
+            ModuleReferenceResolver.Resolve(method);
 
         public EventHandlerDefinition Resolve(EventHandlerReference method) =>
-            moduleExclusiveReferenceResolver.Resolve(method);
+            ModuleReferenceResolver.Resolve(method);
 
         //public new ModuleDefinition Resolve()
         //{
@@ -73,30 +84,5 @@ namespace SCUMSLang.SyntaxTree.Definitions
         //    visitor.Visit(this); // TODO: VERIFY
         //    return this;
         //}
-
-        public new ModuleDefinition Resolve() =>
-            this;
-
-        public void Import(MemberReference member) =>
-            block.Import(member);
-
-        protected internal override Reference Accept(SyntaxNodeVisitor visitor) =>
-            visitor.VisitModuleDefinition(this);
-
-        #region IReferenceResolver
-
-        TypeDefinition IReferenceResolver.Resolve(TypeReference type) =>
-            referenceResolver.Resolve(type);
-
-        FieldDefinition IReferenceResolver.Resolve(FieldReference field) =>
-            referenceResolver.Resolve(field);
-
-        MethodDefinition IReferenceResolver.Resolve(MethodReference method) =>
-            referenceResolver.Resolve(method);
-
-        EventHandlerDefinition IReferenceResolver.Resolve(EventHandlerReference eventHandler) =>
-            referenceResolver.Resolve(eventHandler);
-
-        #endregion
     }
 }

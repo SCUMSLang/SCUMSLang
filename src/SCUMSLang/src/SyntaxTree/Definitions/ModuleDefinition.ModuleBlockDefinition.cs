@@ -17,32 +17,32 @@ namespace SCUMSLang.SyntaxTree.Definitions
                 BlockScope.Module;
 
             public override ModuleDefinition Module { get; }
-            //public override TypeReference DeclaringType => Module;
-
-            //public override string Name =>
-            //    string.Empty;
 
             public IReadOnlyDictionary<string, UsingStaticDirectiveEntry> UsingStaticDirectives =>
                 usingStaticDirectives;
 
-            internal IReferenceResolver ModuleExclusiveReferenceResolver { get; }
+            /// <summary>
+            /// Resolves the references that have been imported or are exclusively
+            /// part of this block; in this order.
+            /// </summary>
+            internal IReferenceResolver ModuleReferenceResolver { get; }
 
             internal protected override LinkedBucketList<string, TypeReference> ModuleTypeList { get; }
 
             protected override BlockDefinition ParentBlock => this;
 
-            private NestedReferenceResolver nestedReferenceResolver;
+            private ImportedReferenceResolver importReferenceResolver;
             private Dictionary<string, UsingStaticDirectiveEntry> usingStaticDirectives;
             private HashSet<string> typeNamesOfResolvedUsingStaticDirective;
 
             public ModuleBlockDefinition(ModuleDefinition module)
             {
-                nestedReferenceResolver = new NestedReferenceResolver();
+                importReferenceResolver = new ImportedReferenceResolver();
 
-                var moduleExclusiveReferencePool = new ReferenceResolverPool();
-                moduleExclusiveReferencePool.Add(nestedReferenceResolver);
-                moduleExclusiveReferencePool.Add(this);
-                ModuleExclusiveReferenceResolver = moduleExclusiveReferencePool;
+                var exclusiveReferencePool = new ReferenceResolverPool();
+                exclusiveReferencePool.Add(importReferenceResolver);
+                exclusiveReferencePool.Add(BlockReferenceResolver);
+                ModuleReferenceResolver = exclusiveReferencePool;
 
                 typeNamesOfResolvedUsingStaticDirective = new HashSet<string>();
                 usingStaticDirectives = new Dictionary<string, UsingStaticDirectiveEntry>();
@@ -70,7 +70,7 @@ namespace SCUMSLang.SyntaxTree.Definitions
                     }
 
                     foreach (var nestedType in nestedTypesProvider.GetNestedTypes()) {
-                        nestedReferenceResolver.CascadingTypes.Add(nestedType.Name, nestedType);
+                        importReferenceResolver.CascadingTypes.Add(nestedType.Name, nestedType);
                     }
 
                     usingStaticDirectives[directiveName] = UsingStaticDirectiveEntry.Resolved(directiveEntry);
@@ -109,17 +109,16 @@ namespace SCUMSLang.SyntaxTree.Definitions
             protected internal override Reference Accept(SyntaxNodeVisitor visitor) =>
                 visitor.VisitModuleBlockDefinition(this);
 
-            private class NestedReferenceResolver : ReferenceResolver
+            private class ImportedReferenceResolver : ReferenceResolver
             {
                 public override LinkedBucketList<string, Reference> BlockMembers { get; }
                 public override LinkedBucketList<string, TypeReference> CascadingTypes { get; }
 
-                public NestedReferenceResolver()
+                public ImportedReferenceResolver()
                 {
                     BlockMembers = new LinkedBucketList<string, Reference>();
                     CascadingTypes = new LinkedBucketList<string, TypeReference>();
                 }
-
             }
 
             public readonly struct UsingStaticDirectiveEntry

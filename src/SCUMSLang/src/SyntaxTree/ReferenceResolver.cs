@@ -11,28 +11,25 @@ namespace SCUMSLang.SyntaxTree
         public abstract LinkedBucketList<string, Reference> BlockMembers { get; }
         public abstract LinkedBucketList<string, TypeReference> CascadingTypes { get; }
 
-        private T? findSingleReference<T>(IReadOnlyLinkedBucketList<string, Reference> references, MemberReference type)
-         where T : class
+        private T? FindByMember<T>(IReadOnlyLinkedBucketList<string, Reference> references, MemberReference member)
+            where T : MemberReference
         {
-            var (success, bucket) = references.Buckets.TryGetValue(type.Name);
+            var (success, bucket) = references.Buckets.TryGetValue(member.Name);
 
             if (!success) {
                 return null;
             }
 
-            var typeDefinitions = bucket.OfType<T>();
+            var typedReferences = bucket.OfType<T>();
 
-            return typeDefinitions.SingleOrDefault(typeDefinition => {
-                return type.DeclaringType == type.DeclaringType;
-            });
+            return typedReferences.SingleOrDefault(typedReference =>
+                TypeReferenceEqualityComparer.ViaResolveComparer.Default.Equals(typedReference.DeclaringType, member.DeclaringType));
         }
 
         public TypeDefinition Resolve(TypeReference type)
         {
-            var typeDefinition = findSingleReference<TypeDefinition>(CascadingTypes, type)
+            return FindByMember<TypeDefinition>(CascadingTypes, type)
                 ?? throw SyntaxTreeThrowHelper.TypeNotFound(type.Name, SyntaxTreeThrowHelper.DefinitionNotFoundExceptionDelegate);
-
-            return typeDefinition;
         }
 
         public FieldDefinition Resolve(FieldReference field)
@@ -42,7 +39,7 @@ namespace SCUMSLang.SyntaxTree
             if (field.DeclaringType is null) {
                 // This allows to resolve field members in own block.
                 // TODO: What about resolving a field member of static block in local block?
-                fieldDefinition = findSingleReference<FieldDefinition>(BlockMembers, field);
+                fieldDefinition = FindByMember<FieldDefinition>(BlockMembers, field);
             } else {
                 var declaringType = Resolve(field.DeclaringType);
                 fieldDefinition = declaringType.Fields?.SingleOrDefault(x => x.Name == field.Name);
@@ -64,9 +61,8 @@ namespace SCUMSLang.SyntaxTree
                     .OfType<MethodDefinition>()
                     .Where(x => x.DeclaringType == method.DeclaringType);
 
-                methodDefinition = typeDefinitions.SingleOrDefault(x => {
-                    return MethodOverloadEqualityComparer.Default.Equals(x, method);
-                });
+                methodDefinition = typeDefinitions.SingleOrDefault(x =>
+                    MethodOverloadEqualityComparer.Default.Equals(x, method));
             }
 
             if (methodDefinition is null) {
@@ -85,9 +81,8 @@ namespace SCUMSLang.SyntaxTree
                     .OfType<EventHandlerDefinition>()
                     .Where(x => x.DeclaringType == eventHandler.DeclaringType);
 
-                eventHandlerDefinition = typeDefinitions.SingleOrDefault(x => {
-                    return EventHandlerReferenceEqualityComparer.OverloadComparer.Default.Equals(x, eventHandler);
-                });
+                eventHandlerDefinition = typeDefinitions.SingleOrDefault(x =>
+                    EventHandlerReferenceEqualityComparer.OverloadComparer.Default.Equals(x, eventHandler));
             }
 
             if (eventHandlerDefinition is null) {
