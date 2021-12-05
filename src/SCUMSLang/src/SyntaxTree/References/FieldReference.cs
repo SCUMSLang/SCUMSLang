@@ -27,8 +27,8 @@ namespace SCUMSLang.SyntaxTree.References
 
         public new virtual FieldDefinition Resolve()
         {
-            return resolvedDefinition = resolvedDefinition
-                ?? ParentBlock?.Module.Resolve(this)
+            return resolvedDefinition 
+                ??= ParentBlock?.Module.Resolve(this)
                 ?? throw new NotSupportedException();
         }
 
