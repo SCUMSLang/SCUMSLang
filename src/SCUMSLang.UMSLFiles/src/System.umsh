@@ -5,6 +5,8 @@ typedef String string;
 typedef enum { false, true } Boolean;
 typedef Boolean bool;
 
+typedef enum { Module } MethodScopes;
+
 /// <summary>Used by compiler! The function is intended to be used as attribute to mark an abstract function as attribute.</summary>
 [Attribute]
 function Attribute();
@@ -13,13 +15,13 @@ function Attribute();
 [Attribute]
 function TriggerCondition();
 
-/// <summary>Used by compiler! The function is intended to be used as attribute to mark an abstract function as only usable in module scope.</summary>
+/// <summary>Used by compiler! The function is intended to be used as attribute to mark an abstract function as only usable in specific scope(s).</summary>
 [Attribute]
-function OnlyModuleScope();
+function ScopeAllowance(params Scopes[] allowedScopes);
 
 /// <summary>
 /// Declares a death counter of (an) unit(s) from the specified player being reservable by compiler.
-/// Internally a death counter represents an UInt32 value which the compiler specific triggers need.
+/// Internally a death counter represents an UInt32 value which the compiler-specific triggers need.
 /// </summary>
-[OnlyModuleScope]
+[ScopeAllowance(Scopes.Module)]
 function add_uint32(Player PlayerId, params Unit[] units);
