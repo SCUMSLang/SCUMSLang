@@ -5,7 +5,7 @@ using System.Runtime.Serialization;
 namespace SCUMSLang.SyntaxTree.Parser
 {
     [Serializable]
-    public class SyntaxTreeParsingException : Exception
+    public class SyntaxTreeParsingException : Exception, IParsingException
     {
         public int FilePosition { get; private set; }
         public byte FilePositionOffset { get; private set; }

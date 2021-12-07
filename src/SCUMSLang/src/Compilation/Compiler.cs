@@ -64,8 +64,8 @@ namespace SCUMSLang.Compilation
                 foreach (var import in importGraph.TopologizedImports) {
                     import.ParseToEnd();
                 }
-            } catch (SyntaxTreeParsingException error) {
-                var compilerError = await FilePassageError.CreateFromFilePassageAsync(error);
+            } catch (Exception error) when (error is IParsingException parsingError) {
+                var compilerError = await FilePassageError.CreateFromFilePassageAsync((dynamic)parsingError);
                 compilerErrors.Add(compilerError);
             }
 

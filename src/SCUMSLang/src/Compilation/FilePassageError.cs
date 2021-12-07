@@ -8,7 +8,8 @@ namespace SCUMSLang.Compilation
 {
     public class FilePassageError : CompilerError
     {
-        public static async Task<CompilerError> CreateFromFilePassageAsync(SyntaxTreeParsingException error)
+        public static async Task<CompilerError> CreateFromFilePassageAsync<T>(T error)
+            where T : Exception, IParsingException
         {
             var compilerErrorType = CompilerErrorSourceType.SyntaxTree;
             var errorMessage = error.Message;

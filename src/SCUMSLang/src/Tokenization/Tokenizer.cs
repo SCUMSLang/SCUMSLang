@@ -27,6 +27,7 @@ namespace SCUMSLang.Tokenization
                     newPosition = RecognizeToken(charReader, out token);
                 } catch (TokenParsingException error) {
                     error.FileLine = previousLastLine;
+                    error.FilePath = filePath;
                     throw;
                 }
 
@@ -37,7 +38,8 @@ namespace SCUMSLang.Tokenization
                     throw new TokenParsingException(position, "Character(s) couldn't be recognized as token.") {
                         FilePositionOffset = positionOffset,
                         FileLine = previousLastLine,
-                        FileLinePosition = fileLinePosition
+                        FileLinePosition = fileLinePosition,
+                        FilePath = filePath
                     };
                 }
 
@@ -122,8 +124,8 @@ namespace SCUMSLang.Tokenization
             }
 
             return Tokenize(
-                Encoding.ASCII.GetString(fileBytesMemory.Span), 
-                positionOffset: (byte)filePositionOffset, 
+                Encoding.ASCII.GetString(fileBytesMemory.Span),
+                positionOffset: (byte)filePositionOffset,
                 filePath: fileStream.Name);
         }
     }

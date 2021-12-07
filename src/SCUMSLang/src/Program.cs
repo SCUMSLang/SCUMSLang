@@ -1,4 +1,5 @@
 ﻿using System;
+using System.Collections.Generic;
 using System.Diagnostics;
 using System.Threading.Tasks;
 using CommandLine;
@@ -9,6 +10,13 @@ namespace SCUMSLang
 {
     public partial class Program
     {
+        static void DisplayErrors(IEnumerable<CompilerError> errors)
+        {
+            foreach (var error in errors) {
+                Console.WriteLine(error.ToString());
+            }
+        }
+
         static async Task<int> Main(string[] args)
         {
             var stopwatch = new Stopwatch();
@@ -29,7 +37,7 @@ namespace SCUMSLang
             }
 
             try {
-                await Compiler.Default.CompileAsync(parameters => {
+                var parserResult = await Compiler.Default.CompileAsync(parameters => {
                     if (options.SystemSources.Count != 0) {
                         parameters.SystemSources.AddRange(options.SystemSources);
                     }
@@ -43,7 +51,11 @@ namespace SCUMSLang
                     }
                 });
 
-                Console.WriteLine($"Finished in {stopwatch.Elapsed.TotalMinutes}m {stopwatch.Elapsed.Seconds}s");
+                if (parserResult.HasErrors) {
+                    DisplayErrors(parserResult.Errors);
+                } else {
+                    Console.WriteLine($"Finished in {stopwatch.Elapsed.TotalMinutes}m {stopwatch.Elapsed.Seconds}s");
+                }
             } catch (Exception error) {
                 Console.WriteLine(error.Message);
             } finally {

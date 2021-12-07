@@ -4,12 +4,14 @@ using System.Runtime.Serialization;
 namespace SCUMSLang.Tokenization
 {
     [Serializable]
-    internal class TokenParsingException : Exception
+    internal class TokenParsingException : Exception, IParsingException
     {
         public int FilePosition { get; }
-        public byte FilePositionOffset { get; internal set; }
+        public byte FilePositionOffset { get; init; }
+        int IParsingException.FilePositionLength => 1;
         public int FileLine { get; internal set; }
-        public int FileLinePosition { get; internal set; }
+        public int FileLinePosition { get; init; }
+        public string? FilePath { get; internal set; }
 
         public TokenParsingException(int position) =>
             FilePosition = position;
