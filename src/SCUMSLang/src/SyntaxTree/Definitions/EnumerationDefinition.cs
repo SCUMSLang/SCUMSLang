@@ -25,7 +25,7 @@ namespace SCUMSLang.SyntaxTree.Definitions
         protected internal override Reference Accept(SyntaxNodeVisitor visitor) =>
             visitor.VisitEnumerationDefinition(this);
 
-        public EnumerationDefinition Update(TypeReference? baseType, IReadOnlyList<FieldDefinition> fields)
+        public EnumerationDefinition UpdateDefinition(TypeReference? baseType, IReadOnlyList<FieldDefinition> fields)
         {
             if (ReferenceEquals(baseType, BaseType) && ReferenceEquals(fields, FieldCollection)) {
                 return this;

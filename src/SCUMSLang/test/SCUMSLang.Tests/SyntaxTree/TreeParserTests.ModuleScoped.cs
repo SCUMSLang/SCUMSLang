@@ -94,8 +94,8 @@ function daisy() {
 
                 var module = DefaultParser.Parse(content).Module;
                 var daisyMethod = module.Block.GetMethod("daisy").Resolve();
-                Assert.Equal(1, daisyMethod.Body.ReferenceRecords.Count);
-                Assert.IsType<MemberAssignmenDefinition>(daisyMethod.Body.ReferenceRecords[0]);
+                Assert.Equal(1, daisyMethod.Body.BookkeptReferences.Count);
+                Assert.IsType<MemberAssignmenDefinition>(daisyMethod.Body.BookkeptReferences[0]);
             }
 
             [Fact]

@@ -6,12 +6,6 @@ namespace SCUMSLang.SyntaxTree.References
 {
     public class TypeReference : MemberReference
     {
-        public static TypeReference CreateString(BlockContainer? blockContainer) =>
-            new TypeReference(SystemTypeLibrary.Sequences[SystemType.String]) { ParentBlockContainer = blockContainer };
-
-        public static TypeReference CreateInteger(BlockContainer? blockContainer) =>
-            new TypeReference(SystemTypeLibrary.Sequences[SystemType.Integer]) { ParentBlockContainer = blockContainer };
-
         public override SyntaxTreeNodeType NodeType =>
             SyntaxTreeNodeType.TypeReference;
 
@@ -43,5 +37,17 @@ namespace SCUMSLang.SyntaxTree.References
 
         protected internal override Reference Accept(SyntaxNodeVisitor visitor) =>
             visitor.VisitTypeReference(this);
+    }
+}
+
+namespace SCUMSLang.SyntaxTree.References
+{
+    partial class Reference
+    {
+        public static TypeReference CreateTypeReference(string name, BlockContainer? blockContainer) =>
+            new TypeReference(name) { ParentBlockContainer = blockContainer };
+
+        public static TypeReference CreateTypeReference(SystemType systemType, BlockContainer? blockContainer) =>
+            CreateTypeReference(SystemTypeLibrary.Sequences[systemType], blockContainer);
     }
 }

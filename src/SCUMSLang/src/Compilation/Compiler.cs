@@ -3,7 +3,8 @@ using System.Collections.Generic;
 using System.Threading.Tasks;
 using SCUMSLang.IO;
 using System.IO;
-using SCUMSLang.SyntaxTree.Parser;
+using SCUMSLang.SyntaxTree;
+using SCUMSLang.SyntaxTree.Definitions;
 
 namespace SCUMSLang.Compilation
 {
@@ -12,6 +13,8 @@ namespace SCUMSLang.Compilation
         public static Compiler Default = new Compiler();
 
         public CompilerSettings Settings { get; }
+
+        private ModuleDefinition systemModule = new ModuleDefinition().AddSystemTypes();
 
         public Compiler() =>
             Settings = new CompilerSettings();
@@ -23,13 +26,8 @@ namespace SCUMSLang.Compilation
             Settings = options;
         }
 
-        public async Task<CompilerResult> CompileAsync(Action<CompilerParameters>? parametersCallback)
+        private List<string> GetImportPaths(CompilerParameters parameters)
         {
-            var parameters = new CompilerParameters();
-            parametersCallback?.Invoke(parameters);
-
-            var importPaths = new List<string>();
-
             static void addImportPath(List<string> importPaths, string importPath)
             {
                 if (!PathTools.IsFullPath(importPath)) {
@@ -38,6 +36,8 @@ namespace SCUMSLang.Compilation
 
                 importPaths.Add(importPath);
             }
+
+            var importPaths = new List<string>();
 
             foreach (var systemSource in parameters.SystemSources) {
                 addImportPath(importPaths, systemSource);
@@ -51,6 +51,22 @@ namespace SCUMSLang.Compilation
                 addImportPath(importPaths, parameters.ImplicitUInt32PoolSource);
             }
 
+            return importPaths;
+        }
+
+        public void ConfigureModuleParameters(ModuleParameters moduleParameters)
+        {
+            var referenceResolver = new ReferenceResolverPool();
+            referenceResolver.Add(systemModule.BlockReferenceResolver);
+            moduleParameters.ReferenceResolver = referenceResolver;
+        }
+
+        public async Task<CompilerResult> CompileAsync(Action<CompilerParameters>? parametersCallback)
+        {
+            var compilerParameters = new CompilerParameters();
+            parametersCallback?.Invoke(compilerParameters);
+            var importPaths = GetImportPaths(compilerParameters);
+
             // TODO: !?!?!!??
             //var systemBlock = new ModuleDefinition()
             //    .AddSystemTypes();
@@ -59,10 +75,14 @@ namespace SCUMSLang.Compilation
             List<CompilerError>? compilerErrors = new List<CompilerError>();
 
             try {
-                importGraph = await DirectAcyclicImportGraph.LoadImportGraphAsync(importPaths);
+                importGraph = await DirectAcyclicImportGraph.GenerateImportGraphAsync(importPaths, ConfigureModuleParameters);
 
                 foreach (var import in importGraph.TopologizedImports) {
-                    import.ParseToEnd();
+                    import.ReadModule();
+                }
+
+                foreach (var import in importGraph.TopologizedImports) {
+                    import.ResolveModule();
                 }
             } catch (Exception error) when (error is IParsingException parsingError) {
                 var compilerError = await FilePassageError.CreateFromFilePassageAsync((dynamic)parsingError);

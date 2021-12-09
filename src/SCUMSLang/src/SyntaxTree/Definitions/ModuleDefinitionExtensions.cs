@@ -12,13 +12,14 @@ namespace SCUMSLang.SyntaxTree.Definitions
         /// <returns></returns>
         public static ModuleDefinition AddSystemTypes(this ModuleDefinition module)
         {
-            module.Block.AddNode(new TypeDefinition(SystemTypeLibrary.Sequences[SystemType.Integer]) {
-                AllowOverwriteOnce = true
-            });
+            module.Block.AddNode(Reference.CreateTypeDefinition(
+                SystemType.Integer,
+                blockContainer: null,
+                allowOverwriteOnce: true));
 
-            module.Block.AddNode(new TypeDefinition(SystemTypeLibrary.Sequences[SystemType.String]) {
-                AllowOverwriteOnce = true
-            });
+            module.Block.AddNode(Reference.CreateTypeDefinition(SystemType.String,
+                blockContainer: null,
+                allowOverwriteOnce: true));
 
             var boolEnumType = Reference.CreateEnumDefinition(
                 SystemTypeLibrary.Sequences[SystemType.Boolean],

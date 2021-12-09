@@ -29,7 +29,7 @@ namespace SCUMSLang.SyntaxTree.Definitions
             } else {
                 typesByName = LocalMemberList;
             }
-
+            
             var (success, bucket) = typesByName.Buckets.TryGetValue(shortName);
 
             if (!success) {

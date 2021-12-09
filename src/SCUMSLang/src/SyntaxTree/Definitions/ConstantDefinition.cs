@@ -21,7 +21,7 @@ namespace SCUMSLang.SyntaxTree.Definitions
         protected internal override Reference Accept(SyntaxNodeVisitor visitor) =>
             visitor.VisitConstantDefinition(this);
 
-        public ConstantDefinition Update(TypeReference valueType)
+        public ConstantDefinition UpdateDefinition(TypeReference valueType)
         {
             if (ReferenceEquals(ValueType, valueType)) {
                 return this;

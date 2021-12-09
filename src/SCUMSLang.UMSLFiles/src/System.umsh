@@ -5,7 +5,7 @@ typedef String string;
 typedef enum { false, true } Boolean;
 typedef Boolean bool;
 
-typedef enum { Module } MethodScopes;
+typedef enum { Module } Scopes;
 
 /// <summary>Used by compiler! The function is intended to be used as attribute to mark an abstract function as attribute.</summary>
 [Attribute]

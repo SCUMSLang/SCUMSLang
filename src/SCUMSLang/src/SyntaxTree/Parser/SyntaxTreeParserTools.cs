@@ -329,17 +329,17 @@ namespace SCUMSLang.SyntaxTree.Parser
         public static ConstantDefinition GetConstant(Token constantToken, BlockContainer? blockContainer)
         {
             if (constantToken.TokenType == TokenType.Number) {
-                var stringTypeReference = TypeReference.CreateInteger(blockContainer);
+                var stringTypeReference = Reference.CreateTypeReference(SystemType.Integer, blockContainer);
                 return new ConstantDefinition(stringTypeReference, constantToken.GetValue<int>());
             }
 
             if (constantToken.TokenType == TokenType.String) {
-                var stringTypeReference = TypeReference.CreateString(blockContainer);
+                var stringTypeReference = Reference.CreateTypeReference(SystemType.String, blockContainer);
                 return new ConstantDefinition(stringTypeReference, constantToken.GetValue<string>());
             }
 
             if (constantToken.TokenType == TokenType.Name) {
-                var typeReference = new TypeReference(constantToken.GetValue<string>()) { ParentBlockContainer = blockContainer };
+                var typeReference = Reference.CreateTypeReference(constantToken.GetValue<string>(), blockContainer);
                 return new ConstantDefinition(typeReference, constantToken.Value);
             }
 
@@ -352,7 +352,7 @@ namespace SCUMSLang.SyntaxTree.Parser
                     throw new ArgumentException("Enumeration field was expected (e.g. Unit.Player1)");
                 }
 
-                var enumFieldType = new TypeReference(pathFragments[0]) { ParentBlockContainer = blockContainer };
+                var enumFieldType = Reference.CreateTypeReference(pathFragments[0], blockContainer);
                 return new ConstantDefinition(enumFieldType, pathFragments[1]);
             }
 
@@ -443,9 +443,10 @@ namespace SCUMSLang.SyntaxTree.Parser
         /// <param name="reader"></param>
         /// <param name="newPosition"></param>
         /// <param name="node"></param>
+        /// <param name="blockContainer"></param>
         /// <param name="required"></param>
         /// <param name="needConsume">The next token gets consumed before the actual token gets evaluated.</param>
-        /// <param name="hasDelimiter">The </param>
+        /// <param name="expectDelimiter"></param>
         /// <returns></returns>
         public static bool TryRecognizeMethodCall(
             SpanReader<Token> reader,

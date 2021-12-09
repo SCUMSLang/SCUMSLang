@@ -19,8 +19,7 @@ namespace SCUMSLang.Compilation
         {
             AbsoluteAssemblyDirectory = new Lazy<string>(() => {
                 var assemblyPath = typeof(Program).Assembly.Location;
-                var assemblyDirectory = Path.GetDirectoryName(assemblyPath)!;
-                return assemblyDirectory;
+                return Path.GetDirectoryName(assemblyPath)!;
             });
 
             AbsoluteUMSLFilesIndexPath = getLazyUMSLFilePath(RelativeUMSLFilesIndexPath);

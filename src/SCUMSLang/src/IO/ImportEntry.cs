@@ -17,11 +17,11 @@ namespace SCUMSLang.IO
     {
         public static async Task<ImportEntry> LoadDirectImportsAsync(
             string importPath,
-            Action<ModuleParameters>? configureModuleParameters = null)
+            Action<ModuleParameters>? moduleParametersConfigurer = null)
         {
             var importEntry = new ImportEntry(
                 importPath,
-                configureModuleParameters);
+                moduleParametersConfigurer);
 
             await importEntry.LoadTokensAsync();
             importEntry.parseDirectImports();
@@ -33,7 +33,7 @@ namespace SCUMSLang.IO
         /// </summary>
         public string ImportPath { get; }
         public ReadOnlyMemory<Token> Tokens => tokens;
-        public ModuleDefinition Module { get; private set; }
+        public ModuleDefinition Module { get; }
         public int TokenReaderUpperPosition { get; private set; }
 
         private ReadOnlyMemory<Token> tokens = null!;
@@ -43,7 +43,7 @@ namespace SCUMSLang.IO
 
         private List<string> directImportPaths;
 
-        protected ImportEntry(string filePath, Action<ModuleParameters>? configureModuleParameters = null)
+        protected ImportEntry(string filePath, Action<ModuleParameters>? moduleParametersConfigurer = null)
         {
             directImportPaths = new List<string>();
             filePath = filePath ?? throw new ArgumentNullException(nameof(filePath));
@@ -55,7 +55,7 @@ namespace SCUMSLang.IO
             ImportPath = filePath;
 
             var moduleParameters = new ModuleParameters();
-            configureModuleParameters?.Invoke(moduleParameters);
+            moduleParametersConfigurer?.Invoke(moduleParameters);
             moduleParameters.FilePath = filePath;
             Module = new ModuleDefinition(moduleParameters);
         }
@@ -85,7 +85,7 @@ namespace SCUMSLang.IO
             var result = parser.Parse(tokens.Span);
             TokenReaderUpperPosition = result.TokenReaderUpperPosition;
 
-            directImportPaths = Module.Block.ReferenceRecords
+            directImportPaths = Module.Block.BookkeptReferences
                 .OfType<ImportDefinition>()
                 .Select(import => import.FilePath)
                 .ToList();
@@ -94,7 +94,8 @@ namespace SCUMSLang.IO
         public override string ToString() =>
             $"{Path.Combine(new DirectoryInfo(Path.GetDirectoryName(ImportPath) ?? "").Name, Path.GetFileName(ImportPath)) }";
 
-        public void ParseToEnd() {
+        public void ReadModule()
+        {
             var parser = new SyntaxTreeParser(options => {
                 options.Module = Module;
                 options.TokenReaderStartPosition = TokenReaderUpperPosition + 1;
@@ -103,5 +104,8 @@ namespace SCUMSLang.IO
 
             parser.Parse(Tokens.Span);
         }
+
+        public void ResolveModule() =>
+            Module.ResolveRecursively();
     }
 }

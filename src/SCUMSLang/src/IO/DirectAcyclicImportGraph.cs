@@ -9,12 +9,13 @@ namespace SCUMSLang.IO
 {
     public class DirectAcyclicImportGraph
     {
-        public static async Task<DirectAcyclicImportGraph> LoadImportGraphAsync(
+        public static async Task<DirectAcyclicImportGraph> GenerateImportGraphAsync(
             IEnumerable<string> initialImportPaths,
-            Action<ModuleParameters>? configureModuleParameters = null) {
+            Action<ModuleParameters>? moduleParametersConfigurer = null)
+        {
             var importGraph = new DirectAcyclicImportGraph(
                 initialImportPaths,
-                configureModuleParameters);
+                moduleParametersConfigurer);
 
             await importGraph.LoadImportsRecursivelyAsync();
             return importGraph;
@@ -24,15 +25,15 @@ namespace SCUMSLang.IO
 
         private List<ImportEntry> topologizedImports;
         private HashSet<string> initialImportPaths;
-        private readonly Action<ModuleParameters>? configureModuleParameters;
+        private readonly Action<ModuleParameters>? moduleParametersConfigurer;
 
         private DirectAcyclicImportGraph(
             IEnumerable<string> initialImportPaths,
-            Action<ModuleParameters>? configureModuleParameters = null)
+            Action<ModuleParameters>? moduleParametersConfigurer = null)
         {
             topologizedImports = new List<ImportEntry>();
             this.initialImportPaths = new HashSet<string>(initialImportPaths);
-            this.configureModuleParameters = configureModuleParameters;
+            this.moduleParametersConfigurer = moduleParametersConfigurer;
         }
 
         protected async Task LoadImportsRecursivelyAsync()
@@ -46,7 +47,7 @@ namespace SCUMSLang.IO
                 foreach (var unloadedImportPath in unloadedImportPaths) {
                     var import = await ImportEntry.LoadDirectImportsAsync(
                         unloadedImportPath,
-                        configureModuleParameters);
+                        moduleParametersConfigurer);
 
                     contextualImports.Add(import);
                     loadedImports.Add(unloadedImportPath, import);
@@ -64,7 +65,7 @@ namespace SCUMSLang.IO
                     }
                 }
             } while (unloadedImportPaths.Count > 0);
-            
+
             var importEdges = loadedImports.Values
                 .SelectMany(x => x.DirectImportPaths
                     .Select(y => (x, loadedImports[y])))
@@ -73,8 +74,8 @@ namespace SCUMSLang.IO
             topologizedImports.Clear();
 
             topologizedImports = TopologicalSorting.KahnAlgorithm.SortTopologically(
-                loadedImports.Values, 
-                importEdges, 
+                loadedImports.Values,
+                importEdges,
                 ImportEntryOnlyPathEqualityComparer.Default);
         }
     }

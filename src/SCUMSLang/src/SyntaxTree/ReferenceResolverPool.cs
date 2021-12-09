@@ -2,13 +2,12 @@
 using System.Collections;
 using System.Collections.Generic;
 using System.Linq;
-using System.Runtime.ExceptionServices;
 using SCUMSLang.SyntaxTree.Definitions;
 using SCUMSLang.SyntaxTree.References;
 
 namespace SCUMSLang.SyntaxTree
 {
-    public class ReferenceResolverPool : IReferenceResolver, IEnumerable<IReferenceResolver>
+    public partial class ReferenceResolverPool : IReferenceResolver, IEnumerable<IReferenceResolver>
     {
         private List<IReferenceResolver> modules;
 
@@ -24,7 +23,7 @@ namespace SCUMSLang.SyntaxTree
             modules.Add(module);
         }
 
-        protected virtual IEnumerable<IReferenceResolver> YieldModules()
+        protected virtual IEnumerable<IReferenceResolver> YieldReferenceResolvers()
         {
             foreach (var module in modules) {
                 yield return module;
@@ -35,18 +34,20 @@ namespace SCUMSLang.SyntaxTree
         {
             var errors = new List<Exception>();
 
-            foreach (var module in YieldModules()) {
+            foreach (var module in YieldReferenceResolvers()) {
                 try {
                     return resolveDelegate(module);
                 } catch (DefinitionNotFoundException error) {
                     errors.Add(error);
+                } catch (DefinitionNotFoundAggregateException error) {
+                    errors.AddRange(error.InnerExceptions);
                 } catch {
                     throw;
                 }
             }
 
             // We only want show unique error messages.
-            throw new AggregateException("One or more exceptions occured while trying to resolve definition.", errors.GroupBy(x => x.Message).Select(x => x.First()));
+            throw new DefinitionNotFoundAggregateException("One or more exceptions occured while trying to resolve definition.", errors.GroupBy(x => x.Message).Select(x => x.First()));
         }
 
         public TypeDefinition Resolve(TypeReference type) =>
@@ -62,7 +63,7 @@ namespace SCUMSLang.SyntaxTree
             getFirstOrThrowFirst(module => module.Resolve(eventHandler));
 
         public IEnumerator<IReferenceResolver> GetEnumerator() =>
-            YieldModules().GetEnumerator();
+            YieldReferenceResolvers().GetEnumerator();
 
         IEnumerator IEnumerable.GetEnumerator() =>
             GetEnumerator();

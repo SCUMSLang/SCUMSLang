@@ -43,7 +43,7 @@ namespace SCUMSLang.SyntaxTree.Definitions
         internal protected override Reference Accept(SyntaxNodeVisitor visitor) =>
             visitor.VisitMethodCallDefinition(this);
 
-        public MethodCallDefinition Update(MethodReference method, IReadOnlyList<ConstantDefinition> genericArguments, IReadOnlyList<ConstantDefinition> arguments)
+        public MethodCallDefinition UpdateDefinition(MethodReference method, IReadOnlyList<ConstantDefinition> genericArguments, IReadOnlyList<ConstantDefinition> arguments)
         {
             if (ReferenceEquals(method, Method) && ReferenceEquals(genericArguments, GenericArguments) && ReferenceEquals(arguments, Arguments)) {
                 return this;

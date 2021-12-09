@@ -4,6 +4,8 @@ namespace SCUMSLang.SyntaxTree
 {
     public enum SystemType
     {
+        [Sequence("UInt8")]
+        Byte,
         [Sequence("UInt32")]
         Integer,
         [Sequence("String")]

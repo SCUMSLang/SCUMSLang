@@ -26,9 +26,9 @@ namespace SCUMSLang.SyntaxTree.References
             Resolve();
 
         protected internal override Reference Accept(SyntaxNodeVisitor visitor) =>
-            visitor.VisitUsingStaticDirective(this);
+            visitor.VisitUsingStaticDirectiveDefinition(this);
 
-        public UsingStaticDirectiveDefinition Update(TypeReference elementType)
+        public UsingStaticDirectiveDefinition UpdateDefinition(TypeReference elementType)
         {
             if (ReferenceEquals(elementType, ElementType)) {
                 return this;

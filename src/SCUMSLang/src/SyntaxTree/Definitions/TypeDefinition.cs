@@ -8,7 +8,7 @@ using SCUMSLang.SyntaxTree.Visitors;
 
 namespace SCUMSLang.SyntaxTree.Definitions
 {
-    public partial class TypeDefinition : TypeReference, INameReservableReference, IOverloadableReference, IMemberDefinition, ITypeDefinition
+    public class TypeDefinition : TypeReference, INameReservableReference, IOverloadableReference, IMemberDefinition, ITypeDefinition
     {
         public override SyntaxTreeNodeType NodeType =>
             SyntaxTreeNodeType.TypeDefinition;
@@ -61,7 +61,7 @@ namespace SCUMSLang.SyntaxTree.Definitions
         protected internal override Reference Accept(SyntaxNodeVisitor visitor) =>
             visitor.VisitTypeDefinition(this);
 
-        public TypeDefinition Update(TypeReference? baseType)
+        public TypeDefinition UpdateDefinition(TypeReference? baseType)
         {
             if (ReferenceEquals(baseType, BaseType)) {
                 return this;
@@ -88,8 +88,8 @@ namespace SCUMSLang.SyntaxTree.Definitions
 
                 if (candidate.AllowOverwriteOnce && candidate.Equals(this)) {
                     AllowOverwriteOnce = false;
-                    
-                    
+
+
 
                     return OverloadConflictResult.Skip;
                 } else {
@@ -100,9 +100,18 @@ namespace SCUMSLang.SyntaxTree.Definitions
             throw new NotImplementedException("More than two type definition with the name have been found that got name reserved without checking.");
         }
     }
+}
 
-    partial class TypeDefinition
+namespace SCUMSLang.SyntaxTree.References
+{
+    partial class Reference
     {
+        public static TypeReference CreateTypeDefinition(string name, BlockContainer? blockContainer, bool allowOverwriteOnce) =>
+            new TypeDefinition(name) { ParentBlockContainer = blockContainer, AllowOverwriteOnce = allowOverwriteOnce };
+
+        public static TypeReference CreateTypeDefinition(SystemType systemType, BlockContainer? blockContainer, bool allowOverwriteOnce) =>
+            CreateTypeDefinition(SystemTypeLibrary.Sequences[systemType], blockContainer, allowOverwriteOnce);
+
         public static TypeDefinition CreateAliasDefinition(
             string name,
             TypeReference baseType,

@@ -4,16 +4,25 @@ namespace SCUMSLang.SyntaxTree.Visitors
 {
     public class SyntaxNodeResolvingVisitor : SyntaxNodeVisitor
     {
+        public readonly static SyntaxNodeResolvingVisitor Default = new SyntaxNodeResolvingVisitor();
+
+        private static T Resolve<T>(T member)
+            where T : MemberReference
+        {
+            _ = member.Resolve();
+            return member;
+        }
+
         protected internal override Reference VisitTypeReference(TypeReference type) =>
-            type.Resolve();
+            Resolve(type);
 
         protected internal override Reference VisitFieldReference(FieldReference field) =>
-            field.Resolve();
+            Resolve(field);
 
         protected internal override Reference VisitMethodReference(MethodReference method) =>
-            method.Resolve();
+            Resolve(method);
 
         protected internal override Reference VisitEventHandlerReference(EventHandlerReference eventHandler) =>
-            eventHandler.Resolve();
+            Resolve(eventHandler);
     }
 }

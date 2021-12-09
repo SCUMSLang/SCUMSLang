@@ -34,27 +34,19 @@ namespace SCUMSLang.SyntaxTree.Definitions
         /// All references (or definitions) as they appeared
         /// from top to bottom of a block.
         /// </summary>
-        public IReadOnlyList<Reference> ReferenceRecords =>
-            referenceRecords;
-
-        /// <summary>
-        /// All types
-        /// </summary>
-        public IReadOnlyLinkedBucketList<string, TypeReference> ModuleTypes =>
-            ModuleTypeList;
-
-        private bool isBlockClosed;
+        public IReadOnlyList<Reference> BookkeptReferences =>
+            bookkeptReferences;
 
         internal protected LinkedBucketList<string, Reference> LocalMemberList { get; }
         internal protected abstract LinkedBucketList<string, TypeReference> ModuleTypeList { get; }
 
         protected abstract BlockDefinition ParentBlock { get; }
 
-        private List<Reference> referenceRecords;
+        private List<Reference> bookkeptReferences;
 
         public BlockDefinition()
         {
-            referenceRecords = new List<Reference>();
+            bookkeptReferences = new List<Reference>();
             LocalMemberList = new LinkedBucketList<string, Reference>();
         }
 
@@ -207,11 +199,8 @@ namespace SCUMSLang.SyntaxTree.Definitions
                 throw new BadBlockScopeException();
             }
 
-            // We want to fill missing module references.
-            //_ = Module.ModuleFillingVisitor.Visit(node);
-
             if (TryAddMember(node)) {
-                referenceRecords.Add(node);
+                bookkeptReferences.Add(node);
 
                 if (node is IBlockHolder blockHolder && blockHolder.IsBlockOwnable) {
                     blockHolder.SetupBlock(this);
@@ -219,7 +208,7 @@ namespace SCUMSLang.SyntaxTree.Definitions
             }
         }
 
-        private TDefinition GetMemberDefinitionBySelector<TReference, TDefinition>(
+        private TDefinition GetMemberDefinitionBySelector<TDefinition>(
             string memberName,
             IReadOnlyLinkedBucketList<string, Reference> candidates,
             Func<IEnumerable<TDefinition>, TDefinition?> singleDefinitionSelector,
@@ -235,21 +224,21 @@ namespace SCUMSLang.SyntaxTree.Definitions
         }
 
         public FieldDefinition GetField(string fieldName) =>
-            GetMemberDefinitionBySelector<FieldReference, FieldDefinition>(
+            GetMemberDefinitionBySelector<FieldDefinition>(
                 fieldName,
                 Module.Block.LocalMemberList,
                 definitions => definitions.SingleOrDefault(),
                 () => SyntaxTreeThrowHelper.FieldNotFound(fieldName));
 
         public MethodDefinition GetMethod(string methodName) =>
-            GetMemberDefinitionBySelector<MethodReference, MethodDefinition>(
+            GetMemberDefinitionBySelector<MethodDefinition>(
                 methodName,
                 LocalMemberList,
                 definitions => definitions.SingleOrDefault(),
                 () => SyntaxTreeThrowHelper.MethodNotFound(methodName));
 
         public MethodDefinition GetMethod(MethodReference methodReference) =>
-            GetMemberDefinitionBySelector<MethodReference, MethodDefinition>(
+            GetMemberDefinitionBySelector<MethodDefinition>(
                 methodReference.Name,
                 LocalMemberList,
                 definitions => definitions.SingleOrDefault(x =>
@@ -257,13 +246,13 @@ namespace SCUMSLang.SyntaxTree.Definitions
                 () => SyntaxTreeThrowHelper.MethodNotFound(methodReference.Name));
 
         public EventHandlerDefinition GetEventHandler(string eventHandlerName) =>
-            GetMemberDefinitionBySelector<EventHandlerReference, EventHandlerDefinition>(
+            GetMemberDefinitionBySelector<EventHandlerDefinition>(
                 eventHandlerName,
                 LocalMemberList,
                 definitions => definitions.SingleOrDefault(),
                 () => SyntaxTreeThrowHelper.MethodNotFound(eventHandlerName));
 
         public override int GetHashCode() =>
-            HashCode.Combine(NodeType, ReferenceRecords);
+            HashCode.Combine(NodeType, BookkeptReferences);
     }
 }

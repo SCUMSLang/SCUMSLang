@@ -95,7 +95,7 @@ namespace SCUMSLang.SyntaxTree.Visitors
             method.UpdateDefinition(VisitAndConvert(method.GenericParameters), VisitAndConvert(method.Parameters));
 
         protected internal virtual Reference VisitMethodCallDefinition(MethodCallDefinition methodCall) =>
-            methodCall.Update(
+            methodCall.UpdateDefinition(
                 VisitAndConvert(methodCall.Method),
                 VisitAndConvert(methodCall.GenericArguments),
                 VisitAndConvert(methodCall.Arguments));
@@ -110,7 +110,7 @@ namespace SCUMSLang.SyntaxTree.Visitors
             localBlock;
 
         protected internal virtual Reference VisitConstantDefinition(ConstantDefinition constant) =>
-            constant.Update(VisitAndConvert(constant.ValueType));
+            constant.UpdateDefinition(VisitAndConvert(constant.ValueType));
 
         protected internal virtual Reference VisitFieldReference(FieldReference field) =>
             field.UpdateReference(VisitAndConvert(field.FieldType));
@@ -123,9 +123,6 @@ namespace SCUMSLang.SyntaxTree.Visitors
 
         protected internal virtual Reference VisitFieldDefinition(FieldDefinition field) =>
             field.UpdateDefinition(VisitAndConvert(field.FieldType));
-
-        protected internal virtual Reference VisitModuleDefinition(ModuleDefinition module) =>
-            module;
 
         protected internal virtual Reference VisitParameterReference(ParameterReference parameter) =>
             parameter;
@@ -140,13 +137,13 @@ namespace SCUMSLang.SyntaxTree.Visitors
             type; // Fine
 
         protected internal virtual Reference VisitEnumerationDefinition(EnumerationDefinition type) =>
-            type.Update(VisitAndConvert(type.BaseType), VisitAndConvert(type.Fields));
+            type.UpdateDefinition(VisitAndConvert(type.BaseType), VisitAndConvert(type.Fields));
 
         protected internal virtual Reference VisitTypeDefinition(TypeDefinition type) =>
-            type.Update(VisitAndConvert(type.BaseType));
+            type.UpdateDefinition(VisitAndConvert(type.BaseType));
 
-        protected internal virtual Reference VisitUsingStaticDirective(UsingStaticDirectiveDefinition usingStaticDirective) =>
-            usingStaticDirective.Update(VisitAndConvert(usingStaticDirective.ElementType));
+        protected internal virtual Reference VisitUsingStaticDirectiveDefinition(UsingStaticDirectiveDefinition usingStaticDirective) =>
+            usingStaticDirective.UpdateDefinition(VisitAndConvert(usingStaticDirective.ElementType));
 
         protected internal virtual Reference VisitEventHandlerReference(EventHandlerReference eventHandler) => eventHandler.UpdateReference(
             VisitAndConvert(eventHandler.GenericParameters),
@@ -158,7 +155,10 @@ namespace SCUMSLang.SyntaxTree.Visitors
             VisitAndConvert(eventHandler.Parameters),
             VisitAndConvert(eventHandler.Conditions));
 
-        internal virtual Reference VisitModuleBlockDefinition(ModuleDefinition.ModuleBlockDefinition moduleBlock) =>
-            moduleBlock;
+        internal virtual Reference VisitModuleBlockDefinition(ModuleBlockDefinition moduleBlock) =>
+            moduleBlock.UpdateDefinition(VisitAndConvert(moduleBlock.BookkeptReferences));
+
+        protected internal virtual Reference VisitModuleDefinition(ModuleDefinition module) =>
+            module.UpdateDefinition(VisitAndConvert(module.ModuleBlock));
     }
 }
