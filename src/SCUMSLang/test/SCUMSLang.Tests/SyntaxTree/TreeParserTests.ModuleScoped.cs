@@ -185,7 +185,7 @@ function goofy() when daisy(false) {}";
             {
                 var module = DefaultParser.Parse(@"function daisy(inter32 test_int);").Module;
 
-                var aggregatedError = Assert.Throws<AggregateException>(() => {
+                var aggregatedError = Assert.Throws<DefinitionNotFoundAggregateException>(() => {
                     if (!module.Block.TryGetMemberFirst<MethodDefinition>("daisy", out var method)) {
                         throw new InvalidOperationException();
                     }
@@ -201,7 +201,7 @@ function goofy() when daisy(false) {}";
             {
                 var module = DefaultParser.Parse(@"function daisy<Player PlayerId>();").Module;
 
-                var aggregatedError = Assert.Throws<AggregateException>(() => {
+                var aggregatedError = Assert.Throws<DefinitionNotFoundAggregateException>(() => {
                     if (!module.Block.TryGetMemberFirst<MethodDefinition>("daisy", out var method)) {
                         throw new InvalidOperationException();
                     }
@@ -221,7 +221,7 @@ function daisy() when cond_one<>(2) {}";
 
                 var module = DefaultParser.Parse(content).Module;
 
-                var aggregatedError = Assert.Throws<AggregateException>(() => {
+                var aggregatedError = Assert.Throws<DefinitionNotFoundAggregateException>(() => {
                     if (!module.Block.TryGetMemberFirst<EventHandlerDefinition>("daisy", out var eventHandler)) {
                         throw new InvalidOperationException();
                     }
