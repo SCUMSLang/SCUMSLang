@@ -1,9 +1,8 @@
 ﻿using System;
-using SCUMSLang.SyntaxTree.Definitions;
 using SCUMSLang.SyntaxTree.References;
 using SCUMSLang.SyntaxTree.Visitors;
 
-namespace SCUMSLang.SyntaxTree
+namespace SCUMSLang.SyntaxTree.Definitions
 {
     public sealed class MemberAssignmenDefinition : Reference
     {

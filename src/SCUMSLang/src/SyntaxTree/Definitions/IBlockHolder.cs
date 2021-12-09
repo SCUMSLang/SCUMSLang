@@ -1,6 +1,4 @@
-﻿using SCUMSLang.SyntaxTree.Definitions;
-
-namespace SCUMSLang.SyntaxTree
+﻿namespace SCUMSLang.SyntaxTree.Definitions
 {
     internal interface IBlockHolder
     {

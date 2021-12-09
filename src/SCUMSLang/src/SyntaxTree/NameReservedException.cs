@@ -2,7 +2,7 @@
 
 namespace SCUMSLang.SyntaxTree
 {
-    public class NameReservedException : BlockEvaluatingException
+    public class NameReservedException : BlockEvaluationException
     {
         public string Name { get; }
 

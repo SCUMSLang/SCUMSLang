@@ -27,7 +27,7 @@ namespace SCUMSLang.SyntaxTree.Definitions
             ForInCollection = forInCollection ?? new ForInDefinition[0];
 
         void IBlockHolder.SetupBlock(BlockDefinition parentBlock) =>
-            BlockHolderTools.SetupBlock(ref block, parentBlock, parentBlock.BlockScope);
+            BlockHolders.SetupBlock(ref block, parentBlock, parentBlock.BlockScope);
 
         protected internal override Reference Accept(SyntaxNodeVisitor visitor) =>
             visitor.VisitTemplateForInDefinition(this);

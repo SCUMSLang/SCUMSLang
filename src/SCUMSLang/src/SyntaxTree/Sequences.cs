@@ -4,13 +4,15 @@ using static SCUMSLang.SCUMSLangTools;
 
 namespace SCUMSLang.SyntaxTree
 {
-    public static class SystemTypeLibrary {
-        public static IReadOnlyDictionary<SystemType, string> Sequences => 
+    public static class Sequences
+    {
+        public static IReadOnlyDictionary<SystemType, string> SystemTypes =>
             sequences;
 
         private static Dictionary<SystemType, string> sequences;
 
-        static SystemTypeLibrary() {
+        static Sequences()
+        {
             sequences = new Dictionary<SystemType, string>();
 
             ForEachEnum<SystemType>(enumValue => {

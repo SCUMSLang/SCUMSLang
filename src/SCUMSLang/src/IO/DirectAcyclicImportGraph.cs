@@ -2,8 +2,8 @@
 using System.Collections.Generic;
 using System.Linq;
 using System.Threading.Tasks;
-using SCUMSLang.SyntaxTree;
 using SCUMSLang.Collections.Generic;
+using SCUMSLang.SyntaxTree.Definitions;
 
 namespace SCUMSLang.IO
 {

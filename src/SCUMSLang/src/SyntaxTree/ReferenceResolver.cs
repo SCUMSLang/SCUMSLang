@@ -29,7 +29,7 @@ namespace SCUMSLang.SyntaxTree
         public TypeDefinition Resolve(TypeReference type)
         {
             return FindByMember<TypeDefinition>(CascadingTypes, type)
-                ?? throw SyntaxTreeThrowHelper.TypeNotFound(type.Name, SyntaxTreeThrowHelper.DefinitionNotFoundExceptionDelegate);
+                ?? throw SyntaxTreeThrowHelper.TypeNotFound(type.Name, SyntaxTreeThrowHelper.DefinitionNotFoundExceptionDelegate, type.FilePosition);
         }
 
         public FieldDefinition Resolve(FieldReference field)
@@ -46,7 +46,7 @@ namespace SCUMSLang.SyntaxTree
             }
 
             if (fieldDefinition is null) {
-                throw SyntaxTreeThrowHelper.FieldNotFound(field.Name, SyntaxTreeThrowHelper.DefinitionNotFoundExceptionDelegate);
+                throw SyntaxTreeThrowHelper.FieldNotFound(field.Name, SyntaxTreeThrowHelper.DefinitionNotFoundExceptionDelegate, field.FilePosition);
             }
 
             return fieldDefinition;
@@ -86,7 +86,7 @@ namespace SCUMSLang.SyntaxTree
             }
 
             if (eventHandlerDefinition is null) {
-                throw SyntaxTreeThrowHelper.EventHandlerdNotFound(eventHandler.Name, SyntaxTreeThrowHelper.DefinitionNotFoundExceptionDelegate);
+                throw SyntaxTreeThrowHelper.EventHandlerdNotFound(eventHandler.Name, SyntaxTreeThrowHelper.DefinitionNotFoundExceptionDelegate, eventHandler.FilePosition);
             }
 
             return eventHandlerDefinition;

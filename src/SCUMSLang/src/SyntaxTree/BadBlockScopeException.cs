@@ -4,7 +4,7 @@ using System.Runtime.Serialization;
 namespace SCUMSLang.SyntaxTree
 {
     [Serializable]
-    public class BadBlockScopeException : BlockEvaluatingException
+    public class BadBlockScopeException : BlockEvaluationException
     {
         protected BadBlockScopeException(SerializationInfo info, StreamingContext context) 
             : base(info, context) { }

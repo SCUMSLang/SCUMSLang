@@ -1,9 +1,8 @@
 ﻿using System;
 using System.Collections.Generic;
 using System.Diagnostics.CodeAnalysis;
-using SCUMSLang.SyntaxTree.References;
 
-namespace SCUMSLang.SyntaxTree
+namespace SCUMSLang.SyntaxTree.References
 {
     public class ParameterReferenceEqualityComparer : EqualityComparer<ParameterReference>
     {

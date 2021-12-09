@@ -36,7 +36,11 @@ namespace SCUMSLang.SyntaxTree.Definitions
         public ModuleDefinition()
             : this(moduleParameters: null) { }
 
-        [MemberNotNull(nameof(FilePath), nameof(ModuleReferenceResolver), nameof(BlockReferenceResolver))]
+        [MemberNotNull(
+            nameof(ModuleBlock),
+            nameof(FilePath),
+            nameof(ModuleReferenceResolver),
+            nameof(BlockReferenceResolver))]
         private void Initialize(ModuleParameters? moduleParameters, ModuleBlockDefinition moduleBlock)
         {
             ModuleBlock = moduleBlock;

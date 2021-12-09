@@ -3,7 +3,7 @@ using System.Runtime.Serialization;
 
 namespace SCUMSLang.SyntaxTree
 {
-    public class DefinitionNotFoundException : BlockEvaluatingException
+    public class DefinitionNotFoundException : BlockEvaluationException
     {
         protected DefinitionNotFoundException(SerializationInfo info, StreamingContext context)
             : base(info, context) { }

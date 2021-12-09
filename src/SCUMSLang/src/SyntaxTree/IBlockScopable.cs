@@ -1,6 +1,6 @@
 ﻿namespace SCUMSLang.SyntaxTree
 {
-    public interface IBlockScopedReference
+    public interface IBlockScopable
     {
         public BlockScope BlockScope { get; }
     }

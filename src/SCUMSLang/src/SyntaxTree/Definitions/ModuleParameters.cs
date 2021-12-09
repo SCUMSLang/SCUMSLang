@@ -1,6 +1,6 @@
 ﻿using SCUMSLang.SyntaxTree.References;
 
-namespace SCUMSLang.SyntaxTree
+namespace SCUMSLang.SyntaxTree.Definitions
 {
     public class ModuleParameters
     {

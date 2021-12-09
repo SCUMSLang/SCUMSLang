@@ -37,7 +37,7 @@ namespace SCUMSLang.SyntaxTree.Definitions
             Attributes = new List<AttributeDefinition>();
 
         void IBlockHolder.SetupBlock(BlockDefinition parentBlock) =>
-            BlockHolderTools.SetupBlock(ref body, parentBlock, BlockScope.Local);
+            BlockHolders.SetupBlock(ref body, parentBlock, BlockScope.Local);
 
         public new MethodDefinition Resolve() =>
             this;

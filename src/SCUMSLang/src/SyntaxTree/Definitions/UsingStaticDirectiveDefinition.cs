@@ -3,7 +3,7 @@ using SCUMSLang.SyntaxTree.Visitors;
 
 namespace SCUMSLang.SyntaxTree.References
 {
-    public class UsingStaticDirectiveDefinition : MemberReference, IBlockScopedReference, IMemberDefinition
+    public class UsingStaticDirectiveDefinition : MemberReference, IBlockScopable, IMemberDefinition
     {
         public override SyntaxTreeNodeType NodeType =>
             SyntaxTreeNodeType.UsingStaticDirective;

@@ -3,7 +3,7 @@ using System.Diagnostics.CodeAnalysis;
 
 namespace SCUMSLang.Tokenization
 {
-    public class Token
+    public class Token : IFilePosition
     {
         public TokenType TokenType { get; }
         public object? Value { get; }
@@ -76,7 +76,7 @@ namespace SCUMSLang.Tokenization
             value = default!;
             return false;
         }
-        
+
         /// <summary>
         /// Token type of current position is compared to each
         /// specified token type and returns <see langword="true"/>

@@ -11,7 +11,7 @@ namespace SCUMSLang.SyntaxTree.Parser
 {
     public static class SyntaxTreeParserTools
     {
-        public static bool TryRecognizeImport(ModuleDefinition module, SpanReader<Token> reader, [NotNullWhen(true)] out int? newPosition, [MaybeNullWhen(false)] out Reference node)
+        private static bool TryRecognizeImport(ModuleDefinition module, SpanReader<Token> reader, [NotNullWhen(true)] out int? newPosition, [MaybeNullWhen(false)] out Reference node)
         {
             if (reader.ViewLastValue == TokenType.ImportKeyword
                 && reader.ConsumeNext(out Token stringToken)
@@ -36,39 +36,38 @@ namespace SCUMSLang.SyntaxTree.Parser
             return false;
         }
 
-        public static bool TryRecognizeNameList(
+        private static bool TryRecognizeNameList(
             SpanReader<Token> reader,
             TokenType openToken,
             TokenType closeToken,
             [NotNullWhen(true)] out int? newPosition,
             [MaybeNullWhen(false)] out List<string> nameList,
-            //BlockContainer? blockContainer = null,
+            [MaybeNullWhen(false)] out List<IFilePosition> namePositionList,
             bool required = false,
             bool needConsume = false)
         {
-            if (reader.ConsumeNext(needConsume)) {
-                if (reader.ViewLastValue == openToken) {
-                    nameList = new List<string>();
+            if (reader.ConsumeNext(needConsume) && reader.ViewLastValue == openToken) {
+                nameList = new List<string>();
+                namePositionList = new List<IFilePosition>();
 
-                    while (reader.PeekNext(out ReaderPosition<Token> nameTokenPosition)
-                        && nameTokenPosition.Value.Value is string name
-                        && !string.IsNullOrEmpty(name)) {
-                        reader.SetLengthTo(nameTokenPosition.UpperReaderPosition);
-                        nameList.Add(name);
+                while (reader.PeekNext(out ReaderPosition<Token> nameTokenPosition)
+                    && nameTokenPosition.Value.Value is string name
+                    && !string.IsNullOrEmpty(name)) {
+                    reader.SetLengthTo(nameTokenPosition.UpperReaderPosition);
+                    nameList.Add(name);
+                    namePositionList.Add(nameTokenPosition.Value);
 
-                        if (reader.PeekNext(TokenType.Comma)) {
-                            reader.SetPositionTo(reader.UpperPosition + 1, length: 1);
-                            continue;
-                        }
+                    if (reader.PeekNext(TokenType.Comma)) {
+                        reader.SetPositionTo(reader.UpperPosition + 1, length: 1);
                     }
-
-                    if (!reader.ConsumeNext(closeToken)) {
-                        throw new SyntaxTreeParsingException(reader.ViewLastPosition, $"The list needs to be closed by '{TokenTypeLibrary.SequenceDictionary[closeToken]}'.");
-                    }
-
-                    newPosition = reader.UpperPosition;
-                    return true;
                 }
+
+                if (!reader.ConsumeNext(closeToken)) {
+                    throw new SyntaxTreeParsingException(reader.ViewLastPosition, $"The list needs to be closed by '{TokenTypeLibrary.SequenceDictionary[closeToken]}'.");
+                }
+
+                newPosition = reader.UpperPosition;
+                return true;
             }
 
             if (required) {
@@ -77,10 +76,11 @@ namespace SCUMSLang.SyntaxTree.Parser
 
             newPosition = null;
             nameList = null;
+            namePositionList = null;
             return false;
         }
 
-        public static int ExpectToken(SpanReader<Token> reader, TokenType tokenType, bool needConsume = false)
+        private static int ExpectToken(SpanReader<Token> reader, TokenType tokenType, bool needConsume = false)
         {
             if (!reader.ConsumeNext(needConsume) || !reader.ViewLastValue.TryRecognize(tokenType)) {
                 throw new SyntaxTreeParsingException(reader.ViewLastValue, $"Specific token was expected: '{TokenTypeLibrary.SequenceDictionary[tokenType]}'");
@@ -89,7 +89,7 @@ namespace SCUMSLang.SyntaxTree.Parser
             return reader.UpperPosition;
         }
 
-        public static bool TryRecognizeTypeAliasReference(SpanReader<Token> reader, [NotNullWhen(true)] out int? newPosition, [MaybeNullWhen(false)] out Reference node)
+        private static bool TryRecognizeTypeAliasReference(SpanReader<Token> reader, [NotNullWhen(true)] out int? newPosition, [MaybeNullWhen(false)] out Reference node)
         {
             if (reader.ViewLastValue == TokenType.TypeDefKeyword) {
                 if (!reader.ConsumeNext(out ReaderPosition<Token> typeTokenPosition)) {
@@ -108,7 +108,7 @@ namespace SCUMSLang.SyntaxTree.Parser
                 }
 
                 if (typeTokenPosition.Value == TokenType.EnumKeyword) {
-                    _ = TryRecognizeNameList(reader, TokenType.OpenBrace, TokenType.CloseBrace, out newPosition, out var nameList, required: true, needConsume: true);
+                    _ = TryRecognizeNameList(reader, TokenType.OpenBrace, TokenType.CloseBrace, out newPosition, out var nameList, out var namePositionList, required: true, needConsume: true);
                     reader.SetLengthTo(newPosition!.Value);
 
                     var enumNameToken = expectNameAndDelimiterToken(ref reader, out newPosition!);
@@ -123,7 +123,7 @@ namespace SCUMSLang.SyntaxTree.Parser
                     var aliasName = aliasNameToken.Value.GetValue<string>();
                     var blockContainer = new BlockContainer();
 
-                    node = TypeDefinition.CreateAliasDefinition(
+                    node = Reference.CreateAliasDefinition(
                         aliasName,
                         new TypeReference(sourceTypeName) {
                             ParentBlockContainer = blockContainer
@@ -139,7 +139,7 @@ namespace SCUMSLang.SyntaxTree.Parser
             return false;
         }
 
-        public static bool TryRecognizeEnumeration(SpanReader<Token> reader, [NotNullWhen(true)] out int? newPosition, [MaybeNullWhen(false)] out Reference node)
+        private static bool TryRecognizeEnumeration(SpanReader<Token> reader, [NotNullWhen(true)] out int? newPosition, [MaybeNullWhen(false)] out Reference node)
         {
             if (reader.ViewLastValue == TokenType.EnumKeyword) {
                 if (!reader.ConsumeNext(out ReaderPosition<Token> enumNameTokenPosition)
@@ -148,14 +148,25 @@ namespace SCUMSLang.SyntaxTree.Parser
                 }
 
                 var blockContainer = new BlockContainer();
-                _ = TryRecognizeNameList(reader, TokenType.OpenBrace, TokenType.CloseBrace, out newPosition, out var nameList, required: true, needConsume: true);
+                _ = TryRecognizeNameList(reader, TokenType.OpenBrace, TokenType.CloseBrace, out newPosition, out var nameList, out var namePositionList, required: true, needConsume: true);
                 reader.SetLengthTo(newPosition!.Value);
 
                 var enumName = enumNameTokenPosition.Value.GetValue<string>();
+                var enumFieldType = Reference.CreateTypeReference(SystemType.Integer, blockContainer);
+
+                FieldDefinition FieldCreator(string name, TypeReference fieldType, TypeReference declaringType, object? value) =>
+                    new FieldDefinition(name, fieldType, declaringType) {
+                        Value = value,
+                        ParentBlockContainer = blockContainer,
+                        FilePosition = namePositionList![nameList!.IndexOf(name)]
+                    };
+
+                IReadOnlyList<FieldDefinition> FieldsCreator(EnumerationDefinition declaringType) =>
+                    EnumerationFieldCollection.Of(enumFieldType, declaringType, nameList!, fieldCreator: FieldCreator);
 
                 var enumType = Reference.CreateEnumDefinition(
                     enumName,
-                    nameList!,
+                    FieldsCreator,
                     blockContainer: blockContainer);
 
                 newPosition = reader.UpperPosition;
@@ -176,7 +187,7 @@ namespace SCUMSLang.SyntaxTree.Parser
         /// <param name="needConsume"></param>
         /// <param name="blockContainer">The shared block container.</param>
         /// <returns></returns>
-        public static int ExpectTypeReference(SpanReader<Token> reader, out TypeReference typeReference, BlockContainer? blockContainer, bool needConsume = false)
+        private static int ExpectTypeReference(SpanReader<Token> reader, out TypeReference typeReference, BlockContainer? blockContainer, bool needConsume = false)
         {
             if (!reader.ConsumeNext(needConsume)
                 || !(reader.ViewLastValue.Value is string typeName)
@@ -188,7 +199,7 @@ namespace SCUMSLang.SyntaxTree.Parser
             return reader.UpperPosition;
         }
 
-        public static int ExpectArgumentTypeReference(SpanReader<Token> reader, out TypeReference typeReference, BlockContainer? blockContainer)
+        private static int ExpectArgumentTypeReference(SpanReader<Token> reader, out TypeReference typeReference, BlockContainer? blockContainer)
         {
             if (reader.ViewLastValue.TryRecognize(TokenType.ParamsKeyword)) {
                 if (!reader.ConsumeNext()) {
@@ -210,7 +221,7 @@ namespace SCUMSLang.SyntaxTree.Parser
             return reader.UpperPosition;
         }
 
-        public static bool TryRecognizeField(SpanReader<Token> reader, out int? newPosition, [MaybeNull] out Reference node)
+        private static bool TryRecognizeField(SpanReader<Token> reader, out int? newPosition, [MaybeNull] out Reference node)
         {
             bool isStatic;
 
@@ -253,7 +264,7 @@ namespace SCUMSLang.SyntaxTree.Parser
             return false;
         }
 
-        public static bool TryRecognizeAssignment(SpanReader<Token> reader, TokenType valueType, out int? newPosition, [MaybeNull] out Reference node)
+        private static bool TryRecognizeAssignment(SpanReader<Token> reader, TokenType valueType, out int? newPosition, [MaybeNull] out Reference node)
         {
             if (reader.ViewLastValue.TryRecognize(TokenType.Name, out string name)
                 && reader.ConsumeNext(TokenType.EqualSign)
@@ -280,7 +291,7 @@ namespace SCUMSLang.SyntaxTree.Parser
         /// </summary>
         /// <param name="reader"></param>
         /// <returns></returns>
-        public static bool TryRecognizeParameterList(
+        private static bool TryRecognizeParameterList(
             SpanReader<Token> reader,
             TokenType openTokenType,
             TokenType closeTokenType,
@@ -326,7 +337,7 @@ namespace SCUMSLang.SyntaxTree.Parser
             return false;
         }
 
-        public static ConstantDefinition GetConstant(Token constantToken, BlockContainer? blockContainer)
+        private static ConstantDefinition GetConstant(Token constantToken, BlockContainer? blockContainer)
         {
             if (constantToken.TokenType == TokenType.Number) {
                 var stringTypeReference = Reference.CreateTypeReference(SystemType.Integer, blockContainer);
@@ -359,7 +370,7 @@ namespace SCUMSLang.SyntaxTree.Parser
             throw new SyntaxTreeParsingException(constantToken, "Bad constant.");
         }
 
-        public static bool TryRecognizeArgumentList(
+        private static bool TryRecognizeArgumentList(
             SpanReader<Token> reader,
             TokenType openTokenType,
             TokenType endTokenType,
@@ -408,7 +419,7 @@ namespace SCUMSLang.SyntaxTree.Parser
             return false;
         }
 
-        public static bool TryRecognizeAttribute(SpanReader<Token> reader, [NotNullWhen(true)] out int? newPosition, [MaybeNullWhen(false)] out Reference node)
+        private static bool TryRecognizeAttribute(SpanReader<Token> reader, [NotNullWhen(true)] out int? newPosition, [MaybeNullWhen(false)] out Reference node)
         {
             if (reader.ViewLastValue == TokenType.OpenSquareBracket
                 && reader.ConsumeNext(TokenType.Name, out var nameTokenPosition)) {
@@ -448,7 +459,7 @@ namespace SCUMSLang.SyntaxTree.Parser
         /// <param name="needConsume">The next token gets consumed before the actual token gets evaluated.</param>
         /// <param name="expectDelimiter"></param>
         /// <returns></returns>
-        public static bool TryRecognizeMethodCall(
+        private static bool TryRecognizeMethodCall(
             SpanReader<Token> reader,
             [NotNullWhen(true)] out int? newPosition,
             [MaybeNullWhen(false)] out MethodCallDefinition node,
@@ -461,8 +472,8 @@ namespace SCUMSLang.SyntaxTree.Parser
                 && reader.ViewLastValue.TryRecognize(TokenType.Name, out var nameToken)
                 && reader.PeekNext(out ReaderPosition<Token> peekedToken)
                 && peekedToken.Value.TryRecognize(TokenType.OpenAngleBracket, TokenType.OpenBracket)) {
-                List<ConstantDefinition> genericArguments;
                 blockContainer ??= new BlockContainer();
+                List<ConstantDefinition> genericArguments;
 
                 if (peekedToken.Value == TokenType.OpenAngleBracket
                     && TryRecognizeArgumentList(
@@ -512,7 +523,7 @@ namespace SCUMSLang.SyntaxTree.Parser
             return false;
         }
 
-        public static bool TryRecognizeFunctionOrEventHandler(SpanReader<Token> reader, out int? newPosition, [MaybeNull] out Reference node)
+        private static bool TryRecognizeFunctionOrEventHandler(SpanReader<Token> reader, out int? newPosition, [MaybeNull] out Reference node)
         {
             if (reader.ViewLastValue.TryRecognize(TokenType.FunctionKeyword, out var functionToken)) {
                 if (!reader.ConsumeNext(TokenType.Name, out var functionNameToken)) {
@@ -581,7 +592,7 @@ namespace SCUMSLang.SyntaxTree.Parser
             return false;
         }
 
-        public static bool TryRecognizeUsingStaticDirective(SpanReader<Token> reader, [NotNullWhen(true)] out int? newPosition, [MaybeNullWhen(false)] out Reference node)
+        private static bool TryRecognizeUsingStaticDirective(SpanReader<Token> reader, [NotNullWhen(true)] out int? newPosition, [MaybeNullWhen(false)] out Reference node)
         {
             if (reader.ViewLastValue.TryRecognize(TokenType.UsingKeyword)
                 && reader.ConsumeNext(TokenType.StaticKeyword)) {
@@ -597,7 +608,7 @@ namespace SCUMSLang.SyntaxTree.Parser
             return false;
         }
 
-        public static bool TryRecognizeTemplateForExpression(SpanReader<Token> reader, [NotNullWhen(true)] out int? newPosition, [MaybeNullWhen(false)] out Reference node)
+        private static bool TryRecognizeTemplateForExpression(SpanReader<Token> reader, [NotNullWhen(true)] out int? newPosition, [MaybeNullWhen(false)] out Reference node)
         {
             if (reader.ViewLastValue.TryRecognize(TokenType.TemplateKeyword)) {
                 var forInCollection = new List<ForInDefinition>();
@@ -699,6 +710,11 @@ namespace SCUMSLang.SyntaxTree.Parser
 
             node = null;
             return null;
+        }
+
+        private class FilePositionalName
+        {
+
         }
     }
 }

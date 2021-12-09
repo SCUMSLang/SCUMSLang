@@ -41,7 +41,7 @@ typedef Boolean bool;
 using static Boolean;
 using static bool;";
 
-                Assert.Throws<BlockEvaluatingException>(() => _ = new SyntaxTreeParser().Parse(content));
+                Assert.Throws<BlockEvaluationException>(() => _ = new SyntaxTreeParser().Parse(content));
             }
         }
     }

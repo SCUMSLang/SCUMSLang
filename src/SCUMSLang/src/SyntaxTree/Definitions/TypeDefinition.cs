@@ -20,7 +20,7 @@ namespace SCUMSLang.SyntaxTree.Definitions
 
         [AllowNull]
         public override BlockDefinition ParentBlock {
-            get => ParentBlockContainer.Block ?? BaseType?.ParentBlock ?? throw new InvalidOperationException();
+            get => ParentBlockContainer.Block ?? BaseType?.ParentBlock ?? throw SyntaxTreeThrowHelper.InvalidOperation(this);
             internal set => ParentBlockContainer.Block = value;
         }
 
@@ -106,24 +106,22 @@ namespace SCUMSLang.SyntaxTree.References
 {
     partial class Reference
     {
-        public static TypeReference CreateTypeDefinition(string name, BlockContainer? blockContainer, bool allowOverwriteOnce) =>
+        public static TypeReference CreateTypeDefinition(string name, bool allowOverwriteOnce, BlockContainer? blockContainer) =>
             new TypeDefinition(name) { ParentBlockContainer = blockContainer, AllowOverwriteOnce = allowOverwriteOnce };
 
-        public static TypeReference CreateTypeDefinition(SystemType systemType, BlockContainer? blockContainer, bool allowOverwriteOnce) =>
-            CreateTypeDefinition(SystemTypeLibrary.Sequences[systemType], blockContainer, allowOverwriteOnce);
+        public static TypeReference CreateTypeDefinition(SystemType systemType, bool allowOverwriteOnce, BlockContainer? blockContainer) =>
+            CreateTypeDefinition(Sequences.SystemTypes[systemType], allowOverwriteOnce, blockContainer);
 
         public static TypeDefinition CreateAliasDefinition(
             string name,
             TypeReference baseType,
             BlockContainer? blockContainer = null)
         {
-            var alias = new TypeDefinition(name) {
+            return new TypeDefinition(name) {
                 IsAlias = true,
                 BaseType = baseType,
                 ParentBlockContainer = blockContainer
             };
-
-            return alias;
         }
     }
 }

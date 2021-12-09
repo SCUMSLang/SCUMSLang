@@ -47,7 +47,7 @@ namespace SCUMSLang.SyntaxTree
             }
 
             // We only want show unique error messages.
-            throw new DefinitionNotFoundAggregateException("One or more exceptions occured while trying to resolve definition.", errors.GroupBy(x => x.Message).Select(x => x.First()));
+            throw new DefinitionNotFoundAggregateException("One or more exceptions occured while resolving a definition.", errors.GroupBy(x => x.Message).Select(x => x.First()));
         }
 
         public TypeDefinition Resolve(TypeReference type) =>

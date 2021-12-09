@@ -1,6 +1,5 @@
 ﻿using System;
 using System.Collections.Generic;
-using System.Diagnostics.CodeAnalysis;
 using System.Linq;
 using SCUMSLang.SyntaxTree.References;
 using SCUMSLang.SyntaxTree.Visitors;
@@ -62,11 +61,11 @@ namespace SCUMSLang.SyntaxTree.Definitions
                 var elementType = directiveEntry.Directive.ElementType.Resolve();
 
                 if (typeNamesOfEachResolvedUsingStaticDirective.Contains(elementType.Name)) {
-                    throw new BlockEvaluatingException("Two using static directives cannot point to the same type.");
+                    throw new BlockEvaluationException("Two using static directives cannot point to the same type.");
                 }
 
                 if (!(elementType is INestedTypesProvider nestedTypesProvider)) {
-                    throw new BlockEvaluatingException("The using static directive can only applied on types with nested types.");
+                    throw new BlockEvaluationException("The using static directive can only applied on types with nested types.");
                 }
 
                 foreach (var nestedType in nestedTypesProvider.GetNestedTypes()) {

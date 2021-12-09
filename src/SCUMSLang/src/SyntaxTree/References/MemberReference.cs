@@ -20,7 +20,7 @@ namespace SCUMSLang.SyntaxTree.References
 
         [AllowNull]
         public virtual BlockDefinition ParentBlock {
-            get => ParentBlockContainer.Block ?? throw new InvalidOperationException();
+            get => ParentBlockContainer.Block ?? throw SyntaxTreeThrowHelper.InvalidOperation(this);
             internal set => ParentBlockContainer.Block = value;
         }
 

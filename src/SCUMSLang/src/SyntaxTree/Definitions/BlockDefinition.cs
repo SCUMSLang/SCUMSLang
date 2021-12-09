@@ -194,8 +194,8 @@ namespace SCUMSLang.SyntaxTree.Definitions
 
         public void AddNode(Reference node)
         {
-            if (node is IBlockScopedReference blockScopableReference
-                && blockScopableReference.BlockScope != BlockScope) {
+            if (node is IBlockScopable blockScopable
+                && blockScopable.BlockScope != BlockScope) {
                 throw new BadBlockScopeException();
             }
 
@@ -243,7 +243,7 @@ namespace SCUMSLang.SyntaxTree.Definitions
                 LocalMemberList,
                 definitions => definitions.SingleOrDefault(x =>
                     new MethodOverloadEqualityComparer(Module).Equals(x, methodReference)),
-                () => SyntaxTreeThrowHelper.MethodNotFound(methodReference.Name));
+                () => SyntaxTreeThrowHelper.MethodNotFound(methodReference.Name, filePosition: methodReference.FilePosition));
 
         public EventHandlerDefinition GetEventHandler(string eventHandlerName) =>
             GetMemberDefinitionBySelector<EventHandlerDefinition>(

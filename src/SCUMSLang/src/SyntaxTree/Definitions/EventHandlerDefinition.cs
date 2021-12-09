@@ -36,7 +36,7 @@ namespace SCUMSLang.SyntaxTree.Definitions
             : base(name, genericParameters, parameters, conditions) { }
 
         void IBlockHolder.SetupBlock(BlockDefinition parentBlock) =>
-            BlockHolderTools.SetupBlock(ref body, parentBlock, BlockScope.Local);
+            BlockHolders.SetupBlock(ref body, parentBlock, BlockScope.Local);
 
         public new EventHandlerDefinition Resolve() =>
             this;

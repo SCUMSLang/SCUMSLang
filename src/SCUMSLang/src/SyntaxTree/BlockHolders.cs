@@ -2,7 +2,7 @@
 
 namespace SCUMSLang.SyntaxTree
 {
-    public static class BlockHolderTools
+    public static class BlockHolders
     {
         public static void SetupBlock(ref BlockDefinition? block, BlockDefinition parentBlock, BlockScope blockScope)
         {

@@ -5,13 +5,13 @@ using SCUMSLang.SyntaxTree.Visitors;
 
 namespace SCUMSLang.SyntaxTree.Definitions
 {
-    public class FieldDefinition : FieldReference, IMemberDefinition
+    public class FieldDefinition : FieldReference
     {
         public object? Value { get; set; }
 
         [AllowNull]
         public override TypeReference FieldType {
-            get => base.FieldType ?? throw new InvalidOperationException();
+            get => base.FieldType ?? throw SyntaxTreeThrowHelper.InvalidOperation(this);
             internal set => base.FieldType = value;
         }
 

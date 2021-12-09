@@ -10,12 +10,10 @@ namespace SCUMSLang.Tokenization
     {
         public static bool TryRecognizeWhiteSpaces(SpanReader<char> reader, out int? newPosition)
         {
-            var whiteSpaceBuffer = new StringBuilder();
-
             if (char.IsWhiteSpace(reader.ViewLastValue)) {
                 while (reader.PeekNext(out var peekedPosition) && char.IsWhiteSpace(peekedPosition.Value)) {
-                    if (reader.ConsumeNext()) {
-                        continue;
+                    if (!reader.ConsumeNext()) {
+                        break;
                     }
                 }
 

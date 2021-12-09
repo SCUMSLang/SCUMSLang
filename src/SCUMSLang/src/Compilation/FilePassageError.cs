@@ -2,7 +2,6 @@
 using System.Text;
 using System.Threading.Tasks;
 using SCUMSLang.IO;
-using SCUMSLang.SyntaxTree.Parser;
 
 namespace SCUMSLang.Compilation
 {
@@ -13,21 +12,22 @@ namespace SCUMSLang.Compilation
         {
             var compilerErrorType = CompilerErrorSourceType.SyntaxTree;
             var errorMessage = error.Message;
+            var errorFilePosition = error.FilePosition;
             CompilerError compilerError;
 
-            if (error.FilePath is null) {
+            if (errorFilePosition?.FilePath is null) {
                 compilerError = new CompilerError(compilerErrorType, errorMessage);
             } else {
-                var filePath = error.FilePath;
-                var filePosition = error.FilePosition;
-                var filePositionLength = error.FilePositionLength;
-                var fileLine = error.FileLine;
+                var filePath = errorFilePosition.FilePath;
+                var filePosition = errorFilePosition.FilePosition;
+                var filePositionLength = errorFilePosition.FilePositionLength;
+                var fileLine = errorFilePosition.FileLine;
 
                 string? filePassage;
 
                 var filePassageLines = await FilePassageReader.Default.ReadPassageAsync(
-                    filePath, 
-                    filePosition + error.FilePositionOffset, 
+                    filePath,
+                    filePosition + errorFilePosition.FilePositionOffset,
                     filePositionLength);
 
                 if (!(filePassageLines is null)) {
@@ -44,7 +44,7 @@ namespace SCUMSLang.Compilation
                     position: filePosition,
                     positionLength: filePositionLength,
                     line: fileLine,
-                    linePosition: error.FileLinePosition);
+                    linePosition: errorFilePosition.FileLinePosition);
             }
 
             var wrappedException = new CompilerException(compilerError.ToString(), error);
@@ -60,7 +60,7 @@ namespace SCUMSLang.Compilation
         public int Position { get; }
         public int PositionLength { get; }
         public int Line { get; }
-        public int LinePosition { get; private set; }
+        public int LinePosition { get; }
 
         public FilePassageError(
             CompilerErrorSourceType errorType,

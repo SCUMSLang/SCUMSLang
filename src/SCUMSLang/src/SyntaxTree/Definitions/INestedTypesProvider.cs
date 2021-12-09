@@ -1,7 +1,7 @@
 ﻿using System.Collections.Generic;
 using SCUMSLang.SyntaxTree.References;
 
-namespace SCUMSLang.SyntaxTree
+namespace SCUMSLang.SyntaxTree.Definitions
 {
     public interface INestedTypesProvider
     {

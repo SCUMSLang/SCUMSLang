@@ -19,7 +19,7 @@ namespace SCUMSLang.SyntaxTree.References
             if (typeDefinition.IsAlias) {
                 do {
                     if (typeDefinition.BaseType is null) {
-                        throw new InvalidOperationException("Type alias has no target type specified.");
+                        throw SyntaxTreeThrowHelper.InvalidOperation(this, "Type alias has no target type specified.");
                     }
 
                     typeDefinition = ParentBlock.Module.Resolve(typeDefinition.BaseType);
@@ -30,7 +30,7 @@ namespace SCUMSLang.SyntaxTree.References
         }
 
         public new TypeDefinition Resolve() =>
-            ResolveNonAliasDefinition(ParentBlock?.Module.Resolve(this) ?? throw new NotSupportedException());
+            ResolveNonAliasDefinition(ParentBlock.Module.Resolve(this) ?? throw new NotSupportedException());
 
         protected override IMemberDefinition ResolveMemberDefinition() =>
             Resolve();
@@ -48,6 +48,6 @@ namespace SCUMSLang.SyntaxTree.References
             new TypeReference(name) { ParentBlockContainer = blockContainer };
 
         public static TypeReference CreateTypeReference(SystemType systemType, BlockContainer? blockContainer) =>
-            CreateTypeReference(SystemTypeLibrary.Sequences[systemType], blockContainer);
+            CreateTypeReference(Sequences.SystemTypes[systemType], blockContainer);
     }
 }

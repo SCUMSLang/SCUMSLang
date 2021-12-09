@@ -51,7 +51,7 @@ function daisy();";
 function TriggerCondition();
 [TriggerCondition()]";
 
-                var error = Assert.Throws<BlockEvaluatingException>(() => DefaultParser.Parse(content));
+                var error = Assert.Throws<BlockEvaluationException>(() => DefaultParser.Parse(content));
                 Assert.Contains("attribute", error.Message);
             }
         }

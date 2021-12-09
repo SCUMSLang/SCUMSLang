@@ -23,7 +23,7 @@ namespace SCUMSLang.SyntaxTree.Definitions
             public void EndCurrentBlock()
             {
                 if (ReferenceEquals(CurrentBlock, CurrentBlock.ParentBlock)) {
-                    throw new BlockEvaluatingException("You cannot end the block of the root block.");
+                    throw new BlockEvaluationException("You cannot end the block of the root block.");
                 }
 
                 CurrentBlock = CurrentBlock.ParentBlock;
@@ -46,7 +46,7 @@ namespace SCUMSLang.SyntaxTree.Definitions
                 }
 
                 if (!ReferenceEquals(blockHolder.Block.ParentBlock, CurrentBlock)) {
-                    throw new BlockEvaluatingException("You cannot begin another block whose parent is not the current block.");
+                    throw new BlockEvaluationException("You cannot begin another block whose parent is not the current block.");
                 }
 
                 CurrentBlock = blockHolder.Block;
