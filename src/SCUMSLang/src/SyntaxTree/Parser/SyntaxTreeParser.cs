@@ -769,30 +769,32 @@ namespace SCUMSLang.SyntaxTree.Parser
                     if (!(node is null)) {
                         if (options.WhileContinueDelegate?.Invoke(node) ?? false) {
                             continue;
-                        } else if (options.WhileBreakDelegate?.Invoke(node) ?? false) {
-                            break;
-                        } else {
-                            if (node is AttributeDefinition precedingAttribute) {
-                                precedingAttributes.Add(precedingAttribute);
-                            } else if (precedingAttributes.Count > 0) {
-                                if (node is IAttributesHolder attributesHolder) {
-                                    foreach (var attribute in precedingAttributes) {
-                                        attributesHolder.Attributes.Add(attribute);
-                                    }
-
-                                    precedingAttributes.Clear();
-                                } else {
-                                    throw SyntaxTreeThrowHelper.AttributeMisposition(node.GetType().Name);
-                                }
-                            }
-
-                            moduleBlockWalker.TrySetParentBlock(node);
-                            moduleBlockWalker.CurrentBlock.AddNode(node);
-                            // Try begin another block AFTER the block
-                            // of the node could be initialized from the
-                            // adding procedure.
-                            moduleBlockWalker.TryBeginAnotherBlock(node);
                         }
+
+                        if (options.WhileBreakDelegate?.Invoke(node) ?? false) {
+                            break;
+                        }
+
+                        if (node is AttributeDefinition precedingAttribute) {
+                            precedingAttributes.Add(precedingAttribute);
+                        } else if (precedingAttributes.Count > 0) {
+                            if (node is IAttributesHolder attributesHolder) {
+                                foreach (var attribute in precedingAttributes) {
+                                    attributesHolder.Attributes.Add(attribute);
+                                }
+
+                                precedingAttributes.Clear();
+                            } else {
+                                throw SyntaxTreeThrowHelper.AttributeMisposition(node.GetType().Name);
+                            }
+                        }
+
+                        moduleBlockWalker.TrySetParentBlock(node);
+                        moduleBlockWalker.CurrentBlock.AddNode(node);
+                        // Try begin another block AFTER the block
+                        // of the node could be initialized from the
+                        // adding procedure.
+                        moduleBlockWalker.TryBeginAnotherBlock(node);
                     }
                 }
 
