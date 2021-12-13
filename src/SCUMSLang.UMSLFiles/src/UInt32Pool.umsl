@@ -1,5 +1,5 @@
-﻿import "EnumTypes/Player.umsh";
-import "EnumTypes/Unit.umsh";
+﻿import "Enums/Player.umsh";
+import "Enums/Unit.umsh";
 
 using static Player;
 using static Unit;

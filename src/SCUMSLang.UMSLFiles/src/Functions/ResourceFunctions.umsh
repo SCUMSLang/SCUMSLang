@@ -1,4 +1,4 @@
-import "../EnumTypes/Index.umsh";
+import "../Enums/Index.umsh";
 
 /// <summary>Sets the resource count for a player.</summary>
 function set_resource(Player player, ResourceType resourceType, int expression);

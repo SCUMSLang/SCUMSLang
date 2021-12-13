@@ -1,7 +1,7 @@
 import "../System.umsh";
-import "../EnumTypes/Comparison.umsh";
-import "../EnumTypes/Unit.umsh";
-import "../EnumTypes/Location.umsh";
+import "../Enums/Comparison.umsh";
+import "../Enums/Unit.umsh";
+import "../Enums/Location.umsh";
 
 /// <summary>When a player owns a quantity of units at location.</summary>
 [TriggerCondition]

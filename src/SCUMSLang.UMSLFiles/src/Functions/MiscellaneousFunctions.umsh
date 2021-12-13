@@ -1,4 +1,4 @@
-import "../EnumTypes/Index.umsh";
+import "../Enums/Index.umsh";
 
 /// <summary>Prints a message, defaults to specified player.</summary>
 function print(string text, Player player);

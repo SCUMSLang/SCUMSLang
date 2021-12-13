@@ -1,6 +1,6 @@
 import "../System.umsh";
-import "../EnumTypes/Comparison.umsh";
-import "../EnumTypes/ScoreType.umsh";
+import "../Enums/Comparison.umsh";
+import "../Enums/ScoreType.umsh";
 
 /// <summary>When a player's score reaches a given quantity.</summary>
 [TriggerCondition]

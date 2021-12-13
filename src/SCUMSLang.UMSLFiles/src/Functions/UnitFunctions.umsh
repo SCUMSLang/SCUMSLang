@@ -1,4 +1,4 @@
-import "../EnumTypes/Index.umsh";
+import "../Enums/Index.umsh";
 
 /// <summary>Spawns units at a location with optional properties.</summary>
 function spawn(Unit unit, Player player, int expression, Location location);

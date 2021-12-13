@@ -5,19 +5,19 @@
   </ItemGroup>
   <ItemGroup>
     <None Include="Conditions\Index.umsh" />
-    <None Include="EnumTypes\Location.umsh" />
-    <None Include="EnumTypes\Comparison.umsh" />
-    <None Include="EnumTypes\AIScript.umsh" />
-    <None Include="EnumTypes\AllianceStatus.umsh" />
-    <None Include="EnumTypes\EndCondition.umsh" />
-    <None Include="EnumTypes\Index.umsh" />
-    <None Include="EnumTypes\Order.umsh" />
-    <None Include="EnumTypes\Player.umsh" />
-    <None Include="EnumTypes\ResourceType.umsh" />
-    <None Include="EnumTypes\ScoreType.umsh" />
-    <None Include="EnumTypes\State.umsh" />
-    <None Include="EnumTypes\Unit.umsh" />
-    <None Include="EnumTypes\UnitProperty.umsh" />
+    <None Include="Enums\Location.umsh" />
+    <None Include="Enums\Comparison.umsh" />
+    <None Include="Enums\AIScript.umsh" />
+    <None Include="Enums\AllianceStatus.umsh" />
+    <None Include="Enums\EndCondition.umsh" />
+    <None Include="Enums\Index.umsh" />
+    <None Include="Enums\Order.umsh" />
+    <None Include="Enums\Player.umsh" />
+    <None Include="Enums\ResourceType.umsh" />
+    <None Include="Enums\ScoreType.umsh" />
+    <None Include="Enums\State.umsh" />
+    <None Include="Enums\Unit.umsh" />
+    <None Include="Enums\UnitProperty.umsh" />
     <None Include="Functions\Index.umsh" />
     <None Include="Functions\UnitFunctions.umsh" />
     <None Include="Functions\UserInterfaceFunctions.umsh" />

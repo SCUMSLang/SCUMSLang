@@ -1,4 +1,4 @@
 import "System.umsh";
-import "EnumTypes/Index.umsh";
+import "Enums/Index.umsh";
 import "Functions/Index.umsh";
 import "Conditions/Index.umsh";
