@@ -31,5 +31,14 @@ namespace SCUMSLang.SyntaxTree.Definitions
 
         protected internal override Reference Accept(SyntaxNodeVisitor visitor) =>
             visitor.VisitTemplateForInDefinition(this);
+
+        public TemplateForInDefinition UpdateDefinition(IReadOnlyList<ForInDefinition> forInDefinitions)
+        {
+            if (ReferenceEquals(ForInCollection, forInDefinitions)) {
+                return this;
+            }
+
+            return new TemplateForInDefinition(forInDefinitions);
+        }
     }
 }

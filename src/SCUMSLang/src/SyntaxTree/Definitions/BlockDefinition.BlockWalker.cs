@@ -31,7 +31,7 @@ namespace SCUMSLang.SyntaxTree.Definitions
 
             public bool TrySetParentBlock(Reference reference)
             {
-                if (reference is IOwnableReference ownableReference) {
+                if (reference is IHasParentBlock ownableReference) {
                     ownableReference.ParentBlock = CurrentBlock;
                     return true;
                 }

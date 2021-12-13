@@ -28,5 +28,6 @@
         UsingStaticDirective,
         ForInDefinition,
         TemplateForInDefinition,
+        ModuleDefinition,
     }
 }

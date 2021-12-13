@@ -2,7 +2,6 @@
 using System.Collections.Generic;
 using System.Diagnostics.CodeAnalysis;
 using System.Linq;
-using SCUMSLang.SyntaxTree.Definitions;
 
 namespace SCUMSLang.SyntaxTree.References
 {
@@ -13,20 +12,20 @@ namespace SCUMSLang.SyntaxTree.References
     {
         public new readonly static MethodOverloadEqualityComparer Default = new MethodOverloadEqualityComparer();
 
-        private readonly ModuleDefinition? module;
+        private readonly IReferenceResolver? referenceResolver;
 
         private MethodOverloadEqualityComparer() { }
 
-        public MethodOverloadEqualityComparer(ModuleDefinition module) =>
-            this.module = module ?? throw new ArgumentNullException(nameof(module));
+        public MethodOverloadEqualityComparer(IReferenceResolver referenceResolver) =>
+            this.referenceResolver = referenceResolver ?? throw new ArgumentNullException(nameof(referenceResolver));
 
-        private TypeDefinition ResolveType(TypeReference type)
+        private IMember Resolve(TypeReference type)
         {
-            if (module is null) {
-                return type.Resolve();
+            if (referenceResolver is null) {
+                return type.AsMember().Resolve();
             }
 
-            return module.Resolve(type);
+            return referenceResolver.Resolve(type).Value;
         }
 
         public override bool Equals(MethodReference? x, MethodReference? y)
@@ -41,10 +40,10 @@ namespace SCUMSLang.SyntaxTree.References
             }
 
             return x.Name == y.Name
-                && x.GenericParameters.Select(paramter => ResolveType(paramter.ParameterType)).SequenceEqual(
-                    y.GenericParameters.Select(paramter => ResolveType(paramter.ParameterType)))
-                && x.Parameters.Select(paramter => ResolveType(paramter.ParameterType)).SequenceEqual(
-                    y.Parameters.Select(paramter => ResolveType(paramter.ParameterType)));
+                && x.GenericParameters.Select(paramter => Resolve(paramter.ParameterType)).SequenceEqual(
+                    y.GenericParameters.Select(paramter => Resolve(paramter.ParameterType)))
+                && x.Parameters.Select(paramter => Resolve(paramter.ParameterType)).SequenceEqual(
+                    y.Parameters.Select(paramter => Resolve(paramter.ParameterType)));
         }
 
         public override int GetHashCode([DisallowNull] MethodReference obj) =>

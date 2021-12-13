@@ -1,4 +1,5 @@
 ﻿using System;
+using System.Collections;
 using System.Collections.Generic;
 using System.Linq;
 using SCUMSLang.SyntaxTree.Definitions;
@@ -6,28 +7,9 @@ using SCUMSLang.SyntaxTree.References;
 
 namespace SCUMSLang.SyntaxTree
 {
-    public class ReferenceResolverPool : ReferenceResolverPoolBase
+    public abstract class ReferenceResolverPoolBase : IReferenceResolver, IEnumerable<IReferenceResolver>
     {
-        private List<IReferenceResolver> referenceResolvers;
-
-        public ReferenceResolverPool() =>
-            referenceResolvers = new List<IReferenceResolver>();
-
-        public void Add(IReferenceResolver module)
-        {
-            if (module is null) {
-                throw new ArgumentNullException(nameof(module));
-            }
-
-            referenceResolvers.Add(module);
-        }
-
-        protected override IEnumerable<IReferenceResolver> GetReferenceResolvers()
-        {
-            foreach (var module in referenceResolvers) {
-                yield return module;
-            }
-        }
+        protected abstract IEnumerable<IReferenceResolver> GetReferenceResolvers();
 
         private ResolveResult<T> getFirstOrThrowFirst<T>(Func<IReferenceResolver, ResolveResult<T>> resolveDelegate)
         {
@@ -87,5 +69,11 @@ namespace SCUMSLang.SyntaxTree
 
         public ResolveResult<MethodDefinition> GetMethod(MethodReference methodReference) =>
             getFirstOrThrowFirst(referenceResolver => referenceResolver.GetMethod(methodReference));
+
+        public IEnumerator<IReferenceResolver> GetEnumerator() =>
+            GetReferenceResolvers().GetEnumerator();
+
+        IEnumerator IEnumerable.GetEnumerator() =>
+            GetEnumerator();
     }
 }

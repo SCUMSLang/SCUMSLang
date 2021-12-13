@@ -1,4 +1,6 @@
 import "../System.umsh";
+import "../EnumTypes/Comparison.umsh";
+import "../EnumTypes/ResourceType.umsh";
 
 /// <summary>When a player owns a quantity of resources.</summary>
 [TriggerCondition]

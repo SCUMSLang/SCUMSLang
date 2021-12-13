@@ -3,7 +3,7 @@ using SCUMSLang.SyntaxTree.Definitions;
 
 namespace SCUMSLang.SyntaxTree.References
 {
-    internal interface IOwnableReference
+    internal interface IHasParentBlock
     {
         [NotNull]
         BlockDefinition? ParentBlock { get; set; }

@@ -1,6 +1,4 @@
-﻿using System;
-using SCUMSLang.SyntaxTree.Definitions;
-using SCUMSLang.SyntaxTree.Visitors;
+﻿using SCUMSLang.SyntaxTree.Visitors;
 
 namespace SCUMSLang.SyntaxTree.References
 {
@@ -9,31 +7,40 @@ namespace SCUMSLang.SyntaxTree.References
         public override SyntaxTreeNodeType NodeType =>
             SyntaxTreeNodeType.TypeReference;
 
-        public virtual bool IsArray { get; internal set; }
+        public virtual bool IsArray { get; internal init; }
+        public virtual bool IsAlias { get; internal init; }
+        public virtual TypeReference? BaseType { get; internal init; }
 
         public TypeReference(string? name)
             : base(name) { }
 
-        protected TypeDefinition ResolveNonAliasDefinition(TypeDefinition typeDefinition)
+        private T ResolveNonAlias<T>(T typeDefinition)
+            where T : TypeReference
         {
-            if (typeDefinition.IsAlias) {
-                do {
-                    if (typeDefinition.BaseType is null) {
-                        throw SyntaxTreeThrowHelper.InvalidOperation(this, "Type alias has no target type specified.");
-                    }
-
-                    typeDefinition = ParentBlock.Module.Resolve(typeDefinition.BaseType);
-                } while (typeDefinition.IsAlias);
+            if (!typeDefinition.IsAlias) {
+                goto exit;
             }
 
+            do {
+                if (typeDefinition.BaseType is null) {
+                    throw SyntaxTreeThrowHelper.InvalidOperation(this, "Type alias has no target type specified.");
+                }
+
+                typeDefinition = ParentBlock.Module.Resolve<T>(typeDefinition.BaseType).Value;
+            } while (typeDefinition.IsAlias);
+
+            exit:
             return typeDefinition;
         }
 
-        public new TypeDefinition Resolve() =>
-            ResolveNonAliasDefinition(ParentBlock.Module.Resolve(this) ?? throw new NotSupportedException());
+        public T Resolve<T>()
+            where T : TypeReference =>
+            ResolveNonAlias(ParentBlock.Module.Resolve<T>(this).Value);
 
-        protected override IMemberDefinition ResolveMemberDefinition() =>
-            Resolve();
+        public new TypeReference Resolve() =>
+            Resolve<TypeReference>();
+
+        protected override IMember ResolveMember() => Resolve();
 
         protected internal override Reference Accept(SyntaxNodeVisitor visitor) =>
             visitor.VisitTypeReference(this);
@@ -46,8 +53,5 @@ namespace SCUMSLang.SyntaxTree.References
     {
         public static TypeReference CreateTypeReference(string name, BlockContainer? blockContainer) =>
             new TypeReference(name) { ParentBlockContainer = blockContainer };
-
-        public static TypeReference CreateTypeReference(SystemType systemType, BlockContainer? blockContainer) =>
-            CreateTypeReference(Sequences.SystemTypes[systemType], blockContainer);
     }
 }

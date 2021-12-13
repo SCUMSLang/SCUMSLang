@@ -1,64 +1,124 @@
-﻿using System.Linq;
+﻿using System;
+using System.Collections.Generic;
+using System.Linq;
 using SCUMSLang.SyntaxTree.Definitions;
 using SCUMSLang.SyntaxTree.References;
 using Teronis;
+using Teronis.Collections.Generic;
 using Teronis.Collections.Specialized;
 
 namespace SCUMSLang.SyntaxTree
 {
-    public abstract class ReferenceResolver : IReferenceResolver
+    public class ReferenceResolver : IReferenceResolver
     {
-        public abstract LinkedBucketList<string, Reference> BlockMembers { get; }
-        public abstract LinkedBucketList<string, TypeReference> CascadingTypes { get; }
+        private readonly static Type ReferenceType = typeof(Reference);
+        private readonly static Type TypeReferenceType = typeof(TypeReference);
+        private readonly static Type MethodDefinitionType = typeof(MethodDefinition);
+        private readonly static Type EventHandlerDefinitionType = typeof(EventHandlerDefinition);
 
-        private T? FindByMember<T>(IReadOnlyLinkedBucketList<string, Reference> references, MemberReference member)
+        public virtual IReadOnlyLinkedBucketList<(string, Type), Reference> Members => members;
+
+        private LinkedBucketList<(string, Type), Reference> members = new LinkedBucketList<(string, Type), Reference>();
+
+        private void AddBaseTypes(string name, Reference type, Type currentDotNetType, Type stoppingBaseType)
+        {
+            addBaseType:
+            members.Add((name, currentDotNetType), type);
+
+            var dotNetBaseType = currentDotNetType.BaseType;
+
+            if (dotNetBaseType == null || dotNetBaseType == stoppingBaseType) {
+                return;
+            }
+
+            currentDotNetType = dotNetBaseType;
+            goto addBaseType;
+        }
+
+        public void AddType(string name, Reference type)
+        {
+            if (type is null) {
+                throw new ArgumentNullException(nameof(type));
+            }
+
+            var dotNetType = type.GetType();
+
+            if (dotNetType == TypeReferenceType) {
+                throw new ArgumentException("Type cannot be a reference");
+            }
+
+            AddBaseTypes(name, type, dotNetType, ReferenceType);
+        }
+
+        private T? FindByMember<T>(IReadOnlyLinkedBucketList<(string, Type), Reference> references, MemberReference member, Type? exceptBaseType = null)
             where T : MemberReference
         {
-            var (success, bucket) = references.Buckets.TryGetValue(member.Name);
+            var (success, bucket) = references.Buckets.TryGetValue((member.Name, typeof(T)));
 
             if (!success) {
                 return null;
             }
 
-            var typedReferences = bucket.OfType<T>();
+            var members = bucket.Cast<T>();
 
-            return typedReferences.SingleOrDefault(typedReference =>
-                TypeReferenceEqualityComparer.ViaResolveComparer.Default.Equals(typedReference.DeclaringType, member.DeclaringType));
+            if (exceptBaseType is not null) {
+                members = members.Where(member => member.GetType() != exceptBaseType);
+            }
+
+            return members.SingleOrDefault(typedReference =>
+                TypeReferenceEqualityComparer.AfterResolveComparer.Default.Equals(typedReference.DeclaringType, member.DeclaringType));
         }
 
-        public TypeDefinition Resolve(TypeReference type)
+        public ResolveResult<T> Resolve<T>(TypeReference type)
+            where T : TypeReference
         {
-            return FindByMember<TypeDefinition>(CascadingTypes, type)
-                ?? throw SyntaxTreeThrowHelper.TypeNotFound(type.Name, SyntaxTreeThrowHelper.DefinitionNotFoundExceptionDelegate, type.FilePosition);
+            var typeDefinition = FindByMember<T>(Members, type, typeof(TypeReference));
+
+            if (typeDefinition is null) {
+                return ResolveResult.Failed<T>(SyntaxTreeThrowHelper.TypeNotFound(
+                    type.Name,
+                    SyntaxTreeThrowHelper.BlockResolutionExceptionDelegate,
+                    type.FilePosition,
+                    Environment.StackTrace));
+            }
+
+            return ResolveResult.Success(typeDefinition);
         }
 
-        public FieldDefinition Resolve(FieldReference field)
+        public ResolveResult<TypeReference> Resolve(TypeReference type) =>
+           Resolve<TypeReference>(type);
+
+        public ResolveResult<FieldDefinition> Resolve(FieldReference field)
         {
             FieldDefinition? fieldDefinition;
 
             if (field.DeclaringType is null) {
                 // This allows to resolve field members in own block.
                 // TODO: What about resolving a field member of static block in local block?
-                fieldDefinition = FindByMember<FieldDefinition>(BlockMembers, field);
+                fieldDefinition = FindByMember<FieldDefinition>(Members, field);
             } else {
-                var declaringType = Resolve(field.DeclaringType);
-                fieldDefinition = declaringType.Fields?.SingleOrDefault(x => x.Name == field.Name);
+                var declaringType = Resolve<TypeDefinition>(field.DeclaringType).ValueOrDefault();
+                fieldDefinition = declaringType?.Fields?.SingleOrDefault(x => x.Name == field.Name);
             }
 
             if (fieldDefinition is null) {
-                throw SyntaxTreeThrowHelper.FieldNotFound(field.Name, SyntaxTreeThrowHelper.DefinitionNotFoundExceptionDelegate, field.FilePosition);
+                return ResolveResult.Failed<FieldDefinition>(SyntaxTreeThrowHelper.FieldNotFound(
+                    field.Name,
+                    SyntaxTreeThrowHelper.BlockResolutionExceptionDelegate,
+                    field.FilePosition,
+                    Environment.StackTrace));
             }
 
-            return fieldDefinition;
+            return ResolveResult.Success(fieldDefinition);
         }
 
-        public MethodDefinition Resolve(MethodReference method)
+        public ResolveResult<MethodDefinition> Resolve(MethodReference method)
         {
             MethodDefinition? methodDefinition = null;
 
-            if (BlockMembers.TryGetBucket(method.Name, out var bucket)) {
+            if (Members.Buckets.TryGetValue((method.Name, MethodDefinitionType), out var bucket)) {
                 var typeDefinitions = bucket
-                    .OfType<MethodDefinition>()
+                    .Cast<MethodDefinition>()
                     .Where(x => x.DeclaringType == method.DeclaringType);
 
                 methodDefinition = typeDefinitions.SingleOrDefault(x =>
@@ -66,19 +126,23 @@ namespace SCUMSLang.SyntaxTree
             }
 
             if (methodDefinition is null) {
-                throw SyntaxTreeThrowHelper.MethodNotFound(method.Name, SyntaxTreeThrowHelper.DefinitionNotFoundExceptionDelegate);
+                return ResolveResult.Failed<MethodDefinition>(SyntaxTreeThrowHelper.MethodNotFound(
+                    method.Name,
+                    SyntaxTreeThrowHelper.BlockResolutionExceptionDelegate,
+                    method.FilePosition,
+                    Environment.StackTrace));
             }
 
-            return methodDefinition;
+            return ResolveResult.Success(methodDefinition);
         }
 
-        public EventHandlerDefinition Resolve(EventHandlerReference eventHandler)
+        public ResolveResult<EventHandlerDefinition> Resolve(EventHandlerReference eventHandler)
         {
             EventHandlerDefinition? eventHandlerDefinition = null;
 
-            if (BlockMembers.TryGetBucket(eventHandler.Name, out var bucket)) {
+            if (Members.Buckets.TryGetValue((eventHandler.Name, EventHandlerDefinitionType), out var bucket)) {
                 var typeDefinitions = bucket
-                    .OfType<EventHandlerDefinition>()
+                    .Cast<EventHandlerDefinition>()
                     .Where(x => x.DeclaringType == eventHandler.DeclaringType);
 
                 eventHandlerDefinition = typeDefinitions.SingleOrDefault(x =>
@@ -86,10 +150,96 @@ namespace SCUMSLang.SyntaxTree
             }
 
             if (eventHandlerDefinition is null) {
-                throw SyntaxTreeThrowHelper.EventHandlerdNotFound(eventHandler.Name, SyntaxTreeThrowHelper.DefinitionNotFoundExceptionDelegate, eventHandler.FilePosition);
+                return ResolveResult.Failed<EventHandlerDefinition>(SyntaxTreeThrowHelper.EventHandlerdNotFound(
+                    eventHandler.Name,
+                    SyntaxTreeThrowHelper.BlockResolutionExceptionDelegate,
+                    eventHandler.FilePosition,
+                    Environment.StackTrace));
             }
 
-            return eventHandlerDefinition;
+            return ResolveResult.Success(eventHandlerDefinition);
         }
+
+        private bool TryGetMemberDefinitionBySelector<TDefinition>(
+            string memberName,
+            IReadOnlyLinkedBucketList<(string, Type), Reference> candidates,
+            Func<IEnumerable<TDefinition>, TDefinition?> definitionSelector,
+            out TDefinition definition)
+            where TDefinition : class
+        {
+            if (!candidates.Buckets.TryGetValue((memberName, typeof(TDefinition)), out var bucket)) {
+                definition = null!;
+                return false;
+            }
+
+            definition = definitionSelector(bucket.Cast<TDefinition>())!;
+            return true;
+        }
+
+        private ResolveResult<TDefinition> GetMemberDefinitionBySelector<TDefinition>(
+            string memberName,
+            IReadOnlyLinkedBucketList<(string, Type), Reference> candidates,
+            Func<IEnumerable<TDefinition>, TDefinition?> definitionSelector,
+            Func<string, Exception> notFoundErrorProvider)
+            where TDefinition : class
+        {
+            if (TryGetMemberDefinitionBySelector(memberName, candidates, definitionSelector, out var definition) && definition is not null) {
+                return ResolveResult.Success(definition);
+            }
+
+            return ResolveResult.Failed<TDefinition>(notFoundErrorProvider(Environment.StackTrace));
+        }
+
+        public ResolveResult<TypeDefinition> GetType(string typeName) =>
+            GetMemberDefinitionBySelector<TypeDefinition>(
+                typeName,
+                Members,
+                definitions => definitions.SingleOrDefault(),
+                (stackTrace) => SyntaxTreeThrowHelper.TypeNotFound(
+                    typeName,
+                    SyntaxTreeThrowHelper.BlockResolutionExceptionDelegate,
+                    stackTrace: stackTrace));
+
+        public ResolveResult<FieldDefinition> GetField(string fieldName) =>
+            GetMemberDefinitionBySelector<FieldDefinition>(
+                fieldName,
+                Members,
+                definitions => definitions.SingleOrDefault(),
+                (stackTrace) => SyntaxTreeThrowHelper.FieldNotFound(
+                    fieldName,
+                    SyntaxTreeThrowHelper.BlockResolutionExceptionDelegate,
+                    stackTrace: stackTrace));
+
+        public ResolveResult<MethodDefinition> GetMethod(string methodName) =>
+            GetMemberDefinitionBySelector<MethodDefinition>(
+                methodName,
+                Members,
+                definitions => definitions.SingleOrDefault(),
+                (stackTrace) => SyntaxTreeThrowHelper.MethodNotFound(
+                    methodName,
+                    SyntaxTreeThrowHelper.BlockResolutionExceptionDelegate,
+                    stackTrace: stackTrace));
+
+        public ResolveResult<MethodDefinition> GetMethod(MethodReference methodReference) =>
+            GetMemberDefinitionBySelector<MethodDefinition>(
+                methodReference.Name,
+                Members,
+                definitions => definitions.SingleOrDefault(definition =>
+                    new MethodOverloadEqualityComparer(definition.ParentBlock.Module.ModuleReferenceResolver).Equals(definition, methodReference)),
+                (stackTrace) => SyntaxTreeThrowHelper.MethodNotFound(
+                    methodReference.Name,
+                    SyntaxTreeThrowHelper.BlockResolutionExceptionDelegate,
+                    methodReference.FilePosition,
+                    stackTrace));
+
+        public ResolveResult<EventHandlerDefinition> GetEventHandler(string eventHandlerName) =>
+            GetMemberDefinitionBySelector<EventHandlerDefinition>(
+                eventHandlerName,
+                Members,
+                definitions => definitions.SingleOrDefault(),
+                (stackTrace) => SyntaxTreeThrowHelper.MethodNotFound(
+                    eventHandlerName,
+                    SyntaxTreeThrowHelper.BlockResolutionExceptionDelegate,
+                    stackTrace: stackTrace));
     }
 }

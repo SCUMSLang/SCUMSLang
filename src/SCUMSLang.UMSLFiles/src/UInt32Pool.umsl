@@ -1,4 +1,7 @@
-﻿using static Player;
+﻿import "EnumTypes/Player.umsh";
+import "EnumTypes/Unit.umsh";
+
+using static Player;
 using static Unit;
 
 template for (Player PlayerId) in (Player1,Player2,Player3,Player4,Player5,Player6,Player7,Player8)

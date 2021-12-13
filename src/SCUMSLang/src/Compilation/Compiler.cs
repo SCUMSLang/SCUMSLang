@@ -5,11 +5,23 @@ using SCUMSLang.IO;
 using System.IO;
 using SCUMSLang.SyntaxTree;
 using SCUMSLang.SyntaxTree.Definitions;
+using System.Linq;
 
 namespace SCUMSLang.Compilation
 {
     public class Compiler
     {
+        static Import ResolveImport(IEnumerable<Import> imports, string importPath)
+        {
+            var import = imports.SingleOrDefault(x => x.ImportPath == importPath);
+
+            if (import is null) {
+                throw SyntaxTreeThrowHelper.ModuleNotFound(importPath, stackTrace: Environment.StackTrace);
+            }
+
+            return import;
+        }
+
         public static Compiler Default = new Compiler();
 
         public CompilerSettings Settings { get; }
@@ -54,35 +66,33 @@ namespace SCUMSLang.Compilation
             return importPaths;
         }
 
-        public void ConfigureModuleParameters(ModuleParameters moduleParameters)
-        {
-            var referenceResolver = new ReferenceResolverPool();
-            referenceResolver.Add(systemModule.BlockReferenceResolver);
-            moduleParameters.ReferenceResolver = referenceResolver;
-        }
-
         public async Task<CompilerResult> CompileAsync(Action<CompilerParameters>? parametersCallback)
         {
             var compilerParameters = new CompilerParameters();
             parametersCallback?.Invoke(compilerParameters);
             var importPaths = GetImportPaths(compilerParameters);
 
-            // TODO: !?!?!!??
-            //var systemBlock = new ModuleDefinition()
-            //    .AddSystemTypes();
-
             DirectAcyclicImportGraph? importGraph = null;
             List<CompilerError>? compilerErrors = new List<CompilerError>();
 
             try {
+                void ConfigureModuleParameters(ModuleParameters moduleParameters)
+                {
+                    moduleParameters.LoggerFactory = compilerParameters.LoggerFactory;
+
+                    var referenceResolver = new ReferenceResolverPool();
+                    referenceResolver.Add(systemModule.BlockReferenceResolver);
+                    moduleParameters.ReferenceResolver = referenceResolver;
+                }
+
                 importGraph = await DirectAcyclicImportGraph.GenerateImportGraphAsync(importPaths, ConfigureModuleParameters);
 
                 foreach (var import in importGraph.TopologizedImports) {
-                    import.ReadModule();
+                    import.ParseModule();
                 }
 
                 foreach (var import in importGraph.TopologizedImports) {
-                    import.ResolveModule();
+                    import.ResolveModule(importPath => ResolveImport(importGraph.TopologizedImports, importPath).Module);
                 }
             } catch (Exception error) when (error is IParsingException parsingError) {
                 var compilerError = await FilePassageError.CreateFromFilePassageAsync((dynamic)parsingError);

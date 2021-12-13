@@ -1,4 +1,5 @@
 import "../System.umsh";
+import "../EnumTypes/Comparison.umsh";
 
 /// <summary>When a certain amount of time has elapsed.</summary>
 [TriggerCondition]

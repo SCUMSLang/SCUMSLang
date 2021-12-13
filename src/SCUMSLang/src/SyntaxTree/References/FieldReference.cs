@@ -4,7 +4,7 @@ using SCUMSLang.SyntaxTree.Visitors;
 
 namespace SCUMSLang.SyntaxTree.References
 {
-    public class FieldReference : MemberReference, IMemberDefinition
+    public class FieldReference : MemberReference, ICollectibleMember
     {
         public override SyntaxTreeNodeType NodeType =>
             SyntaxTreeNodeType.FieldReference;
@@ -25,14 +25,10 @@ namespace SCUMSLang.SyntaxTree.References
             : this(name, fieldType) =>
             DeclaringType = declaringType ?? throw new ArgumentNullException(nameof(declaringType));
 
-        public new virtual FieldDefinition Resolve()
-        {
-            return resolvedDefinition 
-                ??= ParentBlock?.Module.Resolve(this)
-                ?? throw new NotSupportedException();
-        }
+        public new virtual FieldDefinition Resolve() =>
+            CacheOrResolve(() => ParentBlock.Module.Resolve(this).Value);
 
-        protected override IMemberDefinition ResolveMemberDefinition() =>
+        protected override IMember ResolveMember() =>
             Resolve();
 
         protected internal override Reference Accept(SyntaxNodeVisitor visitor) =>
@@ -48,7 +44,7 @@ namespace SCUMSLang.SyntaxTree.References
                 FieldType = fieldType,
                 IsStatic = IsStatic,
                 DeclaringType = DeclaringType,
-                ParentBlock = ParentBlock
+                ParentBlockContainer = ParentBlockContainer
             };
         }
     }

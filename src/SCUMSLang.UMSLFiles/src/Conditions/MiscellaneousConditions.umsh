@@ -1,4 +1,5 @@
 import "../System.umsh";
+import "../EnumTypes/Comparison.umsh";
 
 /// <summary>When always. The function that make a function an event handler.</summary>
 [TriggerCondition]

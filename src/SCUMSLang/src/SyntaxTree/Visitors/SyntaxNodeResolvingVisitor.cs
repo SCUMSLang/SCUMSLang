@@ -1,28 +1,43 @@
-﻿using SCUMSLang.SyntaxTree.References;
+﻿using SCUMSLang.SyntaxTree.Definitions;
+using SCUMSLang.SyntaxTree.References;
 
 namespace SCUMSLang.SyntaxTree.Visitors
 {
     public class SyntaxNodeResolvingVisitor : SyntaxNodeVisitor
     {
-        public readonly static SyntaxNodeResolvingVisitor Default = new SyntaxNodeResolvingVisitor();
+        private readonly ImportResolver importResolver;
 
-        private static T Resolve<T>(T member)
-            where T : MemberReference
+        public SyntaxNodeResolvingVisitor(ImportResolver importResolver) =>
+            this.importResolver = importResolver ?? throw new System.ArgumentNullException(nameof(importResolver));
+
+        protected internal override Reference VisitTypeReference(TypeReference type)
         {
-            _ = member.Resolve();
-            return member;
+            _ = type.Resolve();
+            return base.VisitTypeReference(type);
         }
 
-        protected internal override Reference VisitTypeReference(TypeReference type) =>
-            Resolve(type);
+        protected internal override Reference VisitFieldReference(FieldReference field)
+        {
+            _ = field.Resolve();
+            return base.VisitFieldReference(field);
+        }
 
-        protected internal override Reference VisitFieldReference(FieldReference field) =>
-            Resolve(field);
+        protected internal override Reference VisitMethodReference(MethodReference method)
+        {
+            _ = method.Resolve();
+            return base.VisitMethodReference(method);
+        }
 
-        protected internal override Reference VisitMethodReference(MethodReference method) =>
-            Resolve(method);
+        protected internal override Reference VisitEventHandlerReference(EventHandlerReference eventHandler)
+        {
+            _ = eventHandler.Resolve();
+            return base.VisitEventHandlerReference(eventHandler);
+        }
 
-        protected internal override Reference VisitEventHandlerReference(EventHandlerReference eventHandler) =>
-            Resolve(eventHandler);
+        internal override Reference VisitModuleBlockDefinition(ModuleBlockDefinition moduleBlock)
+        {
+            moduleBlock.ResolveOnce(importResolver);
+            return base.VisitModuleBlockDefinition(moduleBlock);
+        }
     }
 }

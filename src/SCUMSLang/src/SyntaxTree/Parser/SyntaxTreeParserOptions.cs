@@ -1,5 +1,6 @@
 ﻿using System;
 using System.Linq;
+using Microsoft.Extensions.Logging;
 using SCUMSLang.SyntaxTree.Definitions;
 using SCUMSLang.SyntaxTree.References;
 using SCUMSLang.Tokenization;
@@ -20,10 +21,12 @@ namespace SCUMSLang.SyntaxTree.Parser
             set => module = value;
         }
 
+        public bool AutoResolve { get; set; }
         public RecognizableReferences RecognizableNodes { get; set; }
         public TruthyReferenceHandler? WhileContinueDelegate { get; set; }
         public TruthyReferenceHandler? WhileBreakDelegate { get; set; }
-        public bool EmptyRecognizationResultsIntoWhileBreak { get; set; }
+        public bool EmptyRecognizationResultsIntoReturn { get; set; }
+        public ILoggerFactory? LoggerFactory { get; set; }
 
         public SpanReaderBehaviour<Token> TokenReaderBehaviour {
             get {

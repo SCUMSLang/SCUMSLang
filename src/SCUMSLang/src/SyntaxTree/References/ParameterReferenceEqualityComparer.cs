@@ -18,10 +18,10 @@ namespace SCUMSLang.SyntaxTree.References
         {
             public new static OverloadComparer Default = new OverloadComparer();
 
-            public TypeReferenceEqualityComparer.ViaResolveComparer TypeOverloadComparer {
+            public TypeReferenceEqualityComparer.AfterResolveComparer TypeOverloadComparer {
                 get {
                     if (typeOverloadComparer is null) {
-                        typeOverloadComparer = TypeReferenceEqualityComparer.ViaResolveComparer.Default;
+                        typeOverloadComparer = TypeReferenceEqualityComparer.AfterResolveComparer.Default;
                     }
 
                     return typeOverloadComparer;
@@ -30,7 +30,7 @@ namespace SCUMSLang.SyntaxTree.References
                 set => typeOverloadComparer = value;
             }
 
-            private TypeReferenceEqualityComparer.ViaResolveComparer? typeOverloadComparer;
+            private TypeReferenceEqualityComparer.AfterResolveComparer? typeOverloadComparer;
 
             public override bool Equals([AllowNull] ParameterReference x, [AllowNull] ParameterReference y) =>
                 ReferenceEquals(x, y) || !(x is null) && !(y is null)

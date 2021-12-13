@@ -32,10 +32,10 @@ namespace SCUMSLang.SyntaxTree.References
             : this(name, genericParameters, parameters, declaringType: null) { }
 
         public new MethodDefinition Resolve() =>
-            CacheOrResolve(() => ParentBlock.Module.Resolve(this));
+            CacheOrResolve(() => ParentBlock.Module.Resolve(this).Value);
 
-        protected override IMemberDefinition ResolveMemberDefinition() =>
-           Resolve();
+        protected override IMember ResolveMember() =>
+            Resolve();
 
         protected internal override Reference Accept(SyntaxNodeVisitor visitor) =>
             visitor.VisitMethodReference(this);
@@ -51,7 +51,7 @@ namespace SCUMSLang.SyntaxTree.References
 
             return new MethodReference(Name, genericParameters, parameters) {
                 DeclaringType = DeclaringType,
-                ParentBlock = ParentBlock
+                ParentBlockContainer = ParentBlockContainer
             };
         }
     }

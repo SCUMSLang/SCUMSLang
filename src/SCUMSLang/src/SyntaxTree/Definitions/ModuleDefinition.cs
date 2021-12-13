@@ -1,14 +1,24 @@
 ﻿using System;
 using System.Diagnostics.CodeAnalysis;
+using Microsoft.Extensions.Logging;
 using SCUMSLang.SyntaxTree.References;
 using SCUMSLang.SyntaxTree.Visitors;
 
 namespace SCUMSLang.SyntaxTree.Definitions
 {
-    public sealed class ModuleDefinition : TypeReference, IMemberDefinition
+    public delegate ModuleDefinition? ImportResolver(string filePath);
+
+    public sealed class ModuleDefinition : TypeReference, ICollectibleMember, IReferenceResolver
     {
-        public TypeBlockDefinition Block => ModuleBlock;
-        public override BlockDefinition ParentBlock => Block;
+        public override SyntaxTreeNodeType NodeType => SyntaxTreeNodeType.ModuleDefinition;
+
+        [AllowNull]
+        public override BlockContainer ParentBlockContainer {
+            get => parentBlockContainer ??= new ModuleBlockContainer(this);
+            init => parentBlockContainer = value;
+        }
+
+        public BlockDefinition Block => ModuleBlock;
         /// <summary>
         /// The file path of the module. Empty if not known.
         /// </summary>
@@ -26,23 +36,33 @@ namespace SCUMSLang.SyntaxTree.Definitions
         /// is considered too.
         /// </summary>
         public IReferenceResolver BlockReferenceResolver { get; private set; }
+        public ILogger? Logger { get; private set; }
+        public ILoggerFactory? LoggerFactory { get; private set; }
+        public SystemTypesResolver SystemTypes { get; private set; }
 
         internal ModuleBlockDefinition ModuleBlock { get; private set; }
 
+        private BlockContainer? parentBlockContainer;
+
         public ModuleDefinition(ModuleParameters? moduleParameters)
             : base(name: string.Empty) =>
-            Initialize(moduleParameters, new ModuleBlockDefinition(this));
+            Initialize(new ModuleBlockDefinition(this), moduleParameters);
 
         public ModuleDefinition()
-            : this(moduleParameters: null) { }
+            : base(name: string.Empty) =>
+            Initialize(new ModuleBlockDefinition(this), moduleParameters: null);
 
         [MemberNotNull(
+            nameof(SystemTypes),
             nameof(ModuleBlock),
             nameof(FilePath),
             nameof(ModuleReferenceResolver),
             nameof(BlockReferenceResolver))]
-        private void Initialize(ModuleParameters? moduleParameters, ModuleBlockDefinition moduleBlock)
+        private void Initialize(ModuleBlockDefinition moduleBlock, ModuleParameters? moduleParameters)
         {
+            SystemTypes = new SystemTypesResolver(this);
+            LoggerFactory = moduleParameters?.LoggerFactory;
+            Logger = LoggerFactory?.CreateLogger<ModuleDefinition>();
             ModuleBlock = moduleBlock;
             FilePath = moduleParameters?.FilePath ?? string.Empty;
 
@@ -68,29 +88,43 @@ namespace SCUMSLang.SyntaxTree.Definitions
             }
         }
 
-        public new ModuleDefinition Resolve() =>
-            this;
+        public new ModuleDefinition Resolve() => this;
 
-        protected override IMemberDefinition ResolveMemberDefinition() =>
-            Resolve();
+        protected override IMember ResolveMember() => Resolve();
 
         protected internal override Reference Accept(SyntaxNodeVisitor visitor) =>
             visitor.VisitModuleDefinition(this);
 
-        public void ResolveUsingStaticDirectives() =>
-            ModuleBlock.ResolveUsingStaticDirectives();
+        public ResolveResult<T> Resolve<T>(TypeReference type)
+            where T : TypeReference =>
+            ModuleReferenceResolver.Resolve<T>(type);
 
-        public TypeDefinition Resolve(TypeReference type) =>
-            ModuleReferenceResolver.Resolve(type);
+        public ResolveResult<TypeReference> Resolve(TypeReference type) =>
+            Resolve<TypeReference>(type);
 
-        public FieldDefinition Resolve(FieldReference field) =>
+        public ResolveResult<FieldDefinition> Resolve(FieldReference field) =>
             ModuleReferenceResolver.Resolve(field);
 
-        public MethodDefinition Resolve(MethodReference method) =>
+        public ResolveResult<MethodDefinition> Resolve(MethodReference method) =>
             ModuleReferenceResolver.Resolve(method);
 
-        public EventHandlerDefinition Resolve(EventHandlerReference method) =>
+        public ResolveResult<EventHandlerDefinition> Resolve(EventHandlerReference method) =>
             ModuleReferenceResolver.Resolve(method);
+
+        public ResolveResult<TypeDefinition> GetType(string typeName) =>
+            ModuleReferenceResolver.GetType(typeName);
+
+        public ResolveResult<EventHandlerDefinition> GetEventHandler(string eventHandlerName) =>
+            ModuleReferenceResolver.GetEventHandler(eventHandlerName);
+
+        public ResolveResult<FieldDefinition> GetField(string fieldName) =>
+            ModuleReferenceResolver.GetField(fieldName);
+
+        public ResolveResult<MethodDefinition> GetMethod(string methodName) =>
+            ModuleReferenceResolver.GetMethod(methodName);
+
+        public ResolveResult<MethodDefinition> GetMethod(MethodReference methodReference) =>
+            ModuleReferenceResolver.GetMethod(methodReference);
 
         internal ModuleDefinition UpdateDefinition(ModuleBlockDefinition block)
         {
@@ -101,7 +135,29 @@ namespace SCUMSLang.SyntaxTree.Definitions
             throw new InvalidOperationException("You cannot update the module");
         }
 
-        public void ResolveRecursively() =>
-            SyntaxNodeResolvingVisitor.Default.Visit(this); // TODO: VERIFY
+        public void ResolveOnce(ImportResolver importResolver)
+        {
+            var resolvingVisitor = new SyntaxNodeResolvingVisitor(importResolver) {
+                Logger = LoggerFactory?.CreateLogger<SyntaxNodeResolvingVisitor>()
+            };
+
+            resolvingVisitor.Visit(this);
+        }
+
+        public void ResolveOnce() =>
+            ResolveOnce((_) => throw new NotSupportedException());
+
+        private class ModuleBlockContainer : BlockContainer
+        {
+            public override BlockDefinition? Block {
+                get => module.ModuleBlock;
+                set => throw new InvalidOperationException("You cannot set the parent block of a module");
+            }
+
+            private ModuleDefinition module;
+
+            public ModuleBlockContainer(ModuleDefinition module) =>
+                this.module = module;
+        }
     }
 }

@@ -1,6 +1,9 @@
-﻿using System.Collections.Generic;
+﻿using System;
+using System.Collections.Generic;
 using System.Diagnostics.CodeAnalysis;
 using System.Runtime.CompilerServices;
+using System.Text;
+using Microsoft.Extensions.Logging;
 using SCUMSLang.SyntaxTree.Definitions;
 using SCUMSLang.SyntaxTree.References;
 
@@ -8,32 +11,31 @@ namespace SCUMSLang.SyntaxTree.Visitors
 {
     public class SyntaxNodeVisitor
     {
-        //protected virtual void VisitReference(Reference reference) { }
-
-        //protected virtual void VisitMemberReference(MemberReference member) =>
-        //    VisitReference(member);
-
-        //protected virtual void VisitTypeReferenceBase(TypeReference typeBase) =>
-        //    VisitMemberReference(typeBase);
-
-        //protected virtual void VisitTypeSpecification(TypeSpecification typeSpecification) =>
-        //    VisitTypeReferenceBase(typeSpecification);
-
-        //protected virtual void VisitBlockDefinition(BlockDefinition block) =>
-        //    VisitReference(block);
-
-        //protected virtual void VisitFieldReferenceBase(FieldReference field) =>
-        //    VisitMemberReference(field);
-
-        //protected virtual void VisitTypeBlockDefinition(TypeBlockDefinition typeBlock) =>
-        //    VisitBlockDefinition(typeBlock);
-
-        //protected virtual void VisitParameterReference(ParameterReference parameter) =>
-        //    VisitReference(parameter);
+        public ILogger? Logger { get; set; }
 
         [return: NotNullIfNotNull("reference")]
-        public virtual Reference? Visit(Reference? reference) =>
-            reference?.Accept(this) ?? null!;
+        public virtual Reference? Visit(Reference? reference)
+        {
+#if DEBUG
+            if (reference is not null) {
+                var stringBuilder = new StringBuilder();
+
+                if (reference is MemberReference member) {
+                    stringBuilder.Append($"Name = {member.Name}, ");
+                }
+
+                stringBuilder.Append($"NodeType = {Enum.GetName(reference.NodeType)}, ClassType = {reference.GetType().Name}{Environment.NewLine}");
+
+                if (reference is ModuleDefinition module) {
+                    stringBuilder.Append($"--> FilePath = {module.FilePath}");
+                }
+
+                Logger?.LogInformation(stringBuilder.ToString());
+            }
+#endif
+
+            return reference?.Accept(this) ?? null!;
+        }
 
         [return: NotNullIfNotNull("reference")]
         public T? VisitAndConvert<T>(T? reference, [CallerMemberName] string? callerName = null)
@@ -131,7 +133,7 @@ namespace SCUMSLang.SyntaxTree.Visitors
             parameter.Update(VisitAndConvert(parameter.ParameterType));
 
         protected internal virtual Reference VisitTemplateForInDefinition(TemplateForInDefinition templateForIn) =>
-            templateForIn;
+            templateForIn.UpdateDefinition(VisitAndConvert(templateForIn.ForInCollection));
 
         protected internal virtual Reference VisitTypeReference(TypeReference type) =>
             type; // Fine

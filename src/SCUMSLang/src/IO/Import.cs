@@ -12,19 +12,19 @@ using Teronis.IO.FileLocking;
 
 namespace SCUMSLang.IO
 {
-    public class ImportEntry
+    public sealed class Import
     {
-        public static async Task<ImportEntry> LoadDirectImportsAsync(
+        public static async Task<Import> ParseImportsAsync(
             string importPath,
             Action<ModuleParameters>? moduleParametersConfigurer = null)
         {
-            var importEntry = new ImportEntry(
+            var import = new Import(
                 importPath,
                 moduleParametersConfigurer);
 
-            await importEntry.LoadTokensAsync();
-            importEntry.parseDirectImports();
-            return importEntry;
+            await import.Tokenize();
+            import.ParseImports();
+            return import;
         }
 
         /// <summary>
@@ -42,7 +42,7 @@ namespace SCUMSLang.IO
 
         private List<string> directImportPaths;
 
-        protected ImportEntry(string filePath, Action<ModuleParameters>? moduleParametersConfigurer = null)
+        private Import(string filePath, Action<ModuleParameters>? moduleParametersConfigurer = null)
         {
             directImportPaths = new List<string>();
             filePath = filePath ?? throw new ArgumentNullException(nameof(filePath));
@@ -59,7 +59,7 @@ namespace SCUMSLang.IO
             Module = new ModuleDefinition(moduleParameters);
         }
 
-        protected async Task LoadTokensAsync(CancellationToken cancellationToken = default)
+        private async Task Tokenize(CancellationToken cancellationToken = default)
         {
             using var fileStream = FileStreamLocker.Default.WaitUntilAcquired(ImportPath,
                 3 * 1000,
@@ -68,16 +68,15 @@ namespace SCUMSLang.IO
                 fileShare: FileShare.Read,
                 cancellationToken: cancellationToken)!;
 
-            var tokens = await Tokenizer.TokenizeAsync(fileStream);
-            this.tokens = tokens;
+            tokens = await Tokenizer.TokenizeAsync(fileStream);
         }
 
-        private void parseDirectImports()
+        private void ParseImports()
         {
             var parser = new SyntaxTreeParser(options => {
                 options.Module = Module;
                 options.RecognizableNodes = RecognizableReferences.Import;
-                options.EmptyRecognizationResultsIntoWhileBreak = true;
+                options.EmptyRecognizationResultsIntoReturn = true;
                 options.TokenReaderBehaviour.SetSkipConditionForNonParserChannelTokens();
             });
 
@@ -90,10 +89,7 @@ namespace SCUMSLang.IO
                 .ToList();
         }
 
-        public override string ToString() =>
-            $"{Path.Combine(new DirectoryInfo(Path.GetDirectoryName(ImportPath) ?? "").Name, Path.GetFileName(ImportPath)) }";
-
-        public void ReadModule()
+        public void ParseModule()
         {
             var parser = new SyntaxTreeParser(options => {
                 options.Module = Module;
@@ -104,7 +100,10 @@ namespace SCUMSLang.IO
             parser.Parse(Tokens.Span);
         }
 
-        public void ResolveModule() =>
-            Module.ResolveRecursively();
+        public void ResolveModule(ImportResolver importResolver) =>
+            Module.ResolveOnce(importResolver);
+
+        public override string ToString() =>
+            $"{Path.Combine(new DirectoryInfo(Path.GetDirectoryName(ImportPath) ?? "").Name, Path.GetFileName(ImportPath)) }";
     }
 }

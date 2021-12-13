@@ -10,7 +10,9 @@ namespace SCUMSLang.SyntaxTree
                 throw SyntaxTreeThrowHelper.NonNullBlockSetup();
             }
 
-            block = new BlockDefinition.ScopedBlockDefinition(parentBlock, blockScope);
+            block = new BlockDefinition.ScopedBlockDefinition(blockScope) {
+                ParentBlockContainer = BlockContainer.WithBlock(parentBlock)
+            };
         }
     }
 }

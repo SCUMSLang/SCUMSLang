@@ -1,7 +1,8 @@
-﻿using SCUMSLang.SyntaxTree;
+﻿using SCUMSLang.SyntaxTree.Definitions;
 using SCUMSLang.SyntaxTree.Parser;
 using SCUMSLang.SyntaxTree.References;
 using Xunit;
+using Xunit.Abstractions;
 
 namespace SCUMSLang.SyntaxTree
 {
@@ -9,6 +10,9 @@ namespace SCUMSLang.SyntaxTree
     {
         public class ModuleWide : TreeParserTests
         {
+            public ModuleWide(ITestOutputHelper outputHelper)
+                : base(outputHelper) { }
+
             [Fact]
             public void Should_resolve_nested_type_without_specifying_type_name()
             {
@@ -20,11 +24,15 @@ enum Boolean {
 
 using static Boolean;";
 
-                var parser = new SyntaxTreeParser();
+                var parser = new SyntaxTreeParser(options => {
+                    options.AutoResolve = true;
+                    options.Module.AddSystemTypes();
+                });
+
                 var result = parser.Parse(content);
                 var module = result.Module;
 
-                _ = module.Resolve(new TypeReference("false"));
+                module.Resolve(new TypeReference("false")).ThrowIfError();
             }
 
             [Fact]
@@ -41,7 +49,7 @@ typedef Boolean bool;
 using static Boolean;
 using static bool;";
 
-                Assert.Throws<BlockEvaluationException>(() => _ = new SyntaxTreeParser().Parse(content));
+                Assert.Throws<BlockEvaluationException>(() => SyntaxTreeParser.AutoResolvable.Parse(content));
             }
         }
     }

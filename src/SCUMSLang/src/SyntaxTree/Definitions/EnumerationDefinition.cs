@@ -6,13 +6,13 @@ using SCUMSLang.SyntaxTree.Visitors;
 
 namespace SCUMSLang.SyntaxTree.Definitions
 {
-    public delegate IReadOnlyList<FieldDefinition> EnumerationFieldsProvider(EnumerationDefinition declaringType);
+    public delegate IReadOnlyList<FieldDefinition> EnumerationFieldsCreator(EnumerationDefinition declaringType);
 
     public class EnumerationDefinition : TypeDefinition, INestedTypesProvider
     {
         public override IReadOnlyList<FieldDefinition> Fields { get; }
 
-        public EnumerationDefinition(string name, EnumerationFieldsProvider fieldsCreator)
+        public EnumerationDefinition(string name, EnumerationFieldsCreator fieldsCreator)
             : base(name)
         {
             if (fieldsCreator == null) {
@@ -27,11 +27,9 @@ namespace SCUMSLang.SyntaxTree.Definitions
             Fields = fields ?? throw new ArgumentNullException(nameof(fields));
 
 
-        public new EnumerationDefinition Resolve() =>
-            this;
+        public new EnumerationDefinition Resolve() => this;
 
-        protected override IMemberDefinition ResolveMemberDefinition() =>
-            Resolve();
+        protected override IMember ResolveMember() => Resolve();
 
         protected internal override Reference Accept(SyntaxNodeVisitor visitor) =>
             visitor.VisitEnumerationDefinition(this);
@@ -48,7 +46,7 @@ namespace SCUMSLang.SyntaxTree.Definitions
                 DeclaringType = DeclaringType,
                 FieldsAreConstants = FieldsAreConstants,
                 IsEnum = IsEnum,
-                ParentBlock = ParentBlock
+                ParentBlockContainer = ParentBlockContainer
             };
         }
 
@@ -75,7 +73,7 @@ namespace SCUMSLang.SyntaxTree.References
     {
         public static EnumerationDefinition CreateEnumDefinition(
             string name,
-            EnumerationFieldsProvider fieldsCreator,
+            EnumerationFieldsCreator fieldsCreator,
             bool fieldsAreConstants = false,
             bool allowOverwriteOnce = false,
             BlockContainer? blockContainer = null,
@@ -90,29 +88,37 @@ namespace SCUMSLang.SyntaxTree.References
 
         public static EnumerationDefinition CreateEnumDefinition(
             string name,
-            IEnumerable<string> fieldNames,
-            TypeReference? valueType = null,
+            TypeReference fieldType,
+            IList<string>? fieldNames,
             bool fieldsAreConstants = false,
             bool allowOverwriteOnce = false,
             BlockContainer? blockContainer = null,
-            IFilePosition? filePosition = null)
+            IFilePosition? enumPosition = null,
+            IList<IFilePosition>? fieldNamePositions = null)
         {
-            valueType ??= CreateTypeReference(SystemType.Integer, blockContainer);
+            fieldType = fieldType ?? throw new ArgumentNullException(nameof(fieldType));
             blockContainer ??= new BlockContainer();
 
-            EnumerationFieldCollection CreateEnumerationFieldCollection(EnumerationDefinition enumType) =>
-                EnumerationFieldCollection.Of(
-                    valueType,
-                    enumType,
-                    fieldNames,
-                    blockContainer: blockContainer);
+            FieldDefinition FieldCreator(string name, TypeReference fieldType, TypeReference declaringType, object? value) =>
+                    new FieldDefinition(name, fieldType, declaringType) {
+                        Value = value,
+                        ParentBlockContainer = blockContainer,
+                        FilePosition = fieldNamePositions?[fieldNames!.IndexOf(name)]
+                    };
 
-            return new EnumerationDefinition(name, CreateEnumerationFieldCollection) {
+            EnumerationFieldCollection CreateFields(EnumerationDefinition declaringType) =>
+                EnumerationFieldCollection.Of(
+                    fieldType,
+                    declaringType,
+                    fieldNames,
+                    FieldCreator);
+
+            return new EnumerationDefinition(name, CreateFields) {
                 AllowOverwriteOnce = allowOverwriteOnce,
                 FieldsAreConstants = fieldsAreConstants,
                 IsEnum = true,
                 ParentBlockContainer = blockContainer,
-                FilePosition = filePosition
+                FilePosition = enumPosition
             };
         }
     }

@@ -3,6 +3,7 @@ using System.Diagnostics;
 using System.Diagnostics.CodeAnalysis;
 using System.Threading.Tasks;
 using CommandLine;
+using Microsoft.Extensions.Logging;
 using SCUMSLang.CommandLine;
 using SCUMSLang.Compilation;
 
@@ -27,21 +28,6 @@ namespace SCUMSLang
             return true;
         }
 
-        private static void ConfigureParserParameters(Options options, CompilerParameters parameters)
-        {
-            if (options.SystemSources.Count != 0) {
-                parameters.SystemSources.AddRange(options.SystemSources);
-            }
-
-            parameters.UserSources.AddRange(options.UserSources);
-
-            if (options.NoImplicitUInt32Pool) {
-                parameters.NoImplicitUInt32Pool = true;
-            } else if (!(options.ImplicitUInt32PoolSource is null)) {
-                parameters.ImplicitUInt32PoolSource = options.ImplicitUInt32PoolSource;
-            }
-        }
-
         private static async Task<int> Main(string[] args)
         {
             var stopwatch = new Stopwatch();
@@ -54,7 +40,33 @@ namespace SCUMSLang
             CompilerResult compilerResult;
 
             try {
-                compilerResult = await Compiler.Default.CompileAsync(parameters => ConfigureParserParameters(options, parameters));
+                void ConfigureParserParameters(CompilerParameters parameters)
+                {
+                    parameters.LoggerFactory = LoggerFactory.Create(builder => builder.AddConsole());
+
+                    if (options.SystemSources.Count != 0) {
+                        parameters.SystemSources.AddRange(options.SystemSources);
+                    }
+
+                    parameters.UserSources.AddRange(options.UserSources);
+
+                    if (options.NoImplicitUInt32Pool) {
+                        parameters.NoImplicitUInt32Pool = true;
+                    } else if (!(options.ImplicitUInt32PoolSource is null)) {
+                        parameters.ImplicitUInt32PoolSource = options.ImplicitUInt32PoolSource;
+                    }
+                }
+
+                compilerResult = await Compiler.Default.CompileAsync(ConfigureParserParameters);
+            } catch (AggregateException error) {
+                Console.WriteLine(error.Message);
+
+                error.Handle(innerError => {
+                    Console.WriteLine($"--> {innerError.Message}");
+                    return true;
+                });
+
+                return 1;
             } catch (Exception error) {
                 Console.WriteLine(error.Message);
                 return 1;
@@ -67,7 +79,7 @@ namespace SCUMSLang
                     Console.WriteLine(error.ToString());
                 }
             } else {
-                Console.WriteLine($"Finished in {stopwatch.Elapsed.TotalMinutes}m {stopwatch.Elapsed.Seconds}s");
+                Console.WriteLine($"Finished in {Math.Truncate(stopwatch.Elapsed.TotalMinutes)}m {stopwatch.Elapsed.Seconds}s");
             }
 
             return 0;

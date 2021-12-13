@@ -2,6 +2,7 @@
 using System.Collections.Generic;
 using System.IO;
 using System.Threading;
+using Microsoft.Extensions.Logging;
 
 namespace SCUMSLang.Compilation
 {
@@ -29,6 +30,8 @@ namespace SCUMSLang.Compilation
         private static Lazy<string> getLazyUMSLFilePath(string relativeFilePath) =>
             new Lazy<string>(() =>
                 Path.Combine(AbsoluteAssemblyDirectory.Value, relativeFilePath));
+
+        public ILoggerFactory? LoggerFactory { get; set; }
 
         public List<string> SystemSources {
             get {

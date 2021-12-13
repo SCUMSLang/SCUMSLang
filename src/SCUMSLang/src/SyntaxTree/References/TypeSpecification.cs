@@ -1,5 +1,4 @@
 ﻿using System;
-using SCUMSLang.SyntaxTree.Definitions;
 
 namespace SCUMSLang.SyntaxTree.References
 {
@@ -8,16 +7,10 @@ namespace SCUMSLang.SyntaxTree.References
         public override SyntaxTreeNodeType NodeType =>
             SyntaxTreeNodeType.TypeSpecification;
 
-        public TypeReference ElementType =>
-            elementType;
-
-        private TypeReference elementType;
+        public TypeReference ElementType { get; }
 
         protected TypeSpecification(TypeReference elementType)
-            : base(name: null) =>
-            this.elementType = elementType ?? throw new ArgumentNullException(nameof(elementType));
-
-        protected override IMemberDefinition ResolveMemberDefinition() =>
-            throw new NotSupportedException();
+            : base(elementType.Name) =>
+            ElementType = elementType ?? throw new ArgumentNullException(nameof(elementType));
     }
 }

@@ -24,10 +24,10 @@ namespace SCUMSLang.SyntaxTree.Definitions
             return new EnumerationFieldCollection(fieldType, declaringType, fields);
         }
 
-        public static EnumerationFieldCollection Of(TypeReference fieldType, EnumerationDefinition declaringType, IEnumerable<string> nameList, FieldCreator fieldCreator)
+        public static EnumerationFieldCollection Of(TypeReference fieldType, EnumerationDefinition declaringType, IEnumerable<string>? nameList, FieldCreator fieldCreator)
         {
             var fieldValue = 0;
-            var fields = nameList.Select(name => fieldCreator(name, fieldType, declaringType, fieldValue++));
+            var fields = nameList?.Select(name => fieldCreator(name, fieldType, declaringType, fieldValue++)) ?? new FieldDefinition[0];
             return new EnumerationFieldCollection(fieldType, declaringType, fields);
         }
 

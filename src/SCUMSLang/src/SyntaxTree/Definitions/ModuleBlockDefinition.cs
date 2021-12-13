@@ -1,5 +1,6 @@
 ﻿using System;
 using System.Collections.Generic;
+using System.Diagnostics.CodeAnalysis;
 using System.Linq;
 using SCUMSLang.SyntaxTree.References;
 using SCUMSLang.SyntaxTree.Visitors;
@@ -7,7 +8,7 @@ using Teronis.Collections.Specialized;
 
 namespace SCUMSLang.SyntaxTree.Definitions
 {
-    internal class ModuleBlockDefinition : TypeBlockDefinition
+    internal class ModuleBlockDefinition : BlockDefinition
     {
         public override SyntaxTreeNodeType NodeType =>
             SyntaxTreeNodeType.ModuleBlockDefinition;
@@ -15,9 +16,15 @@ namespace SCUMSLang.SyntaxTree.Definitions
         public override BlockScope BlockScope =>
             BlockScope.Module;
 
+        [AllowNull]
+        public override BlockContainer ParentBlockContainer {
+            get => parentBlockContainer ??= new ModuleBlockContainer(this);
+            init => parentBlockContainer = value;
+        }
+
         public override ModuleDefinition Module { get; }
 
-        public IReadOnlyDictionary<string, UsingStaticDirectiveEntry> UsingStaticDirectives =>
+        public IReadOnlyDictionary<string, UsingStaticDirective> UsingStaticDirectives =>
             usingStaticDirectives;
 
         /// <summary>
@@ -26,55 +33,26 @@ namespace SCUMSLang.SyntaxTree.Definitions
         /// </summary>
         internal IReferenceResolver ModuleReferenceResolver { get; }
 
-        internal protected override LinkedBucketList<string, TypeReference> ModuleTypeList { get; }
-
-        protected override BlockDefinition ParentBlock => this;
-
-        private ImportedReferenceResolver importReferenceResolver;
-        private Dictionary<string, UsingStaticDirectiveEntry> usingStaticDirectives;
-        private HashSet<string> typeNamesOfEachResolvedUsingStaticDirective;
+        private BlockContainer? parentBlockContainer;
+        private ReferenceResolverPool importedModules;
+        private ReferenceResolver importedTypesResolver;
+        private Dictionary<string, UsingStaticDirective> usingStaticDirectives;
+        private HashSet<string> usingStaticDirectiveResolvedElementTypeNames;
 
         public ModuleBlockDefinition(ModuleDefinition module)
         {
-            importReferenceResolver = new ImportedReferenceResolver();
+            importedModules = new ReferenceResolverPool();
+            importedTypesResolver = new ReferenceResolver();
 
             var exclusiveReferencePool = new ReferenceResolverPool();
-            exclusiveReferencePool.Add(importReferenceResolver);
+            exclusiveReferencePool.Add(importedTypesResolver);
             exclusiveReferencePool.Add(BlockReferenceResolver);
+            exclusiveReferencePool.Add(importedModules);
             ModuleReferenceResolver = exclusiveReferencePool;
 
-            typeNamesOfEachResolvedUsingStaticDirective = new HashSet<string>();
-            usingStaticDirectives = new Dictionary<string, UsingStaticDirectiveEntry>();
-            ModuleTypeList = new LinkedBucketList<string, TypeReference>();
+            usingStaticDirectiveResolvedElementTypeNames = new HashSet<string>();
+            usingStaticDirectives = new Dictionary<string, UsingStaticDirective>();
             Module = module;
-        }
-
-        internal void ResolveUsingStaticDirectives()
-        {
-            foreach (var directiveName in usingStaticDirectives.Keys.ToList()) {
-                var directiveEntry = usingStaticDirectives[directiveName];
-
-                if (directiveEntry.IsResolved) {
-                    continue;
-                }
-
-                var elementType = directiveEntry.Directive.ElementType.Resolve();
-
-                if (typeNamesOfEachResolvedUsingStaticDirective.Contains(elementType.Name)) {
-                    throw new BlockEvaluationException("Two using static directives cannot point to the same type.");
-                }
-
-                if (!(elementType is INestedTypesProvider nestedTypesProvider)) {
-                    throw new BlockEvaluationException("The using static directive can only applied on types with nested types.");
-                }
-
-                foreach (var nestedType in nestedTypesProvider.GetNestedTypes()) {
-                    importReferenceResolver.CascadingTypes.Add(nestedType.Name, nestedType);
-                }
-
-                usingStaticDirectives[directiveName] = UsingStaticDirectiveEntry.Resolved(directiveEntry);
-                typeNamesOfEachResolvedUsingStaticDirective.Add(elementType.Name);
-            }
         }
 
         protected override bool TryAddMember(Reference member)
@@ -85,17 +63,6 @@ namespace SCUMSLang.SyntaxTree.Definitions
                 }
 
                 usingStaticDirectives.Add(usingStaticDirective.Name, usingStaticDirective);
-
-                if (TryGetType(usingStaticDirective.ElementType.Name, isLongName: false, out var type)) {
-                    try {
-                        _ = type.Resolve();
-                        ResolveUsingStaticDirectives();
-                    } catch (DefinitionNotFoundException) {
-                        // Here we can *try* to resolve using 
-                        // static directive so ignore error.
-                    }
-                }
-
                 return true;
             }
 
@@ -104,45 +71,6 @@ namespace SCUMSLang.SyntaxTree.Definitions
 
         protected internal override Reference Accept(SyntaxNodeVisitor visitor) =>
             visitor.VisitModuleBlockDefinition(this);
-
-        private class ImportedReferenceResolver : ReferenceResolver
-        {
-            public override LinkedBucketList<string, Reference> BlockMembers { get; }
-            public override LinkedBucketList<string, TypeReference> CascadingTypes { get; }
-
-            public ImportedReferenceResolver()
-            {
-                BlockMembers = new LinkedBucketList<string, Reference>();
-                CascadingTypes = new LinkedBucketList<string, TypeReference>();
-            }
-        }
-
-        public readonly struct UsingStaticDirectiveEntry
-        {
-            public static UsingStaticDirectiveEntry Resolved(UsingStaticDirectiveDefinition directive) =>
-                new UsingStaticDirectiveEntry(directive, true);
-
-            public UsingStaticDirectiveDefinition Directive { get; }
-            public bool IsResolved { get; }
-
-            private UsingStaticDirectiveEntry(UsingStaticDirectiveDefinition directive, bool isResolved)
-            {
-                Directive = directive;
-                IsResolved = isResolved;
-            }
-
-            public UsingStaticDirectiveEntry(UsingStaticDirectiveDefinition directive)
-            {
-                Directive = directive;
-                IsResolved = false;
-            }
-
-            public static implicit operator UsingStaticDirectiveEntry(UsingStaticDirectiveDefinition directive) =>
-                new UsingStaticDirectiveEntry(directive);
-
-            public static implicit operator UsingStaticDirectiveDefinition(UsingStaticDirectiveEntry entry) =>
-                entry.Directive;
-        }
 
         internal ModuleBlockDefinition UpdateDefinition(IReadOnlyList<Reference> references)
         {
@@ -155,6 +83,93 @@ namespace SCUMSLang.SyntaxTree.Definitions
             }
 
             throw new InvalidOperationException("You cannot update the module block");
+        }
+
+        private void ResolveImports(ImportResolver importResolver)
+        {
+            foreach (var importDefinition in BookkeptReferences.OfType<ImportDefinition>()) {
+                var importModule = importResolver(importDefinition.FilePath);
+
+                if (importModule is null) {
+                    throw SyntaxTreeThrowHelper.ModuleNotFound(importDefinition.FilePath, filePosition: importDefinition.FilePosition);
+                }
+
+                importedModules.Add(importModule);
+            }
+        }
+
+        private void ResolveUsingStaticDirectives()
+        {
+            foreach (var directiveName in usingStaticDirectives.Keys) {
+                var usingStaticDirectory = usingStaticDirectives[directiveName];
+
+                if (usingStaticDirectory.IsResolved) {
+                    continue;
+                }
+
+                var elementType = usingStaticDirectory.Definition.ElementType.Resolve();
+
+                if (usingStaticDirectiveResolvedElementTypeNames.Contains(elementType.Name)) {
+                    throw new BlockEvaluationException("Two using static directives cannot point to the same type.");
+                }
+
+                if (!(elementType is INestedTypesProvider nestedTypesProvider)) {
+                    throw new BlockEvaluationException("The using static directive can only applied on types with nested types.");
+                }
+
+                foreach (var nestedType in nestedTypesProvider.GetNestedTypes()) {
+                    importedTypesResolver.AddType(nestedType.Name, nestedType);
+                }
+
+                usingStaticDirectives[directiveName] = UsingStaticDirective.Resolved(usingStaticDirectory);
+                usingStaticDirectiveResolvedElementTypeNames.Add(elementType.Name);
+            }
+        }
+
+        public void ResolveOnce(ImportResolver importResolver)
+        {
+            ResolveImports(importResolver);
+            ResolveUsingStaticDirectives();
+        }
+
+        private class ModuleBlockContainer : BlockContainer
+        {
+            public override BlockDefinition? Block {
+                get => moduleBlock;
+                set => throw new InvalidOperationException("You cannot set the parent block of a module");
+            }
+
+            private ModuleBlockDefinition moduleBlock;
+
+            public ModuleBlockContainer(ModuleBlockDefinition moduleBlock) =>
+                this.moduleBlock = moduleBlock;
+        }
+
+        public readonly struct UsingStaticDirective
+        {
+            public static UsingStaticDirective Resolved(UsingStaticDirectiveDefinition directive) =>
+                new UsingStaticDirective(directive, isResolved: true);
+
+            public UsingStaticDirectiveDefinition Definition { get; }
+            public bool IsResolved { get; }
+
+            private UsingStaticDirective(UsingStaticDirectiveDefinition definition, bool isResolved)
+            {
+                Definition = definition;
+                IsResolved = isResolved;
+            }
+
+            public UsingStaticDirective(UsingStaticDirectiveDefinition definition)
+            {
+                Definition = definition;
+                IsResolved = false;
+            }
+
+            public static implicit operator UsingStaticDirective(UsingStaticDirectiveDefinition directive) =>
+                new UsingStaticDirective(directive);
+
+            public static implicit operator UsingStaticDirectiveDefinition(UsingStaticDirective entry) =>
+                entry.Definition;
         }
     }
 }

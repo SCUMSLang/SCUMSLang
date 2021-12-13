@@ -1,9 +1,11 @@
 ﻿using System;
 using System.Diagnostics;
+using Divergic.Logging.Xunit;
 using SCUMSLang.SyntaxTree.Definitions;
 using SCUMSLang.SyntaxTree.Parser;
 using SCUMSLang.SyntaxTree.References;
 using SCUMSLang.Tokenization;
+using Xunit.Abstractions;
 
 namespace SCUMSLang.SyntaxTree
 {
@@ -11,18 +13,18 @@ namespace SCUMSLang.SyntaxTree
     {
         public Action<SyntaxTreeParserOptions> ParserChannelParserOptionsCallback { get; }
         public SyntaxTreeParser DefaultParser { get; }
-        //public ModuleDefinition ExpectedModule { get; }
 
         public TypeDefinition UInt32Type { get; }
         public TypeDefinition IntType { get; }
         public TypeDefinition StringType { get; }
 
-        public TreeParserTests()
+        public TreeParserTests(ITestOutputHelper outputHelper)
         {
-            Trace.Listeners.Add(new DefaultTraceListener());
+            if (outputHelper == null) {
+                throw new ArgumentNullException(nameof(outputHelper));
+            }
 
-            //ExpectedModule = new ModuleDefinition()
-            //    .AddSystemTypes();
+            Trace.Listeners.Add(new DefaultTraceListener());
 
             ParserChannelParserOptionsCallback = options => {
                 options.TokenReaderBehaviour.SetSkipConditionForNonParserChannelTokens();
@@ -34,6 +36,8 @@ namespace SCUMSLang.SyntaxTree
 
             DefaultParser = new SyntaxTreeParser(options => {
                 options.Module.AddSystemTypes();
+                options.LoggerFactory = LogFactory.Create(outputHelper);
+                options.AutoResolve = true;
             });
         }
     }

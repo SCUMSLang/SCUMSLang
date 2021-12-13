@@ -5,5 +5,3 @@
 
 using System.Diagnostics.CodeAnalysis;
 
-[assembly: SuppressMessage("Design", "RCS1194:Implement exception constructors.", Justification = "<Pending>", Scope = "type", Target = "~T:SCUMSLang.Tokenization.TokenParsingException")]
-[assembly: SuppressMessage("Design", "RCS1194:Implement exception constructors.", Justification = "<Pending>", Scope = "type", Target = "~T:SCUMSLang.SyntaxTree.Parser.SyntaxTreeParsingException")]

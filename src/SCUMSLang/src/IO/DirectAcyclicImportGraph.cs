@@ -21,9 +21,9 @@ namespace SCUMSLang.IO
             return importGraph;
         }
 
-        public IReadOnlyList<ImportEntry> TopologizedImports => topologizedImports;
+        public IReadOnlyList<Import> TopologizedImports => topologizedImports;
 
-        private List<ImportEntry> topologizedImports;
+        private List<Import> topologizedImports;
         private HashSet<string> initialImportPaths;
         private readonly Action<ModuleParameters>? moduleParametersConfigurer;
 
@@ -31,7 +31,7 @@ namespace SCUMSLang.IO
             IEnumerable<string> initialImportPaths,
             Action<ModuleParameters>? moduleParametersConfigurer = null)
         {
-            topologizedImports = new List<ImportEntry>();
+            topologizedImports = new List<Import>();
             this.initialImportPaths = new HashSet<string>(initialImportPaths);
             this.moduleParametersConfigurer = moduleParametersConfigurer;
         }
@@ -39,13 +39,13 @@ namespace SCUMSLang.IO
         protected async Task LoadImportsRecursivelyAsync()
         {
             var unloadedImportPaths = initialImportPaths;
-            var loadedImports = new Dictionary<string, ImportEntry>();
+            var loadedImports = new Dictionary<string, Import>();
 
             do {
-                var contextualImports = new List<ImportEntry>();
+                var contextualImports = new List<Import>();
 
                 foreach (var unloadedImportPath in unloadedImportPaths) {
-                    var import = await ImportEntry.LoadDirectImportsAsync(
+                    var import = await Import.ParseImportsAsync(
                         unloadedImportPath,
                         moduleParametersConfigurer);
 
@@ -76,7 +76,7 @@ namespace SCUMSLang.IO
             topologizedImports = TopologicalSorting.KahnAlgorithm.SortTopologically(
                 loadedImports.Values,
                 importEdges,
-                ImportEntryOnlyPathEqualityComparer.Default);
+                ImportOnlyPathEqualityComparer.Default);
         }
     }
 }

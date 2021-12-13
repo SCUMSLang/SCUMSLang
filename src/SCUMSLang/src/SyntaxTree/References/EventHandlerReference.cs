@@ -31,14 +31,10 @@ namespace SCUMSLang.SyntaxTree.References
             : base(name, genericParameters, parameters) =>
             Conditions = conditions ?? new List<MethodCallDefinition>();
 
-        public new EventHandlerDefinition Resolve()
-        {
-            return resolvedDefinition 
-                ??= ParentBlock?.Module.Resolve(this)
-                ?? throw new NotSupportedException();
-        }
+        public new EventHandlerDefinition Resolve() =>
+            CacheOrResolve(() => ParentBlock.Module.Resolve(this).Value);
 
-        protected override IMemberDefinition ResolveMemberDefinition() =>
+        protected override IMember ResolveMember() =>
             Resolve();
 
         protected internal override Reference Accept(SyntaxNodeVisitor visitor) =>
@@ -57,7 +53,7 @@ namespace SCUMSLang.SyntaxTree.References
 
             return new EventHandlerReference(Name, genericParameters, parameters, conditions) {
                 DeclaringType = DeclaringType,
-                ParentBlock = ParentBlock,
+                ParentBlockContainer = ParentBlockContainer,
             };
         }
     }

@@ -6,7 +6,7 @@ using SCUMSLang.SyntaxTree.Visitors;
 
 namespace SCUMSLang.SyntaxTree.Definitions
 {
-    public class MethodDefinition : MethodReference, IMemberDefinition, IOverloadableReference, IBlockHolder, IAttributesHolder
+    public class MethodDefinition : MethodReference, ICollectibleMember, IOverloadableReference, IBlockHolder, IAttributesHolder
     {
         public override SyntaxTreeNodeType NodeType => SyntaxTreeNodeType.MethodDefinition;
         public bool IsAbstract { get; set; }
@@ -42,7 +42,7 @@ namespace SCUMSLang.SyntaxTree.Definitions
         public new MethodDefinition Resolve() =>
             this;
 
-        protected override IMemberDefinition ResolveMemberDefinition() =>
+        protected override IMember ResolveMember() =>
             Resolve();
 
         OverloadConflictResult IOverloadableReference.SolveConflict(BlockDefinition block)
@@ -70,7 +70,7 @@ namespace SCUMSLang.SyntaxTree.Definitions
 
             return new MethodDefinition(Name, genericParameters, parameters) {
                 DeclaringType = DeclaringType,
-                ParentBlock = ParentBlock,
+                ParentBlockContainer = ParentBlockContainer,
                 body = body
             };
         }

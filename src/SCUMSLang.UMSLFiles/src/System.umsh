@@ -1,3 +1,6 @@
+import "EnumTypes/Player.umsh";
+import "EnumTypes/Unit.umsh";
+
 typedef UInt8 byte;
 typedef UInt32 int;
 typedef String string;
@@ -21,7 +24,7 @@ function ScopeAllowance(params Scopes[] allowedScopes);
 
 /// <summary>
 /// Declares a death counter of (an) unit(s) from the specified player being reservable by compiler.
-/// Internally a death counter represents an UInt32 value which the compiler-specific triggers need.
+/// Internally a death counter represents an UInt32 value that is in need of compiler-specific triggers.
 /// </summary>
 [ScopeAllowance(Scopes.Module)]
 function add_uint32(Player PlayerId, params Unit[] units);

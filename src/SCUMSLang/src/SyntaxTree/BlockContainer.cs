@@ -8,7 +8,7 @@ namespace SCUMSLang.SyntaxTree
         public static BlockContainer WithBlock(BlockDefinition block) =>
             new BlockContainer() { Block = block };
 
-        public BlockDefinition? Block { get; set; }
+        public virtual BlockDefinition? Block { get; set; }
 
         [MemberNotNullWhen(true, nameof(Block))]
         public virtual bool HasBlock =>

@@ -1,6 +1,6 @@
 ﻿namespace SCUMSLang.Compilation
 {
-    public enum CompilerErrorSourceType
+    public enum CompilerErrorSource
     {
         Tokenization,
         SyntaxTree

@@ -15,9 +15,9 @@ namespace SCUMSLang.SyntaxTree.References
         public override int GetHashCode([DisallowNull] TypeReference obj) =>
             obj.GetHashCode();
 
-        public class ViaResolveComparer : EqualityComparer<TypeReference>
+        public class AfterResolveComparer : EqualityComparer<TypeReference>
         {
-            public new static ViaResolveComparer Default = new ViaResolveComparer();
+            public new static AfterResolveComparer Default = new AfterResolveComparer();
 
             public override bool Equals([AllowNull] TypeReference x, [AllowNull] TypeReference y)
             {

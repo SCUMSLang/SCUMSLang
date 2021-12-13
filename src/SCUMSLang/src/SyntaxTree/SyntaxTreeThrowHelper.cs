@@ -8,26 +8,43 @@ namespace SCUMSLang.SyntaxTree
 {
     internal static class SyntaxTreeThrowHelper
     {
-        public static BlockEvaluationException MemberNotFound(string typeName, string memberName, Func<string, IFilePosition?, BlockEvaluationException>? errorFactory = null, IFilePosition? filePosition = null)
+        public static BlockResolutionException BlockResolutionExceptionDelegate(string message, IFilePosition? filePosition, string? stackTrace)
         {
-            errorFactory ??= (message, filePosition) => new BlockEvaluationException(message) { FilePosition = filePosition };
-            return errorFactory($"{typeName.UpperFirst()} by name '{memberName}' has not been found.", filePosition);
+            var error = new BlockResolutionException(message) { FilePosition = filePosition };
+            error.SetStackTrace(stackTrace);
+            return error;
         }
 
-        public static BlockEvaluationException TypeNotFound(string name, Func<string, IFilePosition?, BlockEvaluationException>? errorFactory = null, IFilePosition? filePosition = null) =>
-            MemberNotFound("type", name, errorFactory, filePosition);
+        public static BlockEvaluationException BlockEvaluatingExceptionDelegate(string message, IFilePosition? filePosition, string? stackTrace)
+        {
+            var error = new BlockEvaluationException(message) { FilePosition = filePosition };
+            error.SetStackTrace(stackTrace);
+            return error;
+        }
 
-        public static BlockEvaluationException FieldNotFound(string name, Func<string, IFilePosition?, BlockEvaluationException>? errorFactory = null, IFilePosition? filePosition = null) =>
-            MemberNotFound("field", name, errorFactory, filePosition);
+        public static BlockEvaluationException MemberNotFound(string typeName, string memberName, Func<string, IFilePosition?, string?, BlockEvaluationException>? errorFactory = null, IFilePosition? filePosition = null, string? stackTrace = null)
+        {
+            if (errorFactory is null) {
+                errorFactory = BlockEvaluatingExceptionDelegate;
+            }
 
-        public static BlockEvaluationException MethodNotFound(string name, Func<string, IFilePosition?, BlockEvaluationException>? errorFactory = null, IFilePosition? filePosition = null) =>
-            MemberNotFound("method", name, errorFactory, filePosition);
+            return errorFactory($"{typeName.UpperFirst()} by name '{memberName}' has not been found.", filePosition, stackTrace);
+        }
 
-        public static BlockEvaluationException EventHandlerdNotFound(string name, Func<string, IFilePosition?, BlockEvaluationException>? errorFactory = null, IFilePosition? filePosition = null) =>
-            MemberNotFound("event handler", name, errorFactory, filePosition);
+        public static BlockEvaluationException TypeNotFound(string name, Func<string, IFilePosition?, string?, BlockEvaluationException>? errorFactory = null, IFilePosition? filePosition = null, string? stackTrace = null) =>
+            MemberNotFound("type", name, errorFactory, filePosition, stackTrace);
 
-        public static DefinitionNotFoundException DefinitionNotFoundExceptionDelegate(string message, IFilePosition? filePosition) =>
-            new DefinitionNotFoundException(message) { FilePosition = filePosition };
+        public static BlockEvaluationException FieldNotFound(string name, Func<string, IFilePosition?, string?, BlockEvaluationException>? errorFactory = null, IFilePosition? filePosition = null, string? stackTrace = null) =>
+            MemberNotFound("field", name, errorFactory, filePosition, stackTrace);
+
+        public static BlockEvaluationException MethodNotFound(string name, Func<string, IFilePosition?, string?, BlockEvaluationException>? errorFactory = null, IFilePosition? filePosition = null, string? stackTrace = null) =>
+            MemberNotFound("method", name, errorFactory, filePosition, stackTrace);
+
+        public static BlockEvaluationException EventHandlerdNotFound(string name, Func<string, IFilePosition?, string?, BlockEvaluationException>? errorFactory = null, IFilePosition? filePosition = null, string? stackTrace = null) =>
+            MemberNotFound("event handler", name, errorFactory, filePosition, stackTrace);
+
+        public static BlockEvaluationException ModuleNotFound(string name, Func<string, IFilePosition?, string?, BlockEvaluationException>? errorFactory = null, IFilePosition? filePosition = null, string? stackTrace = null) =>
+            MemberNotFound("module", name, errorFactory, filePosition, stackTrace);
 
         public static BlockEvaluationException AttributeMisposition(string? causedName = null) => causedName is null
             ? new BlockEvaluationException($"The attribute cannot be positioned before {causedName}.")

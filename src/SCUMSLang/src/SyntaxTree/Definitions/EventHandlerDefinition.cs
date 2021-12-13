@@ -4,7 +4,7 @@ using SCUMSLang.SyntaxTree.Visitors;
 
 namespace SCUMSLang.SyntaxTree.Definitions
 {
-    public class EventHandlerDefinition : EventHandlerReference, IMemberDefinition, IBlockHolder
+    public class EventHandlerDefinition : EventHandlerReference, ICollectibleMember, IBlockHolder
     {
         public override SyntaxTreeNodeType NodeType =>
             SyntaxTreeNodeType.EventHandlerDefinition;
@@ -41,7 +41,7 @@ namespace SCUMSLang.SyntaxTree.Definitions
         public new EventHandlerDefinition Resolve() =>
             this;
 
-        protected override IMemberDefinition ResolveMemberDefinition() =>
+        protected override IMember ResolveMember() =>
             Resolve();
 
         protected internal override Reference Accept(SyntaxNodeVisitor visitor) =>
@@ -60,7 +60,7 @@ namespace SCUMSLang.SyntaxTree.Definitions
 
             return new EventHandlerDefinition(Name, genericParameters, parameters, conditions) {
                 DeclaringType = DeclaringType,
-                ParentBlock = ParentBlock,
+                ParentBlockContainer = ParentBlockContainer,
                 body = body,
             };
         }

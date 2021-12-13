@@ -1,4 +1,5 @@
-﻿using SCUMSLang.SyntaxTree.References;
+﻿using Microsoft.Extensions.Logging;
+using SCUMSLang.SyntaxTree.References;
 
 namespace SCUMSLang.SyntaxTree.Definitions
 {
@@ -6,5 +7,6 @@ namespace SCUMSLang.SyntaxTree.Definitions
     {
         public IReferenceResolver? ReferenceResolver { get; set; }
         public string? FilePath { get; set; }
+        public ILoggerFactory? LoggerFactory { get; set; }
     }
 }

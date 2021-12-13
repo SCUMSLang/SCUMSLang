@@ -3,12 +3,11 @@ using System.Collections.Generic;
 using System.Diagnostics.CodeAnalysis;
 using System.Linq;
 using SCUMSLang.SyntaxTree.References;
-using Teronis.Collections.Generic;
-using Teronis.Collections.Specialized;
+using Teronis;
 
 namespace SCUMSLang.SyntaxTree.Definitions
 {
-    public abstract partial class BlockDefinition : Reference
+    public abstract partial class BlockDefinition : Reference, IReferenceResolver
     {
         public static bool TryGetFirstOfReferencesByNameAndProber<T>(IEnumerable<Reference> candidates, Func<Reference, bool> isMemberDelegate, [MaybeNullWhen(false)] out T member)
             where T : Reference
@@ -29,59 +28,32 @@ namespace SCUMSLang.SyntaxTree.Definitions
 
         public abstract BlockScope BlockScope { get; }
         public abstract ModuleDefinition Module { get; }
-
         /// <summary>
         /// All references (or definitions) as they appeared
         /// from top to bottom of a block.
         /// </summary>
-        public IReadOnlyList<Reference> BookkeptReferences =>
-            bookkeptReferences;
-
-        internal protected LinkedBucketList<string, Reference> LocalMemberList { get; }
-        internal protected abstract LinkedBucketList<string, TypeReference> ModuleTypeList { get; }
-
-        protected abstract BlockDefinition ParentBlock { get; }
+        public IReadOnlyList<Reference> BookkeptReferences => bookkeptReferences;
+        public IReferenceResolver BlockReferenceResolver => blockReferenceResolver;
 
         private List<Reference> bookkeptReferences;
+        private ReferenceResolver blockReferenceResolver;
+        private BlockWideReferenceResolverPool blockWideReferenceResolver;
 
         public BlockDefinition()
         {
             bookkeptReferences = new List<Reference>();
-            LocalMemberList = new LinkedBucketList<string, Reference>();
-        }
-
-        /// <summary>
-        /// Returns hisself and base blocks.
-        /// </summary>
-        /// <returns>Hisself and base blocks.</returns>
-        protected IEnumerable<BlockDefinition> AllBlocks()
-        {
-            BlockDefinition parentBlock = this;
-            BlockDefinition? previousParentBlock;
-
-            do {
-                yield return parentBlock;
-                previousParentBlock = parentBlock;
-                parentBlock = parentBlock.ParentBlock;
-            } while (!ReferenceEquals(Module.Block, previousParentBlock));
-        }
-
-        protected IEnumerable<BlockType> AllBlocksOfType<BlockType>()
-            where BlockType : BlockDefinition
-        {
-            foreach (var block in AllBlocks()) {
-                if (block is BlockType typedBlock) {
-                    yield return typedBlock;
-                }
-            }
+            blockReferenceResolver = new ReferenceResolver();
+            blockWideReferenceResolver = new BlockWideReferenceResolverPool(this);
         }
 
         public bool TryGetBlocksMembersByName(string name, [MaybeNullWhen(false)] out List<Reference> foundNodes)
         {
             foundNodes = new List<Reference>();
 
-            foreach (var block in AllBlocks()) {
-                if (block.LocalMemberList.TryGetBucket(name, out ILinkedBucketList<string, Reference>? nodes)) {
+            foreach (var block in blockWideReferenceResolver.GetBlocks()) {
+                var (success, nodes) = blockReferenceResolver.Members.Buckets.TryGetValue((name, typeof(TypeReference)));
+
+                if (success) {
                     foreach (var node in nodes) {
                         foundNodes.Add(node);
                     }
@@ -125,18 +97,6 @@ namespace SCUMSLang.SyntaxTree.Definitions
             return false;
         }
 
-        public bool TryGetFirstOfMembers<T>(IEnumerable<T> candidates, [MaybeNullWhen(false)] out T member)
-            where T : Reference =>
-            TryGetFirstOfReferencesByNameAndProber(candidates, (node) => node is T, out member);
-
-        public bool TryGetMemberFirst<T>(string name, [MaybeNullWhen(false)] out T member)
-            where T : Reference =>
-            TryGetFirstOfMembersByNameAndProber(name, (node) => node is T, out member);
-
-        public bool TryGetMemberFirst<T>(T template, [MaybeNullWhen(false)] out T member)
-            where T : MemberReference =>
-            TryGetFirstOfMembersByNameAndProber(template.Name, (node) => node.Equals(template), out member);
-
         public bool TryGetFirstOfMembers<T>(IEnumerable<T> candidates, T template, [MaybeNullWhen(false)] out T member, IEqualityComparer<T>? comparer = null)
             where T : MemberReference
         {
@@ -144,10 +104,7 @@ namespace SCUMSLang.SyntaxTree.Definitions
 
             return TryGetFirstOfReferencesByNameAndProber(
                 candidates,
-                (node) => {
-                    return node is T typedNode
-                        && comparer.Equals(typedNode, template);
-                },
+                (node) => node is T typedNode && comparer.Equals(typedNode, template),
                 out member);
         }
 
@@ -158,8 +115,8 @@ namespace SCUMSLang.SyntaxTree.Definitions
         /// <returns>False indicates skip.</returns>
         protected virtual bool TryAddMember(Reference member)
         {
-            if (member is IMemberDefinition memberDefinition) {
-                bool hasDuplication = TryGetBlocksMembersByName(memberDefinition.Name, out _);
+            if (member is ICollectibleMember collectibleMember) {
+                bool hasDuplication = TryGetBlocksMembersByName(collectibleMember.Name, out _);
 
                 // If node has name, then it can handle name duplications.
                 if (hasDuplication && member is IOverloadableReference nameDuplicationHandleableNode) {
@@ -173,14 +130,10 @@ namespace SCUMSLang.SyntaxTree.Definitions
                 }
 
                 if (hasDuplication) {
-                    throw new NameReservedException(memberDefinition.Name);
+                    throw new NameReservedException(collectibleMember.Name);
                 }
 
-                LocalMemberList.AddLast(memberDefinition.Name, member);
-
-                if (member is TypeReference type) {
-                    ModuleTypeList.Add(type.Name, type);
-                }
+                blockReferenceResolver.AddType(collectibleMember.Name, member);
             }
 
             if (member is INestedTypesProvider namesReservableNode && namesReservableNode.HasNestedTypes) {
@@ -208,51 +161,68 @@ namespace SCUMSLang.SyntaxTree.Definitions
             }
         }
 
-        private TDefinition GetMemberDefinitionBySelector<TDefinition>(
-            string memberName,
-            IReadOnlyLinkedBucketList<string, Reference> candidates,
-            Func<IEnumerable<TDefinition>, TDefinition?> singleDefinitionSelector,
-            Func<Exception> notFoundErrorProvider)
-            where TDefinition : class
-        {
-            if (!candidates.Buckets.TryGetValue(memberName, out var bucket)) {
-                throw notFoundErrorProvider();
-            }
+        public ResolveResult<T> Resolve<T>(TypeReference type)
+            where T : TypeReference =>
+            BlockReferenceResolver.Resolve<T>(type);
 
-            return singleDefinitionSelector(bucket.Cast<TDefinition>())
-                ?? throw notFoundErrorProvider();
-        }
+        public ResolveResult<TypeReference> Resolve(TypeReference type) =>
+           Resolve<TypeReference>(type);
 
-        public FieldDefinition GetField(string fieldName) =>
-            GetMemberDefinitionBySelector<FieldDefinition>(
-                fieldName,
-                Module.Block.LocalMemberList,
-                definitions => definitions.SingleOrDefault(),
-                () => SyntaxTreeThrowHelper.FieldNotFound(fieldName));
+        public ResolveResult<FieldDefinition> Resolve(FieldReference field) =>
+            BlockReferenceResolver.Resolve(field);
 
-        public MethodDefinition GetMethod(string methodName) =>
-            GetMemberDefinitionBySelector<MethodDefinition>(
-                methodName,
-                LocalMemberList,
-                definitions => definitions.SingleOrDefault(),
-                () => SyntaxTreeThrowHelper.MethodNotFound(methodName));
+        public ResolveResult<MethodDefinition> Resolve(MethodReference method) =>
+            BlockReferenceResolver.Resolve(method);
 
-        public MethodDefinition GetMethod(MethodReference methodReference) =>
-            GetMemberDefinitionBySelector<MethodDefinition>(
-                methodReference.Name,
-                LocalMemberList,
-                definitions => definitions.SingleOrDefault(x =>
-                    new MethodOverloadEqualityComparer(Module).Equals(x, methodReference)),
-                () => SyntaxTreeThrowHelper.MethodNotFound(methodReference.Name, filePosition: methodReference.FilePosition));
+        public ResolveResult<EventHandlerDefinition> Resolve(EventHandlerReference eventHandler) =>
+            BlockReferenceResolver.Resolve(eventHandler);
 
-        public EventHandlerDefinition GetEventHandler(string eventHandlerName) =>
-            GetMemberDefinitionBySelector<EventHandlerDefinition>(
-                eventHandlerName,
-                LocalMemberList,
-                definitions => definitions.SingleOrDefault(),
-                () => SyntaxTreeThrowHelper.MethodNotFound(eventHandlerName));
+        public ResolveResult<TypeDefinition> GetType(string typeName) =>
+            BlockReferenceResolver.GetType(typeName);
+
+        public ResolveResult<EventHandlerDefinition> GetEventHandler(string eventHandlerName) =>
+            BlockReferenceResolver.GetEventHandler(eventHandlerName);
+
+        public ResolveResult<FieldDefinition> GetField(string fieldName) =>
+            BlockReferenceResolver.GetField(fieldName);
+
+        public ResolveResult<MethodDefinition> GetMethod(string methodName) =>
+            BlockReferenceResolver.GetMethod(methodName);
+
+        public ResolveResult<MethodDefinition> GetMethod(MethodReference methodReference) =>
+            BlockReferenceResolver.GetMethod(methodReference);
 
         public override int GetHashCode() =>
             HashCode.Combine(NodeType, BookkeptReferences);
+
+        private class BlockWideReferenceResolverPool : ReferenceResolverPoolBase
+        {
+            private readonly BlockDefinition block;
+
+            public BlockWideReferenceResolverPool(BlockDefinition block) => this.block = block;
+
+            public IEnumerable<BlockDefinition> GetBlocks() {
+                BlockDefinition parentBlock = block;
+                BlockDefinition? previousParentBlock;
+
+                do {
+                    yield return parentBlock;
+                    previousParentBlock = parentBlock;
+                    parentBlock = parentBlock.ParentBlock;
+                } while (!ReferenceEquals(block.Module.Block, previousParentBlock));
+            }
+
+            protected override IEnumerable<IReferenceResolver> GetReferenceResolvers()
+            {
+                BlockDefinition parentBlock = block;
+                BlockDefinition? previousParentBlock;
+
+                do {
+                    yield return parentBlock;
+                    previousParentBlock = parentBlock;
+                    parentBlock = parentBlock.ParentBlock;
+                } while (!ReferenceEquals(block.Module.Block, previousParentBlock));
+            }
+        }
     }
 }

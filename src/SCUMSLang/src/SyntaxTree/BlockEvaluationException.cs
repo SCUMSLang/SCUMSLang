@@ -7,6 +7,10 @@ namespace SCUMSLang.SyntaxTree
     {
         public IFilePosition? FilePosition { get; init; }
 
+        public override string? StackTrace => stackTrace ?? base.StackTrace;
+
+        private string? stackTrace;
+
         protected BlockEvaluationException(SerializationInfo info, StreamingContext context)
             : base(info, context) { }
 
@@ -17,5 +21,8 @@ namespace SCUMSLang.SyntaxTree
 
         public BlockEvaluationException(string? message, Exception? innerException)
             : base(message, innerException) { }
+
+        internal void SetStackTrace(string? stackTrace) =>
+            this.stackTrace = stackTrace;
     }
 }

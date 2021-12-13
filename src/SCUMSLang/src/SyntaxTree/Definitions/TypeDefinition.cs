@@ -8,21 +8,15 @@ using SCUMSLang.SyntaxTree.Visitors;
 
 namespace SCUMSLang.SyntaxTree.Definitions
 {
-    public class TypeDefinition : TypeReference, INameReservableReference, IOverloadableReference, IMemberDefinition, ITypeDefinition
+    public class TypeDefinition : TypeReference, INameReservableReference, IOverloadableReference, ICollectibleMember, ITypeDefinition
     {
         public override SyntaxTreeNodeType NodeType =>
             SyntaxTreeNodeType.TypeDefinition;
 
-        public TypeReference? BaseType { get; internal set; }
-        public bool IsEnum { get; internal set; }
-        public bool IsAlias { get; internal set; }
+        public override TypeReference? BaseType { get; internal init; }
+        public bool IsEnum { get; internal init; }
+        public override bool IsAlias { get; internal init; }
         public virtual IReadOnlyList<FieldDefinition>? Fields { get; }
-
-        [AllowNull]
-        public override BlockDefinition ParentBlock {
-            get => ParentBlockContainer.Block ?? BaseType?.ParentBlock ?? throw SyntaxTreeThrowHelper.InvalidOperation(this);
-            internal set => ParentBlockContainer.Block = value;
-        }
 
         [MemberNotNullWhen(true, nameof(Fields))]
         public bool HasFields =>
@@ -52,11 +46,11 @@ namespace SCUMSLang.SyntaxTree.Definitions
         public override int GetHashCode() =>
             HashCode.Combine(base.GetHashCode(), NodeType, Name);
 
-        public new TypeDefinition Resolve() =>
-            this;
 
-        protected override IMemberDefinition ResolveMemberDefinition() =>
-            Resolve();
+        public new TypeDefinition Resolve() =>
+            Resolve<TypeDefinition>();
+
+        protected override IMember ResolveMember() => Resolve();
 
         protected internal override Reference Accept(SyntaxNodeVisitor visitor) =>
             visitor.VisitTypeDefinition(this);
@@ -73,7 +67,7 @@ namespace SCUMSLang.SyntaxTree.Definitions
                 DeclaringType = DeclaringType,
                 IsAlias = IsAlias,
                 IsArray = IsArray,
-                ParentBlock = ParentBlock
+                ParentBlockContainer = ParentBlockContainer
             };
         }
 
@@ -106,10 +100,10 @@ namespace SCUMSLang.SyntaxTree.References
 {
     partial class Reference
     {
-        public static TypeReference CreateTypeDefinition(string name, bool allowOverwriteOnce, BlockContainer? blockContainer) =>
+        public static TypeDefinition CreateTypeDefinition(string name, bool allowOverwriteOnce, BlockContainer? blockContainer) =>
             new TypeDefinition(name) { ParentBlockContainer = blockContainer, AllowOverwriteOnce = allowOverwriteOnce };
 
-        public static TypeReference CreateTypeDefinition(SystemType systemType, bool allowOverwriteOnce, BlockContainer? blockContainer) =>
+        public static TypeDefinition CreateTypeDefinition(SystemType systemType, bool allowOverwriteOnce, BlockContainer? blockContainer) =>
             CreateTypeDefinition(Sequences.SystemTypes[systemType], allowOverwriteOnce, blockContainer);
 
         public static TypeDefinition CreateAliasDefinition(

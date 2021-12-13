@@ -20,10 +20,10 @@ namespace SCUMSLang.SyntaxTree.Definitions
         {
             public new static ViaModuleResolve Default = new ViaModuleResolve();
 
-            public TypeReferenceEqualityComparer.ViaResolveComparer TypeReferenceComparer {
+            public TypeReferenceEqualityComparer.AfterResolveComparer TypeReferenceComparer {
                 get {
                     if (typeReferenceComparer is null) {
-                        typeReferenceComparer = TypeReferenceEqualityComparer.ViaResolveComparer.Default;
+                        typeReferenceComparer = TypeReferenceEqualityComparer.AfterResolveComparer.Default;
                     }
 
                     return typeReferenceComparer;
@@ -32,7 +32,7 @@ namespace SCUMSLang.SyntaxTree.Definitions
                 set => typeReferenceComparer = value;
             }
 
-            private TypeReferenceEqualityComparer.ViaResolveComparer? typeReferenceComparer;
+            private TypeReferenceEqualityComparer.AfterResolveComparer? typeReferenceComparer;
 
             public override bool Equals([AllowNull] ConstantDefinition x, [AllowNull] ConstantDefinition y)
             {

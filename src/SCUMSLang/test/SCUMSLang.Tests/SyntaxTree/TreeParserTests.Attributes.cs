@@ -1,5 +1,6 @@
 ﻿using SCUMSLang.SyntaxTree.Parser;
 using Xunit;
+using Xunit.Abstractions;
 
 namespace SCUMSLang.SyntaxTree
 {
@@ -7,6 +8,9 @@ namespace SCUMSLang.SyntaxTree
     {
         public class Attribtues : TreeParserTests
         {
+            public Attribtues(ITestOutputHelper outputHelper)
+                : base(outputHelper) { }
+
             [Fact]
             public void Should_parse_attribute_without_brackets()
             {
@@ -40,7 +44,7 @@ function TriggerCondition();
 function daisy();";
 
                 var module = DefaultParser.Parse(content).Module;
-                var method = module.Block.GetMethod("daisy");
+                var method = module.Block.GetMethod("daisy").Value;
                 Assert.Single(method.Attributes);
             }
 

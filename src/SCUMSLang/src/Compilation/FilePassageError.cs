@@ -10,13 +10,13 @@ namespace SCUMSLang.Compilation
         public static async Task<CompilerError> CreateFromFilePassageAsync<T>(T error)
             where T : Exception, IParsingException
         {
-            var compilerErrorType = CompilerErrorSourceType.SyntaxTree;
+            var errorSource = CompilerErrorSource.SyntaxTree;
             var errorMessage = error.Message;
             var errorFilePosition = error.FilePosition;
             CompilerError compilerError;
 
             if (errorFilePosition?.FilePath is null) {
-                compilerError = new CompilerError(compilerErrorType, errorMessage);
+                compilerError = new CompilerError(errorSource, errorMessage);
             } else {
                 var filePath = errorFilePosition.FilePath;
                 var filePosition = errorFilePosition.FilePosition;
@@ -37,7 +37,7 @@ namespace SCUMSLang.Compilation
                 }
 
                 compilerError = new FilePassageError(
-                    compilerErrorType,
+                    errorSource,
                     errorMessage,
                     filePassage,
                     filePath,
@@ -47,13 +47,9 @@ namespace SCUMSLang.Compilation
                     linePosition: errorFilePosition.FileLinePosition);
             }
 
-            var wrappedException = new CompilerException(compilerError.ToString(), error);
-            compilerError.WrappedException = wrappedException;
+            compilerError.WrappedException = new CompilerException(compilerError.ToString(), error);
             return compilerError;
         }
-
-        public override CompilerErrorType Type =>
-            CompilerErrorType.FilePassageError;
 
         public string? FilePassage { get; set; }
         public string? FilePath { get; }
@@ -63,7 +59,7 @@ namespace SCUMSLang.Compilation
         public int LinePosition { get; }
 
         public FilePassageError(
-            CompilerErrorSourceType errorType,
+            CompilerErrorSource errorType,
             string errorMessage,
             string? filePassage,
             string filePath,

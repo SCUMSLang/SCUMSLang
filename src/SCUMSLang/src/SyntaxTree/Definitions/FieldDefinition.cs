@@ -7,6 +7,7 @@ namespace SCUMSLang.SyntaxTree.Definitions
 {
     public class FieldDefinition : FieldReference
     {
+        public override SyntaxTreeNodeType NodeType => SyntaxTreeNodeType.FieldDefinition;
         public object? Value { get; set; }
 
         [AllowNull]
@@ -23,9 +24,9 @@ namespace SCUMSLang.SyntaxTree.Definitions
             DeclaringType = declaringType ?? throw new ArgumentNullException(nameof(declaringType));
 
         public new virtual FieldDefinition Resolve() =>
-            CacheOrResolve(() => ParentBlock.Module.Resolve(this));
+            CacheOrResolve(() => ParentBlock.Module.Resolve(this).Value);
 
-        protected override IMemberDefinition ResolveMemberDefinition() =>
+        protected override IMember ResolveMember() =>
             Resolve();
 
         protected internal override Reference Accept(SyntaxNodeVisitor visitor) =>
@@ -40,7 +41,7 @@ namespace SCUMSLang.SyntaxTree.Definitions
             return new FieldDefinition(Name, fieldType) {
                 DeclaringType = DeclaringType,
                 IsStatic = IsStatic,
-                ParentBlock = ParentBlock,
+                ParentBlockContainer = ParentBlockContainer,
                 Value = Value,
             };
         }

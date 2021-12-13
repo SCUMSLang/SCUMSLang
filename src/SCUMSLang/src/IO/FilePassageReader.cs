@@ -10,8 +10,6 @@ namespace SCUMSLang.IO
 {
     public class FilePassageReader
     {
-        public const int SPACING = 24;
-
         public static FilePassageReader Default = new FilePassageReader();
 
         public async Task<List<string>?> ReadPassageAsync(string filePath, int position, int length)
@@ -101,7 +99,7 @@ namespace SCUMSLang.IO
                     }
 
                     while (currentIndex < utf8ContentLength) {
-                        
+
 
                         var character = fileBytesMemory.Span[currentIndex];
 
