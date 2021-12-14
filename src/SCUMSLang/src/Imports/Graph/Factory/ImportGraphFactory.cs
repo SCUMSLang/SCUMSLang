@@ -8,7 +8,7 @@ using SCUMSLang.IO;
 using SCUMSLang.Compilation;
 using SCUMSLang.Imports.Graph.Processors;
 
-namespace SCUMSLang.Imports.Graph
+namespace SCUMSLang.Imports.Graph.Factory
 {
     public class ImportGraphFactory
     {
@@ -56,11 +56,12 @@ namespace SCUMSLang.Imports.Graph
             return importPaths;
         }
 
-        public async Task<ImportGraphFactoryResult> CompileAsync(Action<ImportGraphFactoryParameters>? parametersCallback)
+        public async Task<ImportGraphFactoryResult> CreateImportGraph(ImportGraphFactoryParameters parameters)
         {
-            var compilerParameters = new ImportGraphFactoryParameters();
-            parametersCallback?.Invoke(compilerParameters);
-            var importPaths = GetImportPaths(compilerParameters);
+            if (parameters == null)
+                throw new ArgumentNullException(nameof(parameters));
+
+            var importPaths = GetImportPaths(parameters);
 
             ImportGraph importGraph = default;
             List<ImportGraphFactoryError>? compilerErrors = new List<ImportGraphFactoryError>();
@@ -68,7 +69,7 @@ namespace SCUMSLang.Imports.Graph
             try {
                 void ConfigureModuleParameters(ModuleParameters moduleParameters)
                 {
-                    moduleParameters.LoggerFactory = compilerParameters.LoggerFactory;
+                    moduleParameters.LoggerFactory = parameters.LoggerFactory;
 
                     var referenceResolver = new ReferenceResolverPool();
                     referenceResolver.Add(systemModule.BlockReferenceResolver);
@@ -88,6 +89,6 @@ namespace SCUMSLang.Imports.Graph
         }
 
         public Task<ImportGraphFactoryResult> CompileAsync() =>
-            CompileAsync(default);
+            CreateImportGraph(default);
     }
 }

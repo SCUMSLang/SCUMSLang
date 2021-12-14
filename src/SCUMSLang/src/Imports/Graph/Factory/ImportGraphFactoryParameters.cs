@@ -4,7 +4,7 @@ using System.IO;
 using System.Threading;
 using Microsoft.Extensions.Logging;
 
-namespace SCUMSLang.Imports.Graph
+namespace SCUMSLang.Imports.Graph.Factory
 {
     public sealed class ImportGraphFactoryParameters
     {

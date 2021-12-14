@@ -1,5 +1,5 @@
 ﻿using System.Threading.Tasks;
-using SCUMSLang.Imports.Graph;
+using SCUMSLang.Imports.Graph.Factory;
 using Xunit;
 using static SCUMSLang.SCUMSLangTestsLibrary;
 
@@ -15,8 +15,8 @@ namespace SCUMSLang.Compilation
         [Fact]
         public async Task Should_compile_set_death()
         {
-            var result = await ImportGraphFactory.Default.CompileAsync(parameters => {
-                parameters.ImplicitUInt32PoolSource = GetUMSLFilePath("SetDeaths.umsl");
+            var result = await ImportGraphFactory.Default.CreateImportGraph(new ImportGraphFactoryParameters() {
+                ImplicitUInt32PoolSource = GetUMSLFilePath("SetDeaths.umsl")
             });
 
             result.ThrowOnError();

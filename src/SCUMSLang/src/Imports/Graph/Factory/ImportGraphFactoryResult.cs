@@ -1,6 +1,6 @@
 ﻿using System.Collections.Generic;
 
-namespace SCUMSLang.Imports.Graph
+namespace SCUMSLang.Imports.Graph.Factory
 {
     public class ImportGraphFactoryResult
     {

@@ -1,6 +1,6 @@
 ﻿using System.Collections.Generic;
 using CommandLine;
-using SCUMSLang.Imports.Graph;
+using SCUMSLang.Imports.Graph.Factory;
 
 namespace SCUMSLang.CommandLine
 {

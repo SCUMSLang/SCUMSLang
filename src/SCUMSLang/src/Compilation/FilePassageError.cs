@@ -1,7 +1,7 @@
 ﻿using System;
 using System.Text;
 using System.Threading.Tasks;
-using SCUMSLang.Imports.Graph;
+using SCUMSLang.Imports.Graph.Factory;
 
 namespace SCUMSLang.Compilation
 {

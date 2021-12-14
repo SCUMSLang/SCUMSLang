@@ -1,4 +1,4 @@
-﻿namespace SCUMSLang.Imports.Graph
+﻿namespace SCUMSLang.Imports.Graph.Factory
 {
     public class ImportGraphFactorySettings
     {

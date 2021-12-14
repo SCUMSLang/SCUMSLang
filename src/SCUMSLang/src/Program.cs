@@ -3,9 +3,8 @@ using System.Diagnostics;
 using System.Diagnostics.CodeAnalysis;
 using System.Threading.Tasks;
 using CommandLine;
-using Microsoft.Extensions.Logging;
 using SCUMSLang.CommandLine;
-using SCUMSLang.Imports.Graph;
+using SCUMSLang.Imports.Graph.Factory;
 
 namespace SCUMSLang
 {
@@ -40,24 +39,8 @@ namespace SCUMSLang
             ImportGraphFactoryResult compilerResult;
 
             try {
-                void ConfigureParserParameters(ImportGraphFactoryParameters parameters)
-                {
-                    parameters.LoggerFactory = LoggerFactory.Create(builder => builder.AddConsole());
-
-                    if (options.SystemSources.Count != 0) {
-                        parameters.SystemSources.AddRange(options.SystemSources);
-                    }
-
-                    parameters.UserSources.AddRange(options.UserSources);
-
-                    if (options.NoImplicitUInt32Pool) {
-                        parameters.NoImplicitUInt32Pool = true;
-                    } else if (!(options.ImplicitUInt32PoolSource is null)) {
-                        parameters.ImplicitUInt32PoolSource = options.ImplicitUInt32PoolSource;
-                    }
-                }
-
-                compilerResult = await ImportGraphFactory.Default.CompileAsync(ConfigureParserParameters);
+                var importGraphFactoryParameters = new OptionsMapper().ToImportGraphFactoryParameters(options);
+                compilerResult = await ImportGraphFactory.Default.CreateImportGraph(importGraphFactoryParameters);
             } catch (AggregateException error) {
                 Console.WriteLine(error.Message);
 
