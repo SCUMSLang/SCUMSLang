@@ -12,6 +12,7 @@ EndProject
 Project("{2150E333-8FDC-42A3-9474-1A3956D46DE8}") = "Solution Items", "Solution Items", "{9AAE3F26-49CE-48E9-8A1A-B716EF87F6D4}"
 	ProjectSection(SolutionItems) = preProject
 		.editorconfig = .editorconfig
+		README.md = README.md
 	EndProjectSection
 EndProject
 Project("{13B669BE-BB05-4DDF-9536-439F39A36129}") = "SCUMSLang.UMSLFiles", "src\SCUMSLang.UMSLFiles\src\SCUMSLang.UMSLFiles.msbuildproj", "{71E7C1BF-2DC9-4BF6-B3B5-EC3D52980524}"

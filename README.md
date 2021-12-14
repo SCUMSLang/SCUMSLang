@@ -80,7 +80,7 @@ https://github.com/SCUMSLang/SCUMSLang/blob/main/src/SCUMSLang.UMSLFiles/src/Con
 
 ### 4.3. StarCraft enum types
 
-https://github.com/SCUMSLang/SCUMSLang/blob/main/src/SCUMSLang.UMSLFiles/src/EnumTypes
+https://github.com/SCUMSLang/SCUMSLang/blob/main/src/SCUMSLang.UMSLFiles/src/Enums
 
 ### 4.4. StarCraft functions
 
