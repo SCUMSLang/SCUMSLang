@@ -19,7 +19,7 @@ namespace SCUMSLang.SyntaxTree.Definitions
             Arguments = arguments;
         }
 
-        protected internal override Reference Accept(SyntaxNodeVisitor visitor) =>
+        protected internal override Reference Accept(NodeVisitor visitor) =>
             visitor.VisitForInDefinition(this);
 
         public ForInDefinition Update(ParameterDefinition parameter, IReadOnlyList<ConstantDefinition> arguments)

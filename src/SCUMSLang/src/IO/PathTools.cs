@@ -11,8 +11,8 @@ namespace SCUMSLang.IO
         /// <returns></returns>
         public static bool IsFullPath(string path)
         {
-            if (string.IsNullOrWhiteSpace(path) 
-                || path.IndexOfAny(Path.GetInvalidPathChars()) != -1 
+            if (string.IsNullOrWhiteSpace(path)
+                || path.IndexOfAny(Path.GetInvalidPathChars()) != -1
                 || !Path.IsPathRooted(path)) {
                 return false;
             }

@@ -13,7 +13,7 @@ namespace SCUMSLang.SyntaxTree.Definitions
             internal ScopedBlockDefinition(BlockScope blockScope) => 
                 BlockScope = blockScope;
 
-            protected internal override Reference Accept(SyntaxNodeVisitor visitor) =>
+            protected internal override Reference Accept(NodeVisitor visitor) =>
                 visitor.VisitScopedBlockDefinition(this);
         }
     }

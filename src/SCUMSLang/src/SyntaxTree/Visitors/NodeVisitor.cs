@@ -9,7 +9,7 @@ using SCUMSLang.SyntaxTree.References;
 
 namespace SCUMSLang.SyntaxTree.Visitors
 {
-    public class SyntaxNodeVisitor
+    public class NodeVisitor
     {
         public ILogger? Logger { get; set; }
 
@@ -38,7 +38,7 @@ namespace SCUMSLang.SyntaxTree.Visitors
         }
 
         [return: NotNullIfNotNull("reference")]
-        public T? VisitAndConvert<T>(T? reference, [CallerMemberName] string? callerName = null)
+        protected T? VisitAndConvert<T>(T? reference, [CallerMemberName] string? callerName = null)
             where T : Reference
         {
             if (reference is null) {
@@ -54,7 +54,7 @@ namespace SCUMSLang.SyntaxTree.Visitors
             return visitedReference;
         }
 
-        public IReadOnlyList<T> VisitAndConvert<T>(IReadOnlyList<T> nodes, [CallerMemberName] string? callerName = null)
+        protected IReadOnlyList<T> VisitAndConvert<T>(IReadOnlyList<T> nodes, [CallerMemberName] string? callerName = null)
             where T : Reference
         {
             T[]? newNodes = null;
@@ -157,7 +157,7 @@ namespace SCUMSLang.SyntaxTree.Visitors
             VisitAndConvert(eventHandler.Parameters),
             VisitAndConvert(eventHandler.Conditions));
 
-        internal virtual Reference VisitModuleBlockDefinition(ModuleBlockDefinition moduleBlock) =>
+        protected internal virtual Reference VisitModuleBlockDefinition(ModuleBlockDefinition moduleBlock) =>
             moduleBlock.UpdateDefinition(VisitAndConvert(moduleBlock.BookkeptReferences));
 
         protected internal virtual Reference VisitModuleDefinition(ModuleDefinition module) =>

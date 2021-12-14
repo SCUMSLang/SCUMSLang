@@ -92,7 +92,7 @@ namespace SCUMSLang.SyntaxTree.Definitions
 
         protected override IMember ResolveMember() => Resolve();
 
-        protected internal override Reference Accept(SyntaxNodeVisitor visitor) =>
+        protected internal override Reference Accept(NodeVisitor visitor) =>
             visitor.VisitModuleDefinition(this);
 
         public ResolveResult<T> Resolve<T>(TypeReference type)
@@ -137,8 +137,8 @@ namespace SCUMSLang.SyntaxTree.Definitions
 
         public void ResolveOnce(ImportResolver importResolver)
         {
-            var resolvingVisitor = new SyntaxNodeResolvingVisitor(importResolver) {
-                Logger = LoggerFactory?.CreateLogger<SyntaxNodeResolvingVisitor>()
+            var resolvingVisitor = new ResolvingVisitor(importResolver) {
+                Logger = LoggerFactory?.CreateLogger<ResolvingVisitor>()
             };
 
             resolvingVisitor.Visit(this);

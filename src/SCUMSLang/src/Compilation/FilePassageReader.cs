@@ -6,7 +6,7 @@ using System.Threading.Tasks;
 using SCUMSLang.Text;
 using Teronis.IO.FileLocking;
 
-namespace SCUMSLang.IO
+namespace SCUMSLang.Compilation
 {
     public class FilePassageReader
     {

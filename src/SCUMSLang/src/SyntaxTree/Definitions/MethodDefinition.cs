@@ -56,7 +56,7 @@ namespace SCUMSLang.SyntaxTree.Definitions
             }
         }
 
-        protected internal override Reference Accept(SyntaxNodeVisitor visitor) =>
+        protected internal override Reference Accept(NodeVisitor visitor) =>
             visitor.VisitMethodReference(this);
 
         public MethodDefinition UpdateDefinition(

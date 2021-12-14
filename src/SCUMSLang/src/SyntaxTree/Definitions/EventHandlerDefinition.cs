@@ -44,7 +44,7 @@ namespace SCUMSLang.SyntaxTree.Definitions
         protected override IMember ResolveMember() =>
             Resolve();
 
-        protected internal override Reference Accept(SyntaxNodeVisitor visitor) =>
+        protected internal override Reference Accept(NodeVisitor visitor) =>
              visitor.VisitEventHandlerDefinition(this);
 
         public EventHandlerDefinition UpdateDefinition(

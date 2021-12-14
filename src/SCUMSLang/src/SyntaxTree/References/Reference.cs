@@ -42,9 +42,9 @@ namespace SCUMSLang.SyntaxTree.References
         public override int GetHashCode() =>
             HashCode.Combine(NodeType);
 
-        internal protected abstract Reference Accept(SyntaxNodeVisitor visitor);
+        internal protected abstract Reference Accept(NodeVisitor visitor);
 
-        void IVisitableReference.Accept(SyntaxNodeVisitor visitor) =>
+        void IVisitableReference.Accept(NodeVisitor visitor) =>
             throw new NotImplementedException();
     }
 }

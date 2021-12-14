@@ -4,11 +4,10 @@ using System.Diagnostics.CodeAnalysis;
 using System.Linq;
 using SCUMSLang.SyntaxTree.References;
 using SCUMSLang.SyntaxTree.Visitors;
-using Teronis.Collections.Specialized;
 
 namespace SCUMSLang.SyntaxTree.Definitions
 {
-    internal class ModuleBlockDefinition : BlockDefinition
+    public class ModuleBlockDefinition : BlockDefinition
     {
         public override SyntaxTreeNodeType NodeType =>
             SyntaxTreeNodeType.ModuleBlockDefinition;
@@ -69,7 +68,7 @@ namespace SCUMSLang.SyntaxTree.Definitions
             return base.TryAddMember(member);
         }
 
-        protected internal override Reference Accept(SyntaxNodeVisitor visitor) =>
+        protected internal override Reference Accept(NodeVisitor visitor) =>
             visitor.VisitModuleBlockDefinition(this);
 
         internal ModuleBlockDefinition UpdateDefinition(IReadOnlyList<Reference> references)

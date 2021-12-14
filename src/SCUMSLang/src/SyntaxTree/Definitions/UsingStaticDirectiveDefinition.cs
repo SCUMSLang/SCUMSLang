@@ -23,7 +23,7 @@ namespace SCUMSLang.SyntaxTree.References
 
         protected override IMember ResolveMember() => Resolve();
 
-        protected internal override Reference Accept(SyntaxNodeVisitor visitor) =>
+        protected internal override Reference Accept(NodeVisitor visitor) =>
             visitor.VisitUsingStaticDirectiveDefinition(this);
 
         public UsingStaticDirectiveDefinition UpdateDefinition(TypeReference elementType)

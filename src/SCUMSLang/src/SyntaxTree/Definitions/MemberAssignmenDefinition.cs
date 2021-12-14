@@ -20,7 +20,7 @@ namespace SCUMSLang.SyntaxTree.Definitions
         public override int GetHashCode() =>
             HashCode.Combine(NodeType, Field, Constant);
 
-        internal protected override Reference Accept(SyntaxNodeVisitor visitor) =>
+        internal protected override Reference Accept(NodeVisitor visitor) =>
             visitor.VisitMemberAssignmentDefinition(this);
     }
 }

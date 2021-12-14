@@ -4,9 +4,9 @@ using System.IO;
 using System.Threading;
 using Microsoft.Extensions.Logging;
 
-namespace SCUMSLang.Compilation
+namespace SCUMSLang.Imports.Graph
 {
-    public sealed class CompilerParameters
+    public sealed class ImportGraphFactoryParameters
     {
         public const string RelativeUMSLFilesIndexPath = "UMSLFiles/Index.umsh";
         public const string RelativeUMSLFilesUInt32PoolPath = "UMSLFiles/UInt32Pool.umsl";
@@ -16,7 +16,7 @@ namespace SCUMSLang.Compilation
 
         private static Lazy<string> AbsoluteAssemblyDirectory { get; }
 
-        static CompilerParameters()
+        static ImportGraphFactoryParameters()
         {
             AbsoluteAssemblyDirectory = new Lazy<string>(() => {
                 var assemblyPath = typeof(Program).Assembly.Location;

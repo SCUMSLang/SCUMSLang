@@ -1,44 +1,34 @@
 ﻿using System;
 using System.Collections.Generic;
 using System.Threading.Tasks;
-using SCUMSLang.IO;
 using System.IO;
 using SCUMSLang.SyntaxTree;
 using SCUMSLang.SyntaxTree.Definitions;
-using System.Linq;
+using SCUMSLang.IO;
+using SCUMSLang.Compilation;
+using SCUMSLang.Imports.Graph.Processors;
 
-namespace SCUMSLang.Compilation
+namespace SCUMSLang.Imports.Graph
 {
-    public class Compiler
+    public class ImportGraphFactory
     {
-        static Import ResolveImport(IEnumerable<Import> imports, string importPath)
-        {
-            var import = imports.SingleOrDefault(x => x.ImportPath == importPath);
+        public static ImportGraphFactory Default = new ImportGraphFactory();
 
-            if (import is null) {
-                throw SyntaxTreeThrowHelper.ModuleNotFound(importPath, stackTrace: Environment.StackTrace);
-            }
-
-            return import;
-        }
-
-        public static Compiler Default = new Compiler();
-
-        public CompilerSettings Settings { get; }
+        public ImportGraphFactorySettings Settings { get; }
 
         private ModuleDefinition systemModule = new ModuleDefinition().AddSystemTypes();
 
-        public Compiler() =>
-            Settings = new CompilerSettings();
+        public ImportGraphFactory() =>
+            Settings = new ImportGraphFactorySettings();
 
-        public Compiler(Action<CompilerSettings> settingsCallback)
+        public ImportGraphFactory(Action<ImportGraphFactorySettings> settingsCallback)
         {
-            var options = new CompilerSettings();
+            var options = new ImportGraphFactorySettings();
             settingsCallback?.Invoke(options);
             Settings = options;
         }
 
-        private List<string> GetImportPaths(CompilerParameters parameters)
+        private List<string> GetImportPaths(ImportGraphFactoryParameters parameters)
         {
             static void addImportPath(List<string> importPaths, string importPath)
             {
@@ -66,14 +56,14 @@ namespace SCUMSLang.Compilation
             return importPaths;
         }
 
-        public async Task<CompilerResult> CompileAsync(Action<CompilerParameters>? parametersCallback)
+        public async Task<ImportGraphFactoryResult> CompileAsync(Action<ImportGraphFactoryParameters>? parametersCallback)
         {
-            var compilerParameters = new CompilerParameters();
+            var compilerParameters = new ImportGraphFactoryParameters();
             parametersCallback?.Invoke(compilerParameters);
             var importPaths = GetImportPaths(compilerParameters);
 
-            DirectAcyclicImportGraph? importGraph = null;
-            List<CompilerError>? compilerErrors = new List<CompilerError>();
+            ImportGraph importGraph = default;
+            List<ImportGraphFactoryError>? compilerErrors = new List<ImportGraphFactoryError>();
 
             try {
                 void ConfigureModuleParameters(ModuleParameters moduleParameters)
@@ -85,24 +75,19 @@ namespace SCUMSLang.Compilation
                     moduleParameters.ReferenceResolver = referenceResolver;
                 }
 
-                importGraph = await DirectAcyclicImportGraph.GenerateImportGraphAsync(importPaths, ConfigureModuleParameters);
-
-                foreach (var import in importGraph.TopologizedImports) {
-                    import.ParseModule();
-                }
-
-                foreach (var import in importGraph.TopologizedImports) {
-                    import.ResolveModule(importPath => ResolveImport(importGraph.TopologizedImports, importPath).Module);
-                }
+                importGraph = (await ImportGraphGenerator.Default.GenerateImportGraphAsync(importPaths, ConfigureModuleParameters))
+                    .NextProcess(DirectAcyclicImportGraphParser.Default)
+                    .NextProcess(DirectAcyclicImportGraphResolver.Default)
+                    .NextProcess(DirectAcyclicImportGraphExpander.Default);
             } catch (Exception error) when (error is IParsingException parsingError) {
                 var compilerError = await FilePassageError.CreateFromFilePassageAsync((dynamic)parsingError);
                 compilerErrors.Add(compilerError);
             }
 
-            return new CompilerResult(importGraph, compilerErrors);
+            return new ImportGraphFactoryResult(importGraph, compilerErrors);
         }
 
-        public Task<CompilerResult> CompileAsync() =>
-            CompileAsync(default(Action<CompilerParameters>));
+        public Task<ImportGraphFactoryResult> CompileAsync() =>
+            CompileAsync(default);
     }
 }

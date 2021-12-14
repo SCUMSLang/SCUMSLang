@@ -1,7 +1,7 @@
 ﻿using System.Collections.Generic;
 using System.Diagnostics.CodeAnalysis;
 
-namespace SCUMSLang.IO
+namespace SCUMSLang.Imports
 {
     public class ImportOnlyPathEqualityComparer : EqualityComparer<Import>
     {

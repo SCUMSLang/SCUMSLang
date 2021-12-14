@@ -13,7 +13,7 @@ namespace SCUMSLang.SyntaxTree.Definitions
         public AttributeDefinition(MethodCallDefinition methodCall) =>
             MethodCall = methodCall;
 
-        internal protected override Reference Accept(SyntaxNodeVisitor visitor) =>
+        internal protected override Reference Accept(NodeVisitor visitor) =>
             visitor.VisitAttributeDefinition(this);
     }
 }

@@ -13,7 +13,7 @@ namespace SCUMSLang.SyntaxTree.References
         internal ParameterReference(TypeReference parameterType) =>
             ParameterType = parameterType ?? throw new ArgumentNullException(nameof(parameterType));
 
-        protected internal override Reference Accept(SyntaxNodeVisitor visitor) =>
+        protected internal override Reference Accept(NodeVisitor visitor) =>
             visitor.VisitParameterReference(this);
     }
 }

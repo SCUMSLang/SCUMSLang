@@ -29,7 +29,7 @@ namespace SCUMSLang.SyntaxTree.Definitions
         void IBlockHolder.SetupBlock(BlockDefinition parentBlock) =>
             BlockHolders.SetupBlock(ref block, parentBlock, parentBlock.BlockScope);
 
-        protected internal override Reference Accept(SyntaxNodeVisitor visitor) =>
+        protected internal override Reference Accept(NodeVisitor visitor) =>
             visitor.VisitTemplateForInDefinition(this);
 
         public TemplateForInDefinition UpdateDefinition(IReadOnlyList<ForInDefinition> forInDefinitions)

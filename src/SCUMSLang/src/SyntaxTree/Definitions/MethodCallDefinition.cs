@@ -40,7 +40,7 @@ namespace SCUMSLang.SyntaxTree.Definitions
             Arguments = arguments ?? new List<ConstantDefinition>();
         }
 
-        internal protected override Reference Accept(SyntaxNodeVisitor visitor) =>
+        internal protected override Reference Accept(NodeVisitor visitor) =>
             visitor.VisitMethodCallDefinition(this);
 
         public MethodCallDefinition UpdateDefinition(MethodReference method, IReadOnlyList<ConstantDefinition> genericArguments, IReadOnlyList<ConstantDefinition> arguments)

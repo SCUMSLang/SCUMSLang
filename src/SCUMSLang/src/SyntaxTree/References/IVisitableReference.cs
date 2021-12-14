@@ -4,6 +4,6 @@ namespace SCUMSLang.SyntaxTree.References
 {
     public interface IVisitableReference
     {
-        void Accept(SyntaxNodeVisitor visitor);
+        void Accept(NodeVisitor visitor);
     }
 }

@@ -3,11 +3,11 @@ using SCUMSLang.SyntaxTree.References;
 
 namespace SCUMSLang.SyntaxTree.Visitors
 {
-    public class SyntaxNodeResolvingVisitor : SyntaxNodeVisitor
+    public class ResolvingVisitor : NodeVisitor
     {
         private readonly ImportResolver importResolver;
 
-        public SyntaxNodeResolvingVisitor(ImportResolver importResolver) =>
+        public ResolvingVisitor(ImportResolver importResolver) =>
             this.importResolver = importResolver ?? throw new System.ArgumentNullException(nameof(importResolver));
 
         protected internal override Reference VisitTypeReference(TypeReference type)
@@ -34,7 +34,7 @@ namespace SCUMSLang.SyntaxTree.Visitors
             return base.VisitEventHandlerReference(eventHandler);
         }
 
-        internal override Reference VisitModuleBlockDefinition(ModuleBlockDefinition moduleBlock)
+        protected internal override Reference VisitModuleBlockDefinition(ModuleBlockDefinition moduleBlock)
         {
             moduleBlock.ResolveOnce(importResolver);
             return base.VisitModuleBlockDefinition(moduleBlock);

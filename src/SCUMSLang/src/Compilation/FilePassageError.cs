@@ -1,22 +1,22 @@
 ﻿using System;
 using System.Text;
 using System.Threading.Tasks;
-using SCUMSLang.IO;
+using SCUMSLang.Imports.Graph;
 
 namespace SCUMSLang.Compilation
 {
-    public class FilePassageError : CompilerError
+    public class FilePassageError : ImportGraphFactoryError
     {
-        public static async Task<CompilerError> CreateFromFilePassageAsync<T>(T error)
+        public static async Task<ImportGraphFactoryError> CreateFromFilePassageAsync<T>(T error)
             where T : Exception, IParsingException
         {
-            var errorSource = CompilerErrorSource.SyntaxTree;
+            var errorSource = ImportGraphFactoryErrorSource.SyntaxTree;
             var errorMessage = error.Message;
             var errorFilePosition = error.FilePosition;
-            CompilerError compilerError;
+            ImportGraphFactoryError compilerError;
 
             if (errorFilePosition?.FilePath is null) {
-                compilerError = new CompilerError(errorSource, errorMessage);
+                compilerError = new ImportGraphFactoryError(errorSource, errorMessage);
             } else {
                 var filePath = errorFilePosition.FilePath;
                 var filePosition = errorFilePosition.FilePosition;
@@ -47,7 +47,7 @@ namespace SCUMSLang.Compilation
                     linePosition: errorFilePosition.FileLinePosition);
             }
 
-            compilerError.WrappedException = new CompilerException(compilerError.ToString(), error);
+            compilerError.Exception = new ImportGraphFactoryException(compilerError.ToString(), error);
             return compilerError;
         }
 
@@ -59,7 +59,7 @@ namespace SCUMSLang.Compilation
         public int LinePosition { get; }
 
         public FilePassageError(
-            CompilerErrorSource errorType,
+            ImportGraphFactoryErrorSource errorType,
             string errorMessage,
             string? filePassage,
             string filePath,

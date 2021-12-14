@@ -5,7 +5,7 @@ using System.Threading.Tasks;
 using CommandLine;
 using Microsoft.Extensions.Logging;
 using SCUMSLang.CommandLine;
-using SCUMSLang.Compilation;
+using SCUMSLang.Imports.Graph;
 
 namespace SCUMSLang
 {
@@ -37,10 +37,10 @@ namespace SCUMSLang
                 return 1;
             }
 
-            CompilerResult compilerResult;
+            ImportGraphFactoryResult compilerResult;
 
             try {
-                void ConfigureParserParameters(CompilerParameters parameters)
+                void ConfigureParserParameters(ImportGraphFactoryParameters parameters)
                 {
                     parameters.LoggerFactory = LoggerFactory.Create(builder => builder.AddConsole());
 
@@ -57,7 +57,7 @@ namespace SCUMSLang
                     }
                 }
 
-                compilerResult = await Compiler.Default.CompileAsync(ConfigureParserParameters);
+                compilerResult = await ImportGraphFactory.Default.CompileAsync(ConfigureParserParameters);
             } catch (AggregateException error) {
                 Console.WriteLine(error.Message);
 

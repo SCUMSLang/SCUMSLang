@@ -30,7 +30,7 @@ namespace SCUMSLang.SyntaxTree.Definitions
             : base(parameterType) =>
             Constant = Constants.Null;
 
-        protected internal override Reference Accept(SyntaxNodeVisitor visitor) =>
+        protected internal override Reference Accept(NodeVisitor visitor) =>
             visitor.VisitParameterDefinition(this);
 
         public ParameterDefinition Update(TypeReference parameterType)
