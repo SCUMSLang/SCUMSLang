@@ -1,6 +1,6 @@
 ﻿namespace SCUMSLang.Imports.Graph.Processors
 {
-    public interface IDirectAcyclicImportGraphProcessor
+    public interface IImportGraphProcessor
     {
         ImportGraph Process(ImportGraph importGraph);
     }

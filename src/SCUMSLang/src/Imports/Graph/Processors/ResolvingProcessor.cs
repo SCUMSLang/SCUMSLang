@@ -5,9 +5,9 @@ using SCUMSLang.SyntaxTree;
 
 namespace SCUMSLang.Imports.Graph.Processors
 {
-    public class DirectAcyclicImportGraphResolver : IDirectAcyclicImportGraphProcessor
+    public class ResolvingProcessor : IImportGraphProcessor
     {
-        public readonly static DirectAcyclicImportGraphResolver Default = new DirectAcyclicImportGraphResolver();
+        public readonly static ResolvingProcessor Default = new ResolvingProcessor();
 
         private Import GetImportByPath(IEnumerable<Import> imports, string importPath)
         {
@@ -33,7 +33,7 @@ namespace SCUMSLang.Imports.Graph.Processors
             return importGraph.WithState(ImportGraphState.Resolved);
         }
 
-        ImportGraph IDirectAcyclicImportGraphProcessor.Process(ImportGraph importGraph) =>
+        ImportGraph IImportGraphProcessor.Process(ImportGraph importGraph) =>
             ResolveModules(importGraph);
     }
 }

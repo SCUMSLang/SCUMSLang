@@ -2,9 +2,9 @@
 
 namespace SCUMSLang.Imports.Graph.Processors
 {
-    public class DirectAcyclicImportGraphExpander : IDirectAcyclicImportGraphProcessor
+    public class ExpandingProcessor : IImportGraphProcessor
     {
-        public readonly static DirectAcyclicImportGraphExpander Default = new DirectAcyclicImportGraphExpander();
+        public readonly static ExpandingProcessor Default = new ExpandingProcessor();
 
         public ImportGraph ExpandModules(ImportGraph importGraph)
         {
@@ -15,7 +15,7 @@ namespace SCUMSLang.Imports.Graph.Processors
             return importGraph.WithState(ImportGraphState.Expanded);
         }
 
-        ImportGraph IDirectAcyclicImportGraphProcessor.Process(ImportGraph importGraph) =>
+        ImportGraph IImportGraphProcessor.Process(ImportGraph importGraph) =>
             ExpandModules(importGraph);
     }
 }

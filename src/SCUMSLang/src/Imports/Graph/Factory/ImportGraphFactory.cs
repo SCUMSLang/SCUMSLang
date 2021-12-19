@@ -77,9 +77,9 @@ namespace SCUMSLang.Imports.Graph.Factory
                 }
 
                 importGraph = (await ImportGraphGenerator.Default.GenerateImportGraphAsync(importPaths, ConfigureModuleParameters))
-                    .NextProcess(DirectAcyclicImportGraphParser.Default)
-                    .NextProcess(DirectAcyclicImportGraphResolver.Default)
-                    .NextProcess(DirectAcyclicImportGraphExpander.Default);
+                    .NextProcess(ParsingProcessor.Default)
+                    .NextProcess(ResolvingProcessor.Default)
+                    .NextProcess(ExpandingProcessor.Default);
             } catch (Exception error) when (error is IParsingException parsingError) {
                 var compilerError = await FilePassageError.CreateFromFilePassageAsync((dynamic)parsingError);
                 compilerErrors.Add(compilerError);

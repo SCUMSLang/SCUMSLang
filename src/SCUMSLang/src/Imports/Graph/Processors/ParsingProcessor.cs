@@ -3,9 +3,9 @@ using SCUMSLang.Tokenization;
 
 namespace SCUMSLang.Imports.Graph.Processors
 {
-    public class DirectAcyclicImportGraphParser : IDirectAcyclicImportGraphProcessor
+    public class ParsingProcessor : IImportGraphProcessor
     {
-        public readonly static DirectAcyclicImportGraphParser Default = new DirectAcyclicImportGraphParser();
+        public readonly static ParsingProcessor Default = new ParsingProcessor();
 
         private void ParseModule(Import import)
         {
@@ -27,7 +27,7 @@ namespace SCUMSLang.Imports.Graph.Processors
             return importGraph.WithState(ImportGraphState.Parsed);
         }
 
-        ImportGraph IDirectAcyclicImportGraphProcessor.Process(ImportGraph importGraph) =>
+        ImportGraph IImportGraphProcessor.Process(ImportGraph importGraph) =>
             ParseModules(importGraph);
     }
 }
