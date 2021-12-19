@@ -135,18 +135,6 @@ namespace SCUMSLang.SyntaxTree.Definitions
             throw new InvalidOperationException("You cannot update the module");
         }
 
-        public void ResolveOnce(ImportResolver importResolver)
-        {
-            var resolvingVisitor = new ResolvingVisitor(importResolver) {
-                Logger = LoggerFactory?.CreateLogger<ResolvingVisitor>()
-            };
-
-            resolvingVisitor.Visit(this);
-        }
-
-        public void ResolveOnce() =>
-            ResolveOnce((_) => throw new NotSupportedException());
-
         private class ModuleBlockContainer : BlockContainer
         {
             public override BlockDefinition? Block {

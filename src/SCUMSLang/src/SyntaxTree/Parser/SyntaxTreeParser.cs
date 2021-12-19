@@ -1,4 +1,5 @@
-﻿using SCUMSLang.SyntaxTree.Definitions;
+﻿using SCUMSLang.Imports.Graph.Processors;
+using SCUMSLang.SyntaxTree.Definitions;
 using SCUMSLang.SyntaxTree.References;
 using SCUMSLang.Tokenization;
 using System;
@@ -811,7 +812,7 @@ namespace SCUMSLang.SyntaxTree.Parser
             }
 
             if (options.AutoResolve) {
-                options.Module.ResolveOnce();
+                ResolvingProcessor.ResolveModule(options.Module);
             }
 
             return new SyntaxTreeParserResult(module, lastRecognizedUpperPosition);

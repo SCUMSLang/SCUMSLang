@@ -56,10 +56,11 @@ namespace SCUMSLang.Imports.Graph.Factory
             return importPaths;
         }
 
-        public async Task<ImportGraphFactoryResult> CreateImportGraph(ImportGraphFactoryParameters parameters)
+        public async Task<ImportGraphFactoryResult> CreateImportGraph(ImportGraphFactoryParameters? parameters)
         {
-            if (parameters == null)
-                throw new ArgumentNullException(nameof(parameters));
+            if (parameters == null) {
+                parameters = new ImportGraphFactoryParameters();
+            }
 
             var importPaths = GetImportPaths(parameters);
 
@@ -78,7 +79,7 @@ namespace SCUMSLang.Imports.Graph.Factory
 
                 importGraph = (await ImportGraphGenerator.Default.GenerateImportGraphAsync(importPaths, ConfigureModuleParameters))
                     .NextProcess(ParsingProcessor.Default)
-                    .NextProcess(ResolvingProcessor.Default)
+                    .NextProcess(new ResolvingProcessor() { LoggerFactory = parameters.LoggerFactory })
                     .NextProcess(ExpandingProcessor.Default);
             } catch (Exception error) when (error is IParsingException parsingError) {
                 var compilerError = await FilePassageError.CreateFromFilePassageAsync((dynamic)parsingError);
